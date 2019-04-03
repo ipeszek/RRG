@@ -13,7 +13,7 @@ a java-based suite of programs to create RTF and/or PDF files, relieving RRG use
 
 You can add your own customized macros to accommodate your analysis needs.
   
-Please refer to [RRG overview document](docs\RRG_overview_02Apr2019.pdf) for an overview of RRG.
+Please refer to [RRG overview document](docs/RRG_overview_02Apr2019.pdf) for an overview of RRG.
 
 The detailed documentation of RRG macro's parameters 
 will be posted soon as comments in the source code.

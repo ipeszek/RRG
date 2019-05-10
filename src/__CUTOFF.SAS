@@ -38,6 +38,8 @@ select cats("cats(",name,") in (", cutoffcolumn,")") into:currval
   from &trtinfods (where =(cutoffcolumn ne ''));
 quit;
 
+%*put '4iza __cutoff pass1 ' currval=&currval;
+
 
 
 %if %length(&currval)>0 %then %do;
@@ -95,6 +97,12 @@ put;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
+/*
+put @1 "proc print data =&dsin;";
+put @1 "title '4iza __cutoff pass 2';";
+put @1 "run;";
+put @1 "title;";
+*/
 
 put @1 "data &dsin;";
 put @1 "  set &dsin;";
@@ -110,13 +118,13 @@ put @1 "         __colevt[__i]='';";
 put @1 "    end;";
 put @1 "  end;";
 %if %upcase(&showgrpcnt) ne Y %then %do;
-put @1 "  if __grpid ne 999 then do;";
-put @1 "    do __i=1 to dim(cols);";
-put @1 "         cols[__i]='';";
-put @1 "         __colevt[__i]='';";
-put @1 "    end;";
-put @1 "    %* CLEARS COUNTS FOR GROUPING VARIABLES:;";
-put @1 "  end;";
+  put @1 "  if __grpid ne 999 then do;";
+  put @1 "    do __i=1 to dim(cols);";
+  put @1 "         cols[__i]='';";
+  put @1 "         __colevt[__i]='';";
+  put @1 "    end;";
+  put @1 "    %* CLEARS COUNTS FOR GROUPING VARIABLES:;";
+  put @1 "  end;";
 %end;
 
 put @1 "  if __grpid=999 then do;";

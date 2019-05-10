@@ -25,6 +25,8 @@ preloadfmt=,
 across=N,
 incolumn=,
 colhead=,
+mincnt=,
+minpct=
 )/store;
 
 
@@ -147,7 +149,9 @@ colhead=%nrbquote(&colhead),
 autospan=%nrbquote(&autospan),
 skipline=%nrbquote(%upcase(&skipline)),
 preloadfmt = %nrbquote(&preloadfmt),
-sortcolumn=&sortcolumn);
+sortcolumn=&sortcolumn,
+mincnt=%nrbquote(&mincnt),
+minpct=%nrbquote(&minpct));
 
 data __timer;
 	set __timer end=eof;

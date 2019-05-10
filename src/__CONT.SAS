@@ -17,6 +17,7 @@ byn4pop=,
 trtvars=,
 outds=)/store;
 
+
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 run;
@@ -69,7 +70,7 @@ proc sql noprint;
   select trim(left(condfmt))   into:condfmt  separated by ' ' from  __contv;
 quit;
 
-%put 4iza slfmt=&slfmt sdfmt=&sdfmt;
+%*put 4iza slfmt=&slfmt sdfmt=&sdfmt;
 
 %if %length(&where)=0 %then %let where=%str(1=1);
 %if %length(&tabwhere)=0 %then %let tabwhere=%str(1=1);
@@ -88,6 +89,7 @@ quit;
 %end;
 
 
+
 %* LABELLINE=1 MEANS THAT 1ST STATISTIC IS TO BE PUT ON THE SAME;
 %* LINE AS VARIABLE LABEL;
 %* FOR TABLES WITH STATISTICS IN COLUMNS, THIS IS IGNORED,;
@@ -99,31 +101,7 @@ quit;
 %end;
 
 %if %length(&where)=0  %then %let where=%str(1=1);
-/*
-%local minmaxsep clmsep clmub;
-data _null_;
-  length xx $ 10 yy yy1 yy2 minmaxsep clmsep clmub $ 200;
-  xx='MIN+MAX';
-  yy = put(xx, &sdfmt);
-  yy1 = scan(yy,1,' ');
-  yy2 = scan(yy, 2, ' ');
-  if substr(yy1, length(yy1), 1)=',' then minmaxsep=',';
-  else if yy2 ne '' then minmaxsep=cats(yy2);
-  else minmaxsep=',';
-  
-  call symput('minmaxsep',  cats(minmaxsep));
-  
-  xx='LCLM+UCLM';
-  yy = put(xx, &sdfmt);
-  yy1 = scan(yy,1,' ');
-  yy2 = scan(yy, 2, ' ');
-  if substr(yy1, length(yy1), 1)=',' then clmsep=',';
-  else clmsep=cats(yy2);
-  call symput('clmsep',  cats(clmsep));
-  if substr(yy1, 1, 1)='(' then clmub='(';
-  call symput('clmub',  cats(clmub));
-run;
-*/
+
 %*--------------------------------------------------------------------;
 %* PREPARATION: CREATE (OR TRANSFORM) DATASET WITH LIST OF REQUESTED ;
 %*   STATISTICS, THEIR ORDER, AND THEIR DISPLAY "NAMES";
@@ -140,49 +118,32 @@ run;
      string = compbl(symget("stat"));
      num = countw(string,' ');
      basedec = compbl(symget("basedec"));
+     %put 4iza I am here 1;
      do __order =1 to num;
       name = scan(string,__order, ' ');
       label = put(upcase(name), &slfmt); 
-      put '4iza ' name= label=;
+      
       __dispname = strip(put(upcase(name), &sdfmt));
-      /*
-      if upcase(name)='MEAN+STD' then do;
-        __dispname=upcase(__dispname);
-        __dispname=tranwrd(strip(__dispname), "MEAN", "$MEAN$");
-        __dispname=tranwrd(strip(__dispname), "STD", "$STD$");
-      end;
-      */
+      
       if upcase(name)='MEAN+SD' then do;
         __dispname=upcase(__dispname);
         __dispname=tranwrd(strip(__dispname), "MEAN", "$MEAN$");
         __dispname=tranwrd(strip(__dispname), "SD", "$STD$");
-        /*__name='MEAN+SD';*/
+       
       end;
-      /*
-      if upcase(name)='MEAN+STDERR' then do;
-        __dispname=upcase(__dispname);
-        __dispname=tranwrd(strip(__dispname), "MEAN", "$MEAN$");
-        __dispname=tranwrd(strip(__dispname), "STDERR", "$STDERR$");
-      end;
-      */
+      
       if upcase(name)='MEAN+SE' then do;
         __dispname=upcase(__dispname);
         __dispname=tranwrd(strip(__dispname), "MEAN", "$MEAN$");
         __dispname=tranwrd(strip(__dispname), "SE", "$STDERR$");
-       /* __name = 'MEAN+STDERR';*/
+       
       end;
       if upcase(name)='MIN+MAX' then do;
         __dispname=upcase(__dispname);
         __dispname=tranwrd(strip(__dispname), "MIN", "$MIN$");
         __dispname=tranwrd(strip(__dispname), "MAX", "$MAX$");
       end;
-      /*
-      if upcase(name)='LCLM+UCLM' then do;
-        __dispname=upcase(__dispname);
-        __dispname=tranwrd(strip(__dispname), "LCLM", "$LCLM$");
-        __dispname=tranwrd(strip(__dispname), "UCLM", "$UCLM$");
-      end;
-      */
+      
       
       if upcase(name)='STD' then __dispname='STD';
       if upcase(name)='STDERR' then __dispname='STDERR';
@@ -261,7 +222,11 @@ run;
 %*  THAT HOLDS BASE DECIMAL PRECISION;
    data __contstatlist;
    set __contstatlist;
+    %if %length &basedec)<=0 %then %do;
+      %let basedec=0;
+    %end;
     if __name in('N','NMISS') then __basedec=0;
+   
    else __basedec = &basedec + input(upcase(__name), &decinfmt);
    run;
 %end;     
@@ -296,8 +261,8 @@ proc sql noprint;
 
 quit;
 
-%put 4iza statlist=&statlist;
-%put 4iza statlist2=&statlist2;
+%*put 4iza statlist=&statlist;
+%*put 4iza statlist2=&statlist2;
 
 %* IF &STAT HAS ONLY MODEL-BASED STATISTICS THEN SKIP THE REST OF STEPS;
    
@@ -386,6 +351,7 @@ put;
 put @1 "data __contds2;";
 put @1 "set __contds2;";
 put @1 "by &by &trtvars __tby &groupvars &decvar  &unit &var;";
+put @1 "if missing(&decvar) then &decvar=0;";
 put @1 "if first.%scan(&unit,-1,%str( )) then output;";
 put @1 "if not first.%scan(&unit,-1,%str( )) or not last.%scan(&unit,-1,%str( )) then do;";
 put @1 "put 'WAR' 'NING: duplicate data for ' %scan(&unit,-1,%str( ))= &var=;";
@@ -549,7 +515,7 @@ put;
 put @1  "data __contstat0;";
 put @1 ' length __name $ 2000;';
 put @1 "   __statlist = compbl(upcase('" "&statlist" "'));";
-/*put @1 '   do __i =1 to ' "%sysfunc(countw(&statlist, %str( ))) ;";*/
+
 put @1 "   do __i =1 to  countw(__statlist, ' ') ;";
 put @1 "      __name = scan(__statlist,  __i, ' ');"; 
 put @1 '      output;';
@@ -590,7 +556,7 @@ put @1 '    (keep=__fname __name __order __sid __disp __dispname __basedec);';
 put @1 '    by __name;';
 put @1 '    if __a;';
 put @1 '  run;  ';
-/*%__rrgpd(ds=__contstat0);*/
+
 put;
 %* end of template;
 
@@ -605,15 +571,7 @@ put;
 put @1 '%if &nobs>0 %then %do;';
 put;
 put;
-/*
-put "proc print data=__contstat;";
-put "title '4iza __contstat before transpose' ;";
-put "run;";
 
-put "proc print data=__contstat0;";
-put "title '4iza __contstat0 before transpose' ;";
-put "run;";
-*/
 put;
 put;
 put @1 '  data __contstat;';
@@ -676,6 +634,7 @@ put @1 "data __contstat2;";
 put @1 " set  __contstat;";
 put @1 " length __col $ 2000;";
 %if %length(&decvar)>0 %then %do;
+put @1 "    if missing(&decvar) then &decvar=0;";
 put @1 "   if __name in ('N','NMISS') then __basedec=0;";
 put @1 "   else __basedec = &decvar + input(upcase(__name), &decinfmt);";
 %end;
@@ -734,7 +693,7 @@ put @1 "proc sort data=__contstat2;";
 put @1 "  by &by &trtvars __tby &groupvars __order __sid ;";
 put @1 "run;";
 put;
-/*PUT "proc print data=__contstat2; title 'constat2'; run;";*/
+
 put;
 put @1 "data __contstat2;";
 put @1 "set __contstat2;";
@@ -752,13 +711,13 @@ put @1 "end;";
 
 put @1 "else do;";
 put @1 "  if first.__order then __ncol =__dispname;";
-/*put @1 "put 4iza __ncol=";*/
+
 put @1 "     __ncol =tranwrd(strip(__ncol), '$'||strip(upcase(__name))||'$', strip(__col));";
 put @1 "     if last.__order then do;";
 
 put @1 "        if compress(__ncol, '.,(): ')='' then __ncol='';     ";
 put @1 "        __col=strip(__ncol);";
-/*put @1 "        __tmpalign = cats('" "&align" "');";   */
+
 put @1 "        __tmpalign = 'C';";   
 put @1 "        output;";
 put @1 "     end;";
@@ -766,7 +725,7 @@ put @1 "end;";
 put @1 "run;";
 put;
 
-/*PUT "proc print data=__contstat2; title 'constat2 after fix'; run;";*/
+
 put;
 run;
 
@@ -938,7 +897,8 @@ run;
     put @1 "   decvar=__decvar,";
     %end;
     %else %do;
-    put @1 "   decvar=&decvar,";
+    put @1 "   decvar=&decvar;";
+    put @1 "   if missing(decvar) then decvar=0;";
     %end;
     if parms ne '' then do;
       put @1 parms ",";
@@ -1119,14 +1079,7 @@ run;
     mergetype = inner,
       dataout = __contstat3);
       
-      /*
-      ** SHOUDL IT BE AS FOLLOWS?;
-      rp_joinds(data1 = __contstat2,
-        data2 = __pop ,
-           by = &by &trtvars,
-    mergetype = INNER,
-      dataout = __contstat3);
-      */
+     
 
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
@@ -1261,7 +1214,7 @@ put @1 "run;";
 put;
 put @1 '%end;';
 put;
-/*%__rrgpd(ds=&outds);*/
+
 put @1 '%exit' "c&varid:";
 run;
 

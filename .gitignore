@@ -1,2 +1,6 @@
 *.log
 *.bak
+*.o
+*.hi
+
+.shake/

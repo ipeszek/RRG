@@ -16,6 +16,11 @@
 %local debug lastcol savexml output_engine java2sas fname colsp varby metadatads;  
 %local append appendable tablepart colwidths  stretch print gcols dist2next replace;
  
+
+  data _null_;
+  file "&rrgpgmpath./&rrguri.0.sas"  mod lrecl=1000;
+put;
+run; 
   
 proc sql noprint;
   select append into:append separated by ' ' from __repinfo;
@@ -336,11 +341,11 @@ run;
 %end;
  
 
-%if &savercd=Y and %upcase(&print)=Y  %then %do;
+%if &savercd=Y /*and %upcase(&print)=Y*/  %then %do;
   %__savercd;
 %end;
 
-%if %upcase(&gentxt)=Y and %upcase(&print)=Y  %then %do;
+%if %upcase(&gentxt)=Y /*and %upcase(&print)=Y */ %then %do;
 
   %__gentxt;
 
@@ -379,7 +384,7 @@ run;
 
 %end;  
 
-
+%if  %upcase(&print)=Y  %then %do;
 %inc "&rrgpgmpath./&rrguri.0.sas";
 
 
@@ -392,6 +397,7 @@ input record $varying2000. len;
 put record $varying2000. len;
 run;
 
+%end;
 
 %*put java2sas=&java2sas;
 
@@ -758,7 +764,9 @@ run;
   
 
   %* submit remaining portion;
+  %if  %upcase(&print)=Y  %then %do;
   %inc "&rrgpgmpath./&rrguri.0.sas";
+%end;
  
   
 

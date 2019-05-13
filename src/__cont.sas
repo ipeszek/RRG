@@ -84,6 +84,7 @@ quit;
 %* IF BASEDEC = VARIABLE NAME THEN SAVE THIS NAME IN &DECVAR;
 
 
+
 %if  %sysfunc(notdigit(&basedec))>0 %then %do;
   %let decvar=&basedec;
 %end;
@@ -112,13 +113,14 @@ data __contstatlist;
 run;
 
 %if %length(&statsetid)=0  %then %do;
+  
      data __contstatlist;
      length string basedec name label __dispname $ 2000;
      drop string num;
      string = compbl(symget("stat"));
      num = countw(string,' ');
      basedec = compbl(symget("basedec"));
-     %put 4iza I am here 1;
+
      do __order =1 to num;
       name = scan(string,__order, ' ');
       label = put(upcase(name), &slfmt); 
@@ -218,17 +220,18 @@ run;
 %* CREATE A VARIABLE HOLDING NUMBER OF DECIMAL PLACE;
      
 %if %length(&decvar)=0 %then %do;
-%* &DECVAR IS MACRO VARIABLE HOLDING VARIABLE NAME ;
-%*  THAT HOLDS BASE DECIMAL PRECISION;
-   data __contstatlist;
-   set __contstatlist;
-    %if %length &basedec)<=0 %then %do;
-      %let basedec=0;
-    %end;
-    if __name in('N','NMISS') then __basedec=0;
-   
-   else __basedec = &basedec + input(upcase(__name), &decinfmt);
-   run;
+  
+    %* &DECVAR IS MACRO VARIABLE HOLDING VARIABLE NAME ;
+    %*  THAT HOLDS BASE DECIMAL PRECISION;
+       data __contstatlist;
+       set __contstatlist;
+        %if %length (&basedec)<=0 %then %do;
+          %let basedec=0;
+        %end;
+        if __name in('N','NMISS') then __basedec=0;
+       
+       else __basedec = &basedec + input(upcase(__name), &decinfmt);
+       run;
 %end;     
 
 
@@ -300,6 +303,13 @@ run;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 set __contstatlist end=eof;
+/*put '4iza in contstatlist ' __basedec=;*/
+if missing(__basedec) then do;
+  __basedec=0;
+/*  put '4iza __basedec is missing';*/
+end;
+
+/*put '4iza in contstatlist after setting to 0 ' __basedec=;*/
 if _n_=1 then do;
   put @1 "data __contstatlist;";
   put @1 "  length __fname __name __disp __dispname $ 2000;";
@@ -337,6 +347,7 @@ put;
 %let tmp = %sysfunc(tranwrd(%sysfunc(compbl(&by &trtvars 
       __tby &groupvars &decvar  &unit &var)) , 
        %str( ), %str(,)));
+%*put 4iza decvar=&decvar;       
 
 put @1 "proc sql noprint;";
 put @1 "     create table __contds2 as select distinct";
@@ -351,7 +362,9 @@ put;
 put @1 "data __contds2;";
 put @1 "set __contds2;";
 put @1 "by &by &trtvars __tby &groupvars &decvar  &unit &var;";
-put @1 "if missing(&decvar) then &decvar=0;";
+%if %length(&decvar) %then %do;
+  put @1 "if missing(&decvar) then &decvar=0;";
+%end;  
 put @1 "if first.%scan(&unit,-1,%str( )) then output;";
 put @1 "if not first.%scan(&unit,-1,%str( )) or not last.%scan(&unit,-1,%str( )) then do;";
 put @1 "put 'WAR' 'NING: duplicate data for ' %scan(&unit,-1,%str( ))= &var=;";
@@ -402,56 +415,56 @@ put;
 %end;
 
 %if %length(&nmiss)>0 %then %do;
-put;
-put @1 "*-----------------------------------------------------;";
-PUT @1 "* CALCULATE NUMBER OF MISSING;";
-put @1 "*-----------------------------------------------------;";
-put;
+      put;
+      put @1 "*-----------------------------------------------------;";
+      PUT @1 "* CALCULATE NUMBER OF MISSING;";
+      put @1 "*-----------------------------------------------------;";
+      put;
 
-%if %length(&popwhere)=0 %then %let popwhere=%str(1=1);
+      %if %length(&popwhere)=0 %then %let popwhere=%str(1=1);
 
-%* calculate number of missing;
+      %* calculate number of missing;
 
-%local tmp tmp4pop;
-%let tmp = %sysfunc(compbl(&trtvars __tby &by &groupvars));
-%let tmp = %sysfunc(tranwrd(&tmp, %str( ), %str(,)));
-%let tmp4pop = %sysfunc(compbl(&popgrp &trtvars __pop));
-%let tmp4pop = %sysfunc(tranwrd(&tmp4pop, %str( ), %str(,)));
+      %local tmp tmp4pop;
+      %let tmp = %sysfunc(compbl(&trtvars __tby &by &groupvars));
+      %let tmp = %sysfunc(tranwrd(&tmp, %str( ), %str(,)));
+      %let tmp4pop = %sysfunc(compbl(&popgrp &trtvars __pop));
+      %let tmp4pop = %sysfunc(tranwrd(&tmp4pop, %str( ), %str(,)));
 
-put @1 "proc sql noprint;";
-put @1 "  create table __nm as select count(*) as __totn, &tmp";
-put @1 "  from (select distinct &tmp, &unit from __dataset(where=(&var ne . and &tabwhere and &where )))";
-put @1 "  group by &tmp";
-put @1 "  order by &tmp";
-put @1 "  ;";
-put;
-put @1 "create table __nmiss as select * from ";
-put @1 "  (select * from __nm) natural left join ";
-put @1 "  (select distinct &tmp4pop as __ptot from __pop) ;";
-put;  
-put @1 "quit;";
-put;  
-put @1 "  data __nmiss;";
-put @1 "  set __nmiss;";
+      put @1 "proc sql noprint;";
+      put @1 "  create table __nm as select count(*) as __totn, &tmp";
+      put @1 "  from (select distinct &tmp, &unit from __dataset(where=(&var ne . and &tabwhere and &where )))";
+      put @1 "  group by &tmp";
+      put @1 "  order by &tmp";
+      put @1 "  ;";
+      put;
+      put @1 "create table __nmiss as select * from ";
+      put @1 "  (select * from __nm) natural left join ";
+      put @1 "  (select distinct &tmp4pop as __ptot from __pop) ;";
+      put;  
+      put @1 "quit;";
+      put;  
+      put @1 "  data __nmiss;";
+      put @1 "  set __nmiss;";
 
-put @1 "    if __totn=. then __totn=0;";
-put @1 "    nmiss= __ptot-__totn;";
-put @1 "    drop __totn __ptot;";
-put @1 "  run;";
-put;  
-put @1 "  proc sort data=__nmiss;";
-put @1 "    by  &trtvars __tby &by &groupvars;";
-put @1 "  run;";
-put;
-put @1 "  proc sort data=__contstat;";
-put @1 "    by &trtvars __tby &by &groupvars;";
-put @1 "  run;";
-put;
-put @1 "  data  __contstat;";
-put @1 "    merge __contstat __nmiss;   ";
-put @1 "    by  &trtvars __tby &by &groupvars;";
-put @1 "  run;";
-put;
+      put @1 "    if __totn=. then __totn=0;";
+      put @1 "    nmiss= __ptot-__totn;";
+      put @1 "    drop __totn __ptot;";
+      put @1 "  run;";
+      put;  
+      put @1 "  proc sort data=__nmiss;";
+      put @1 "    by  &trtvars __tby &by &groupvars;";
+      put @1 "  run;";
+      put;
+      put @1 "  proc sort data=__contstat;";
+      put @1 "    by &trtvars __tby &by &groupvars;";
+      put @1 "  run;";
+      put;
+      put @1 "  data  __contstat;";
+      put @1 "    merge __contstat __nmiss;   ";
+      put @1 "    by  &trtvars __tby &by &groupvars;";
+      put @1 "  run;";
+      put;
 
 
 %end;
@@ -477,18 +490,18 @@ proc sql noprint;
 quit;
 
 %if %length(&groupby) %then %do;
-proc sql noprint;
-%do i=1 %to %sysfunc(countw(&groupby,%str( )));
-  %let tmp=;
-  select value into:tmp separated by ' ' from __rrgpgminfo
-  (where=(
-  upcase(value)=upcase("__grp_template_"||"%scan(&groupby,&i,%str( ))")
-  ));
-  %if %length(&tmp) %then %let gv_wt=&gv_wt %scan(&groupby,&i,%str( ));
-  %else %do;
-  %let gv_nt=&gv_nt %scan(&groupby,&i,%str( ));
-  %end;
-%end;
+    proc sql noprint;
+    %do i=1 %to %sysfunc(countw(&groupby,%str( )));
+      %let tmp=;
+      select value into:tmp separated by ' ' from __rrgpgminfo
+      (where=(
+      upcase(value)=upcase("__grp_template_"||"%scan(&groupby,&i,%str( ))")
+      ));
+      %if %length(&tmp) %then %let gv_wt=&gv_wt %scan(&groupby,&i,%str( ));
+      %else %do;
+        %let gv_nt=&gv_nt %scan(&groupby,&i,%str( ));
+      %end;
+    %end;
 quit;
 %end;
 
@@ -634,7 +647,7 @@ put @1 "data __contstat2;";
 put @1 " set  __contstat;";
 put @1 " length __col $ 2000;";
 %if %length(&decvar)>0 %then %do;
-put @1 "    if missing(&decvar) then &decvar=0;";
+    put @1 "    if missing(&decvar) then &decvar=0;";
 put @1 "   if __name in ('N','NMISS') then __basedec=0;";
 put @1 "   else __basedec = &decvar + input(upcase(__name), &decinfmt);";
 %end;
@@ -656,19 +669,19 @@ put @1 "* CREATE DISPLAY OF STATISTICS (FORMAT);";
 put @1 "*--------------------------------------------------------------;";
 
 %if %length(&condfmt)=0 %then %do;
-put @1 "   if __name='PROBT' then do;";
-put @1 "     __val=round(__val, 0.000000001);";
-put @1 "     __col = put(__val, &pvfmt);";
-put @1 "   end;";
-put @1 "   else do;";
-put @1 "     __val = round(__val, 10**(-1*__basedec));";
-put @1 "     __col = compress(putn(__val, __decfmt));";
-put @1 "   end;";
+    put @1 "   if __name='PROBT' then do;";
+    put @1 "     __val=round(__val, 0.000000001);";
+    put @1 "     __col = put(__val, &pvfmt);";
+    put @1 "   end;";
+    put @1 "   else do;";
+    put @1 "     __val = round(__val, 10**(-1*__basedec));";
+    put @1 "     __col = compress(putn(__val, __decfmt));";
+    put @1 "   end;";
 %end;
 
 %else %do;
 
-%put condfmt=&condfmt;
+  %put condfmt=&condfmt;
   %__condfmt(condfmt=%nrbquote(&condfmt));
 %end;
 
@@ -744,24 +757,25 @@ run;
 %mstat:
 
 
-%put 4iza ovstat ovstat=&ovstat;
-%if %length(&ovstat)>0 %then %do;
-data __contstatlistm2;
-  length __fname __name  __ovstat $ 2000 __modelname $ 200;  
-  __overall=1;
-  __ovstat=trim(left(symget("ovstat")));
- do __i=1 to countw(__ovstat,' ');
-     __fname = upcase(scan(__ovstat,__i,' '));
-     __modelname=scan(__fname, 1, '.');
-     __name = scan(__fname, 2, '.');
-     __order = __i;
-      output;
- end;
-run;
+%*put 4iza ovstat ovstat=&ovstat;
 
-data __contstatlistm;
-  set __contstatlistm __contstatlistm2;
-run;
+%if %length(&ovstat)>0 %then %do;
+    data __contstatlistm2;
+      length __fname __name  __ovstat $ 2000 __modelname $ 200;  
+      __overall=1;
+      __ovstat=trim(left(symget("ovstat")));
+     do __i=1 to countw(__ovstat,' ');
+         __fname = upcase(scan(__ovstat,__i,' '));
+         __modelname=scan(__fname, 1, '.');
+         __name = scan(__fname, 2, '.');
+         __order = __i;
+          output;
+     end;
+    run;
+
+    data __contstatlistm;
+      set __contstatlistm __contstatlistm2;
+    run;
 
 
 %end;
@@ -792,10 +806,10 @@ run;
     set __contstatlistm end=eof;
     if _n_=1 then do;      
       %if %length(&ovstat) %then %do;
-      put @1 "  data __overallstats0;";
-      put @1 "  if 0;";
-      put @1 "  run;";
-      put;
+          put @1 "  data __overallstats0;";
+          put @1 "  if 0;";
+          put @1 "  run;";
+          put;
       %end;
       put @1 "*-----------------------------------------------------;";
       put @1 "* CREATE A LIST OF REQUESTED MODEL-BASED STATISTICS   ;";
@@ -833,15 +847,33 @@ run;
     put @1 "* PREPARE DATASET FOR CUSTOM MODEL, REMOVING POOLED TREATMENTS;";
     put @1 "*-------------------------------------------------------------;";
     put;
+    
+    put @1 "data __dataset;";
+    put @1 "set __dataset;";
+    %if %length(&decvar)=0 %then %do;
+        put @1 "__decvar=&basedec;";
+        put @1 "if missing(__decvar) then __decvar=0;";
+    %end;
+    %else %do;
+       put @1 "if missing(&decvar) then &decvar=0;";
+    %end;
+    
+    put @1 "run;";
+    
+    put;
+    
     put @1 "data __datasetp;";
     put @1 "set __dataset(where=(&tabwhere and &where &pooledstr));";
-    %if %length(&decvar)=0 %then %do;
-    put @1 "__decvar=&basedec;";
-    %end;
+   
     put @1 "run;";
     put;
   run;
     
+
+    
+    
+    
+   
 
 
   %do i = 1 %to &nmodels;
@@ -852,6 +884,11 @@ run;
       length __fname $ 2000;
       call symput("currentmodel", cats(__modelname));
     run; 
+    
+    libname tmpout "&rrgoutpath";
+    data tmpout.__modelstat;
+      set __modelstat;
+    run;
      
     %local nmoddef; 
     %let nmoddef=0;
@@ -866,20 +903,22 @@ run;
     quit;
     
     %if &nmoddef>0 %then %do;
-    proc sort data=__modelp nodupkey;
-      by model;
-    run;  
+        proc sort data=__modelp nodupkey;
+          by model;
+        run;  
     %end;
     %else %do;
-    data __modelp;
-      length name $ 2000;
-      name = "&currentmodel";
-      parms='';
-    run;
+        data __modelp;
+          length name $ 2000;
+          name = "&currentmodel";
+          parms='';
+        run;
     %end;
       
       
     %local modelds;
+    
+ %put 4iza pass99 decvar=&decvar;  
     
     data _null_;
     file "&rrgpgmpath./&rrguri..sas" mod;
@@ -887,6 +926,7 @@ run;
     set __modelp;
     __macroname2 = cats('%', name,'(');
     put;
+   /* put @1 "4iza pass99 decvar=&decvar;";*/
     put @1 __macroname2;
     put @1 "   var=&var,";
     put @1 "   trtvar=&trtvars,";
@@ -894,11 +934,11 @@ run;
     put @1 "   dataset=__datasetp,";
     %* todo: decvar to custom parameters;
     %if %length(&decvar)=0 %then %do;
-    put @1 "   decvar=__decvar,";
+        put @1 "   decvar=__decvar,";
     %end;
     %else %do;
-    put @1 "   decvar=&decvar;";
-    put @1 "   if missing(decvar) then decvar=0;";
+        put @1 "   decvar=&decvar,";
+        /*put @1 "   if missing(decvar) then decvar=0;";*/
     %end;
     if parms ne '' then do;
       put @1 parms ",";
@@ -915,17 +955,17 @@ run;
     %* collect overall statistics;
     %if %length(&ovstat) %Then %do;
     
-    put @1 "*---------------------------------------------------------;";
-    put @1 "* ADD OVERALL STATISTICS TO DATASET THAT COLLECTS THEM;";
-    put @1 "*---------------------------------------------------------;";
-    put;
-    put @1 'data __overallstats0;';
-    put @1 "length __fname $ 2000;";
-    put @1 "set __overallstats0 &modelds(in=__a where=(__overall=1));";
-    put @1 "__blockid = &varid;";
-    put @1 "if __a then __fname = upcase(cats('" "&currentmodel" "','.',__stat_name));";
-    put @1 'run;';
-    put;
+        put @1 "*---------------------------------------------------------;";
+        put @1 "* ADD OVERALL STATISTICS TO DATASET THAT COLLECTS THEM;";
+        put @1 "*---------------------------------------------------------;";
+        put;
+        put @1 'data __overallstats0;';
+        put @1 "length __fname $ 2000;";
+        put @1 "set __overallstats0 &modelds(in=__a where=(__overall=1));";
+        put @1 "__blockid = &varid;";
+        put @1 "if __a then __fname = upcase(cats('" "&currentmodel" "','.',__stat_name));";
+        put @1 'run;';
+        put;
     %end;
     
   
@@ -1030,6 +1070,8 @@ run;
     put @1 '%end;';
    run;
   %end;
+  
+  
   data _null_;
   file "&rrgpgmpath./&rrguri..sas" mod;
   put; 

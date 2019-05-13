@@ -81,10 +81,11 @@ run;
    %end;
    
    
-   
+
     
    %if %length(&groupvars) %then %do;
-   
+     
+      
    proc sort data=&dataset ;
     by &groupvars &decvar;
    run;
@@ -267,7 +268,7 @@ run;
       ods output close; 
       ods output modelanova = __anova_model_ 
                    lsmeancl = __anova_lsmean_ 
-                   lsmeans  = __lsmeans_
+                   lsmeans  = __lsmeans
                    %if &nt>1 and %length(&refvals) %then %do;
                LSMeanDiffCL = __anova_lsmeand_ 
                        diff = __anova_lsdiff_

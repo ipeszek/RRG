@@ -22,7 +22,7 @@ totorder=)/store;
 %local  vinfods ds4var ds4pop ds4denom  outds varid unit  
         decode where popwhere var fmt denomvars denomwhere allstat totaltext
         totalpos stat popgrp pctfmt showmiss pct4missing totalgrp totalwhere
-        misstext misspos missorder totorder countwhat denomincltrt;
+        misstext misspos missorder totorder countwhat denomincltrt maxtrt;
         ;
 
 
@@ -73,7 +73,8 @@ proc sql noprint;
     from &vinfods;
   select trim(left(countwhat))  into:countwhat separated by ' ' 
     from &vinfods;
-quit;
+    
+  
 
 
 %if %length(&popgrp)=0 %then %let popgrp=&by4pop &groupvars4pop;
@@ -91,6 +92,20 @@ quit;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
+/*
+put @1 "proc sql noprint;";
+put @1 "   select max(__trtid) into:maxtrt separated by ' ' from __trt;";
+put @1 "quit;";
+put ;
+*/
+/*
+put @1 "data _null_;";
+put @1 "  length x $ 200;";
+put @1 '  x=symget("maxtrt");';
+put @1 "  call symput('maxtrt',compress(x));";
+put @1 "run;";
+*/
+
 %if %upcase(&countwhat)=MAX %then %do;
 put @1 "proc sort data=&ds4var (where=(not missing(&var)));";
 put @1 "  by  __tby __trtid &by &groupvars &unit  __order &var ;";
@@ -207,6 +222,7 @@ put;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
+
 put @1 "data __catcntnmiss3;";
 put @1 "  set __catcntnmiss3;";
 put @1 "  drop __i __cntpop: __cntnmiss: _name_;";
@@ -324,6 +340,32 @@ put;
     put @1 "    id __trtid;";
     put @1 "    var __denom;";
     put @1 "run;";
+    /*
+    put @1 "proc print data=__catdenom2;";
+    put @1 "  title '__catdenom2';";
+    put @1 "run;";
+    */
+%end;
+
+%else %do;
+    put @1 "proc transpose data=__catdenom out=__catdenom2 prefix=__sden_;";
+    put @1 "    by __tby  &denomvars;";
+    put @1 "    var __denom;";
+    put @1 "run;"; 
+    
+    /*
+    put @1 "data __catdenom2;";
+    put @1 "  set __catdenom2;";
+   
+    put @1 "%do i=1 %to &maxtrt;";
+    put @1 "    __den_&i=__sden_1;";
+    put @1 "  %end;";
+    put @1 "run;";
+    put @1 "proc print data=__catdenom2;";
+    put @1 "  title '__catdenom2';";
+    put @1 "run;";
+    */
+    
 %end;
 
 
@@ -403,6 +445,18 @@ put @1 "by __tby  &denomvars;";
 put @1 "run;";
 put;
 
+/*
+put @1 "proc print data=__trt;";
+put @1 "  title '__trt';";
+put @1 "run;";
+put @1 "title;";
+*/
+/*
+put @1 "proc sql noprint;";
+put @1 "   select max(__trtid) into:maxtrt separated by ' ' from __trt;";
+put @1 "quit;";
+put ;
+*/
 
 put @1 "data &outds;";
 put @1 "length __col_0  $ 2000 __stat $ 20;";
@@ -413,16 +467,22 @@ put @1 "drop _name_;";
 put;
 put @1 'array cnt{*} __cnt_1-__cnt_&maxtrt;';
 put @1 'array pct{*} __pct_1-__pct_&maxtrt;';
+
 put @1 'array denom{*} __den_1-__den_&maxtrt;';
+
 put @1 'array col{*} $ 2000 __col_1-__col_&maxtrt;';
 put;
 
+
 %if &denomincltrt ne Y %then %do;
   put;
-  put @1 '  do over denom;';
-  put @1 '    denom=__denom;';
-  put @1 'end';
+  put @1 '  do i=1 to dim(denom);';
+  put @1 '    denom[i]=__sden_1;';
+  put @1 'end;';
+ 
+  
 %end;  
+
 put;
 put @1 "if 0 then __total=0;";
 put;

@@ -17,24 +17,33 @@ groupvars=)/store;
 
 %local dsin vinfods by groupvars mincnt minpct trtinfods trtds;
 
-%local showgrpcnt showemptygroups i grpidminpct grpidmincnt;
+%local showgrpcnt showemptygroups i grpidminpct grpidmincnt
+  grpsrt mincntpctvar;
 
 
 
-data __varinfo;
-  set __varinfo;
-  __grpid=_n_;
+data __varinfo_cutoff;
+  set __varinfo (where=( type ne 'TRT'));
 run;
 
-proc print data=__varinfo;
-  title '__varinfo in __cutoff';
+data __varinfo_cutoff;
+  set __varinfo_cutoff end=eof;
+  __grpid=_n_;
+  if eof then __grpid=999;
+run;
+
+proc print data=__varinfo_cutoff;
+  title '__varinfo_cutoff in __cutoff';
   var name __grpid type mincnt minpct;
 run;
 
 proc sql;
 select name into: grpsrt separated by ' '
-  from __varinfo where type ne 'TRT'
+  from __varinfo_cutoff where type ne 'TRT'
   order by __grpid;
+select name into: mincntpctvar    separated by ''
+from __varinfo_cutoff
+where not missing (minpct) or not missing (mincnt);
 quit;
 
 
@@ -44,15 +53,15 @@ quit;
 proc sql noprint;
  
   
-  select min(__grpid) into:grpidminpct separated by ' ' from __varinfo 
+  select min(__grpid) into:grpidminpct separated by ' ' from __varinfo_cutoff 
     (where=(not missing(minpct)));
   
-  select min(__grpid) into:grpidmincnt separated by ' ' from __varinfo 
+  select min(__grpid) into:grpidmincnt separated by ' ' from __varinfo_cutoff 
     (where=(not missing(mincnt)));
   
-  select trim(left(mincnt)) into:mincnt separated by ' ' from __varinfo
+  select trim(left(mincnt)) into:mincnt separated by ' ' from __varinfo_cutoff
   (where=(__grpid=&grpidmincnt));
-  select trim(left(minpct)) into:minpct separated by ' ' from __varinfo
+  select trim(left(minpct)) into:minpct separated by ' ' from __varinfo_cutoff
    (where=(__grpid=&grpidminpct));
   
   select trim(left(showgroupcnt)) into:showgrpcnt 
@@ -203,14 +212,14 @@ data _null_;
       
   
 put @1 "proc sort data=&dsin;";
-put @1 "by aebodsys aellt aedecod __order;";
+put @1 "by &grpsrt  __order;";
 put @1 "run;";
 
 put @1 "data &dsin;";
 put @1 "  set &dsin;";
-put @1 "by aebodsys aellt aedecod __order;";
+put @1 "by &grpsrt  __order;";
 put @1 "  retain fordelete2;";
-put @1 "  if first.aebodsys then fordelete2=fordelete;";
+put @1 "  if first.&mincntpctvar then fordelete2=fordelete;";
 put @1 "run;";
 
 put @1 "data &dsin;";

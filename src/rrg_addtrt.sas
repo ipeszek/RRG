@@ -19,10 +19,15 @@ incolumns=,
 autospan=,
 splitrow=,
 across=Y,
-remove=
+remove=,
+codelist=,
+delimiter=%str(,)
 )/store;
 
-
+%local name label decode suffix nline totaltext sortcolumn
+       cutoffcolumn incolumns autospan splitrow across
+       remove codelist delimiter;
+       
 %* totaltext seems to be never used;
 
 %local name label decode suffix nline totaltext sortcolumn 
@@ -69,7 +74,9 @@ splitrow = %nrbquote(&splitrow),
 type=TRT,
 autospan=%nrbquote(&autospan),
 across=&across,
-delmods=%nrbquote(&remove)
+delmods=%nrbquote(&remove),
+codelist=%nrbquote(&codelist),
+delimiter = %nrbquote(&delimiter)
 );
 
 data __timer;

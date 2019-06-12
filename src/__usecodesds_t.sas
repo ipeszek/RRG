@@ -6,9 +6,11 @@
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
 
-%macro __usecodesds(
-  vinfods=, varid=, outds=, dsin=, 
-  /*grptmpds=,*/
+%macro __usecodesds_t(
+  vinfods=, 
+  varid=, 
+  outds=, 
+  dsin=, 
   trtvars=, 
   by=
   )/store;
@@ -39,7 +41,7 @@ NOTES:   IF CODELISTDS WAS NOT SPECIFIED FOR A VARIABLE, THIS MACRO DOES
 
 
 
-%local vinfods varid outds dsin /*grptmpds */ trtvars by;
+%local vinfods varid outds dsin  trtvars by;
 %local decode var codes codelistds countwhat ;
       
 
@@ -57,12 +59,7 @@ quit;
 
 /* catv is__varinfo subset on where varid=&varid */
 
-%if %length(&codelistds)=0 %then %do;
-  %put 4iza codelistds in usecodesds does not exist;
-  %goto exit;
-%end;
-
-%put 4iza in usecodesds codelistds=&codelistds;
+%if %length(&codelistds)=0 %then %goto exit;
 
 %local execcl;
 %* this is the name of the dataset into which codelistds will be copied;
@@ -79,105 +76,7 @@ quit;
 %if &varnum>0 %then %let var2=&var;
 %let rc = %sysfunc(close(&dsid));
 
-%if %sysfunc(exist(__grpcodes_exec)) %then %do;
 
-  %* CROSS-JOIN __GRPCODES WITH CODELISTDS;    
-  proc sql noprint;
-    create table __tmp as select * from __grpcodes_exec
-       cross join &execcl;
-     create table &execcl as select * from __tmp;
-    create table __grpcodes_exec as select distinct * from 
-      &execcl(drop=&var2 &decode &order);
-  quit;  
-  
-  data _null_;
-  file "&rrgpgmpath./&rrguri..sas" mod;
-  put;
-  *----------------------------------------------------;
-  * CROSS-JOIN __GRPCODES WITH CODELISTDS;
-  *----------------------------------------------------;
-  put @1 "proc sql noprint;";
-  put @1 "    create table __tmp as select * from __grpcodes";
-  put @1 "       cross join &codelistds;";
-  put @1 "     create table &codelistds as select * from __tmp;";
-  put @1 "  create table __grpcodes as select distinct * from ";
-  put @1 "    &codelistds (drop=&var2 &decode &order);";
-  put @1 "quit;";  
-  put;
-  run;
-
-%end;
-
-%else %do;
-  ** if &codelistds has grouping variables then we need to create __grpcodesds;
-  
-  data __tmp;
-    set &execcl;
-    drop &var2 &decode &order;
-  run;
-  
-  
-  %local dsid numvar numobs rc;
-  %let dsid = %sysfunc(open(__tmp));
-  %let numvar = %sysfunc(attrn(&dsid, nvars));
-  %let numobs = %sysfunc(attrn(&dsid, nobs));
-  %let rc = %sysfunc(close(&dsid));
- 
-  %if &numvar>0 and &numobs>0 %then %do;
-  
-    %local grpnames grpdec allgrp tmp;
-    proc sql noprint;
-      select name into:grpnames separated by ' ' 
-        from __varinfo (where=(type='GROUP'));
-      select decode into:grpdec separated by ' ' 
-        from __varinfo (where=(type='GROUP'));
-    quit;
-    
-    %local dsid numvar numobs rc;
-    %let dsid = %sysfunc(open(__tmp));
-    %do i=1 %to %sysfunc(countw(&grpnames, %str( )));
-      %let tmp = %scan(&grpnames, &i, %str( ));
-      %if %sysfunc(varnum(&dsid, &tmp))>0 %then
-        %let allgrp = &allgrp &tmp;
-      %if %sysfunc(varnum(&dsid, __order_&tmp))>0 %then
-        %let allgrp = &allgrp __order_&tmp;
-    %end;    
-    %do i=1 %to %sysfunc(countw(&grpdec, %str( )));
-      %let tmp = %scan(&grpdec, &i, %str( ));
-      %if %sysfunc(varnum(&dsid, &tmp))>0 %then
-        %let allgrp = &allgrp &tmp;
-    %end;    
-    %let rc= %sysfunc(close(&dsid));
-  
-    %if %length(&allgrp) %then %do;%* IP 2009-03-01;
-      %let tmp = %sysfunc(tranwrd(&allgrp, %str( ), %str(,)));
-    %end;
-
-      proc sql noprint;
-      create table __grpcodes_exec as select 
-         distinct &tmp from __tmp;
-      quit;
-    
-      data _null_;
-      file "&rrgpgmpath./&rrguri..sas" mod;
-      put;
-      *----------------------------------------------------;
-      * CREATE TEMPLATE FOR DISPLAY OF GROUPING VARIABLES;
-      *----------------------------------------------------;
-      put @1 "data __tmp;";
-      put @1 "set &codelistds;";
-      put @1 "drop &var2 &decode &order;";
-      put @1 "run;";
-      
-      put @1 "proc sql noprint;";
-      put @1 "  create table __grpcodes as select distinct ";
-      put @1 " &tmp from __tmp;";
-      put @1 "quit;  ";
-      put;
-      run;
-  %end;
-
-%end;
 
 
 
@@ -472,5 +371,5 @@ run;
 %exit:
 
 
-%mend __usecodesds;
+%mend ;
 

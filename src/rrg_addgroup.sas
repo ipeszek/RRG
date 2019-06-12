@@ -6,6 +6,8 @@
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
 
+* 22May2019: added ordervar;
+
 %macro rrg_addgroup(
 name=,
 label=,
@@ -26,7 +28,8 @@ across=N,
 incolumn=,
 colhead=,
 mincnt=,
-minpct=
+minpct=,
+ordervar=
 )/store;
 
 
@@ -151,7 +154,15 @@ skipline=%nrbquote(%upcase(&skipline)),
 preloadfmt = %nrbquote(&preloadfmt),
 sortcolumn=&sortcolumn,
 mincnt=%nrbquote(&mincnt),
-minpct=%nrbquote(&minpct));
+minpct=%nrbquote(&minpct)
+/*,
+ordervar=&ordervar
+*/
+);
+
+proc print data=__varinfo;
+  title '4iza __varinfo after rrg_addgroup';
+run;
 
 data __timer;
 	set __timer end=eof;

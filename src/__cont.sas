@@ -918,7 +918,7 @@ run;
       
     %local modelds;
     
- %put 4iza pass99 decvar=&decvar;  
+ %*put 4iza pass99 decvar=&decvar;  
     
     data _null_;
     file "&rrgpgmpath./&rrguri..sas" mod;
@@ -1135,6 +1135,13 @@ run;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
+
+/*
+put @1 "proc print data=__contstat3;";
+put @1 "  title '4iza __contstat3 in __cont';";
+put @1 "run;";
+*/
+
 put @1 "proc sort data=__contstat3;";
 put @1 "   by  &by &groupvars __tby __order  __fname  __disp __tmpalign;";
 put @1 "run;";
@@ -1168,6 +1175,8 @@ put @1 "    end;";
 put @1 "  if __fname='NMISS' and __keep=0 then delete;";
 put @1 "  drop __keep __i __col_x;";
 put @1 "run;";
+
+
 run;
 
 
@@ -1254,6 +1263,7 @@ put;
 put @1 "drop __i;";
 put @1 "run;";
 put;
+%*__rrgpd(ds=__fcont4, title2='line 1266');
 put @1 '%end;';
 put;
 

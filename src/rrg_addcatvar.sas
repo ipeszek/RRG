@@ -213,6 +213,12 @@ desc=&desc,
 delmods=%nrbquote(&remove),
 DENOMINClTRT=%upcase(&DENOMINClTRT));
 
+
+proc print data=__varinfo;
+  title '4iza __varinfo after rrg_addcatvar';
+run;
+
+
 data __timer;
 	set __timer end=eof;
 	output;

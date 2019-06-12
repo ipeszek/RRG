@@ -443,7 +443,7 @@ run;
 
 %__makecodeds_t (vinfods=__VARINFO, dsin=&datasetrrg, outds=__CODES4TRT);    
 
-%if %sysfunc(exist(__CODES4TRT_exec)) %then %do;
+%if %sysfunc(exist(__CODES4TRT)) %then %do;
 
 proc sql noprint;
   select trim(left(name))      
@@ -451,32 +451,12 @@ proc sql noprint;
 quit;
 
 
-/*
+
 %__joinds(
   data1=__pop, 
   data2=__CODES4TRT, 
-  by=&varby4pop &trtvar ,
+  by=&trtvar ,
   dataout=__pop, cond=);
- */ 
-  
-  /*
-  proc sort data=__pop;
-    by &trtvar;
-  run;
-  
-  proc sort data=__CODES4TRT_exec;
-    by &trtvar;
-  run;
-  
-  data __pop;
-    merge __pop __CODES4TRT_exec;
-    by &trtvar;
-  run;
-  
-  proc print data=__pop;
-    title '4iza __pop after merging with __codes4trt_exec';
-  run;
-  */
   
 
   
@@ -484,27 +464,6 @@ quit;
   data _null_;
     file "&rrgpgmpath./&rrguri..sas" mod;
     put;
-    
-    
-    
-  put "proc sort data=__pop;";
-  put "  by &trtvar;";
-  put "run;";
-  
-  put "proc sort data=__CODES4TRT;";
-  put "  by &trtvar;";
-  put "run;";
-  
-  %__rrgpd(ds=__CODES4TRT, title2='line 498');
-  %__rrgpd(ds=__pop, title2='line 499');
-  
-  put "data __pop;";
-  put "  merge __pop __CODES4TRT;";
-  put "  by &trtvar;";
-  put "run;";
-  
-   %__rrgpd(ds=__pop, title2='line 506');
-    
     put "data __pop;";
     put "  set __pop;";
     put "  if missing(__grouped) then __grouped=0;";
@@ -626,8 +585,8 @@ put;
 
 %local tmp tmp1;
 %let tmp =%sysfunc(tranwrd(%sysfunc(compbl(
-      __grouped &trtvar __trtid /*&trtdec*/)), %str( ), %str(,)));
-%let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar __trtid)), %str( ), %str(,)));
+      __grouped &trtvar /*&trtdec*/)), %str( ), %str(,)));
+%let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar)), %str( ), %str(,)));
 put @1 "proc sql  noprint;";
 put @1 "create table __trt as select distinct ";
 put @1 "&tmp";
@@ -635,35 +594,15 @@ put @1 "from __pop";
 put @1 "order by &tmp1;";
 put @1 "quit;";
 put;
-put "proc print data=__trt;";
-put "  title '4iza __trt dataset after sql take 1';";
-put "run;";
-put;
 put "*** 4iza creating trt id;";
 put;
-
-%__rrgpd(ds=__trt, title2='line 645');
-
 put @1 "data __trt;";
 put @1 "set __trt ;";
 put @1 "by &trtvar;";
-put @1 "retain __tmptrtid;";
-put @1 "if _n_=1 then __tmptrtid=0;";
-put @1 "if first.&trtvar then __tmptrtid+1;";
-put @1 "else __tmptrtid+1;";
+put @1 "retain __trtid;";
+put @1 "if _n_=1 then __trtid=1;";
+put @1 "else __trtid+1;";
 put @1 "run;";
-put @1 "data __trt;";
-put @1 "set __trt ;";
-put @1 "__trtid= __tmptrtid;";
-/*put @1 "drop __tmptrtid;";*/
-put @1 "run;";
-
-/*
-put @1 "data __trt;";
-put @1 "set __trt ;";
-put @1 "by &trtvar;";
-*/
-%__rrgpd(ds=__trt, title2='line 665');
 put;
 put @1 "*------------------------------------------------------------------;";
 put @1 "* MAXTRT IS THE NUMBER OF TREATMENT GROUPS;";
@@ -673,39 +612,29 @@ put;
 put @1 "proc sql noprint;";
 put @1 "   select max(__trtid) into:maxtrt separated by ' ' from __trt;";
 put @1 "quit;";
- put '%put final maxtrt  &maxtrt ;'; 
 put ;
-
+put @1 "* FOR SOME REASON SOMETIMES MAXTRT GENERATES PROBLEM ;";
+put @1 "* WHEN USING CMPRES;";
+put @1 "* THIS IS WORKAROUND;";
+put;
+put @1 "data _null_;";
+put @1 "  length x $ 200;";
+put @1 '  x=symget("maxtrt");';
+put @1 "  call symput('maxtrt',compress(x));";
+put @1 "run;";
 put;
 put @1 "*------------------------------------------------------------------;";
 put @1 "%* ADD __TRTID VARIABLE TO DATASET WITH POPULATION COUNT;";
 put @1 "*------------------------------------------------------------------;";
 put;
 put "*** 4iza start adding __trtid to __pop;";
-put;
-
-put "proc sql  noprint;";
-put "create table __trt as select distinct ";
-put "__grouped,&trtvar,__trtid";
-put "from __pop";
-put "order by &trtvar;";
-put "quit;";
-put;
-
-
-put "proc print data=__pop;";
-put "  title '4iza __pop dataset after sql line 675';";
-put "run;";
-put "proc print data=__trt;";
-put "  title '4iza __trt dataset after sql line 678';";
-put "run;";
 run;
 
 
 
 %__joinds(data1=__pop,
         data2=__trt,
-          by = &trtvar __trtid,
+          by = &trtvar,
       mergetype=INNER,
         dataout=__pop);
 
@@ -713,10 +642,6 @@ run;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
-
-put "proc print data=__trt;";
-put "  title '4iza __trt dataset';";
-put "run;";
 put @1 "data __pop;";
 put @1 "set __pop;";
 put @1 "__pop = __pop_&numtrt;";
@@ -1428,7 +1353,6 @@ quit;
   put;
 
   put @1 '%let maxtrt=%eval(&maxtrt' "+&ovorder);";
-  put '%put final maxtrt ' "&maxtrt" ';'; 
   run;
 
 %end;

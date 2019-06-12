@@ -16,16 +16,6 @@
 
 %let datain = %unquote(&datain);
 
-/*
-%if %length(&unit)=0 %then %do;
-   %let &unit=__n__;
-   %* CREATE UNIQUE VALUE FOR EACH RECORD (FOR COUNTING OF EVENTS);
-   data &datain;
-   set &datain;
-   __n__=_n_;
-   run;
-%end;
-*/
 
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
@@ -68,6 +58,8 @@ put @1 "    (select distinct &tmp3) from  " __datain ");";
 put @1 "  quit;";
 %end;
 put;
+
+
 run;
 
 %mend;

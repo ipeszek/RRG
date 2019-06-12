@@ -118,6 +118,8 @@ proc sql noprint;
   select trim(left(delimiter)) into:delimiter separated by ' ' from  __catv;
 quit;
 
+%put 4iza varid=&varid varname=&varname codes=&codes;
+
 %if %length(&codelistds) %then %do;
   data __&codelistds._exec __&codelistds; 
     set &codelistds;

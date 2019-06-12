@@ -233,6 +233,10 @@ run;
       
 */
 
+proc print data=__catcodes&varid._exec;
+  title"__catcodes&varid._exec after __makecodeds ";
+run;
+
 %*-------------------------------------------------------------;
 %* PROCESS DATASET WITH LIST OF CODES (IF GIVEN);
 %*-------------------------------------------------------------;

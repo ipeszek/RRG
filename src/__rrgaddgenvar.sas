@@ -190,6 +190,7 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   codelistds=trim(left(symget("codelistds")));
   templateds=trim(left(symget("templateds")));
   ordervar=trim(left(symget("ordervar")));
+ 
   denom=trim(left(symget("denom")));
   DENOMINClTRT=upcase(trim(left(symget("DENOMINClTRT"))));
   
@@ -224,6 +225,11 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   output;
 run;
 
+%if %length(&ordervar)<=0 %then %do;
+  %let ordervar=&name;
+%end;
+
+%put 4iza ordervar=&ordervar;
 
 data &outds;
 set &outds __tmp;

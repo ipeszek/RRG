@@ -282,7 +282,7 @@ quit;
 
 %* ensures only one trt variable;
 
-%* if %length(&trtvar)>0 %then %let numtrt = %sysfunc(countw(&trtvar, %str( )));
+
 %if %length(&trtvar)>0 %then %let numtrt = 1;
 
 data _null_;
@@ -416,116 +416,10 @@ run;
 %let tmptrt=__grouped &trt1 __dec_&trt1 __suff_&trt1 __prefix_&trt1 __nline_&trt1 __autospan;        
 
 
-%do i=2 %to &numtrt;
 
-  %let tmptrt=__grouped &&trt&i __dec_&&trt&i __suff_&&trt&i __prefix_&&trt&i
-       __nline_&&trt&i __autospan;
-  
-  %__getcntg(datain=__dataset, 
-          unit=&subjid, 
-          group=&varby4pop __grouped 
-          %do j=1 %to &i; 
-            &&trt&j __dec_&&trt&j __suff_&&trt&j __prefix_&&trt&j __nline_&&trt&j __autospan
-          %end;,
-          cnt=__pop_&i, 
-          dataout=__pop_&i);
-
-  %__joinds(
-  data1=__pop, 
-  data2=__pop_&i, 
-  by=&varby4pop __grouped  
-    %do j=1 %to %eval(&i-1); 
-      &&trt&j __dec_&&trt&j __suff_&&trt&j __prefix_&&trt&j __nline_&&trt&j __autospan
-    %end;, 
-  dataout=__pop, cond=);
-  
-%end;
-
-%__makecodeds_t (vinfods=__VARINFO, dsin=&datasetrrg, outds=__CODES4TRT);    
-
-%if %sysfunc(exist(__CODES4TRT_exec)) %then %do;
-
-proc sql noprint;
-  select trim(left(name))      
-  into:trtvar    separated by ' ' from  __varinfo (where=(upcase(type)='TRT'));
-quit;
+   
 
 
-/*
-%__joinds(
-  data1=__pop, 
-  data2=__CODES4TRT, 
-  by=&varby4pop &trtvar ,
-  dataout=__pop, cond=);
- */ 
-  
-  /*
-  proc sort data=__pop;
-    by &trtvar;
-  run;
-  
-  proc sort data=__CODES4TRT_exec;
-    by &trtvar;
-  run;
-  
-  data __pop;
-    merge __pop __CODES4TRT_exec;
-    by &trtvar;
-  run;
-  
-  proc print data=__pop;
-    title '4iza __pop after merging with __codes4trt_exec';
-  run;
-  */
-  
-
-  
-  
-  data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    put;
-    
-    
-    
-  put "proc sort data=__pop;";
-  put "  by &trtvar;";
-  put "run;";
-  
-  put "proc sort data=__CODES4TRT;";
-  put "  by &trtvar;";
-  put "run;";
-  
-  %__rrgpd(ds=__CODES4TRT, title2='line 498');
-  %__rrgpd(ds=__pop, title2='line 499');
-  
-  put "data __pop;";
-  put "  merge __pop __CODES4TRT;";
-  put "  by &trtvar;";
-  put "run;";
-  
-   %__rrgpd(ds=__pop, title2='line 506');
-    
-    put "data __pop;";
-    put "  set __pop;";
-    put "  if missing(__grouped) then __grouped=0;";
-    put "  if missing(__pop) then __pop=0;";
-    put "  if missing(__pop_1) then __pop_1=0;";
-    put "  if missing(__grpid) then __grpid=999;";
-    put "  if missing(__autospan) then __autospan='N';";
-    put "  if missing(__nline_&trtvar) then __nline_&trtvar='Y';";
-    
-      put "__dec_&trtvar=trtdec;";
-    
-    put "run;";
-    put;
-    put "proc print data=__pop;";
-    put "title '__pop after merging with __CODES4TRT';";
-    put "run;";
-    put "title;";
-    put;
-  run;
-
-%end;
 
 %* MAKE SURE THAT EACH DISTINCT VARBY HAS ALL TREATMENTS;
 
@@ -562,6 +456,7 @@ quit;
           put @1 "       if __pop_&i=. then __pop_&i=0;";
       %end;  
     put @1 "   run;";
+   
     run;
   %end;
   %else %do;
@@ -596,8 +491,9 @@ quit;
           put @1 "       if __pop_&i=. then __pop_&i=0;";
       %end;  
     put @1 "   run;";
+    
     put;
-    put "*** 4iza finished processing __pop;";
+   
   run;  
   %end;  
 %end;
@@ -615,10 +511,101 @@ quit;
   run;
 %end;
 
+%__makecodeds_t (vinfods=__VARINFO, dsin=&datasetrrg); 
+
+%if %sysfunc(exist(__CODES4TRT_exec)) %then %do;
+  
+    %local varby4sql;
+     proc sql;
+     select name into:varby4sql separated by ', ' 
+     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y')); 
+     quit;
+      
+         
+    data _null_;
+    file "&rrgpgmpath./&rrguri..sas" mod;
+    put;
+    put;
+    
+    %if &nvarby>0 %then %do;
+        put "  proc sql;";
+        put "  create table varbytbl"; 
+        put "  as select distinct &varby4sql"; 
+        put "  from __dataset; ";
+        put "  quit;";
+          
+       
+        
+        put "proc sql;";
+        put "  create table __CODES4TRT2 as";
+        put "  select * from varbytbl cross join __CODES4TRT;";
+        put "quit;";
+        
+        put " data __CODES4TRT; ";
+        put "set __CODES4TRT2;";
+        put "run;";
+        
+        put "  proc print data=__CODES4TRT;";
+        put "    title '4iza __CODES4TRT';";
+        put "  run;";
+        
+        
+      
+    %end;
+      
+
+    put "data __pop;";
+    put "  set __pop;";
+    put "  drop __dec_&trtvar;";
+    put "run;";
+    
+    put "proc sql;";
+    put "  create table __popx as select * from __pop natural full outer join __CODES4TRT;";
+    put "quit;";
+    
+    
+    put "%local __mod_nline __mod_autospan __mod_suff __mod_prefix;";
+    put "proc sql noprint;";
+    
+    put "  select distinct __nline_&trtvar into: __mod_nline";
+    put "  separated by ' ' from __popx (where=(not missing(__nline_&trtvar)));";
+    
+    put "  select distinct __suff_&trtvar into: __mod_suff";
+    put "  separated by ' ' from __popx (where=(not missing(__suff_&trtvar)));";
+
+    put "  select distinct __prefix_&trtvar into: __mod_prefix";
+    put "  separated by ' ' from __popx (where=(not missing(__prefix_&trtvar)));";
+     
+    put "  select distinct __autospan into: __mod_autospan";
+    put "  separated by ' ' from __popx (where=(not missing(__autospan)));";
+        
+    put "quit;";
+    put ;
+    put '%put 4iza __mod_nline=&__mod_nline;';
+    put ;
+    
+    
+    put "data __pop;";
+    put "  set __popx;";
+    put "  if missing(__grpid) then __grpid=999;";
+    put "  if missing(__pop_1)  then __pop_1=0;";
+    put "  if missing(__grouped)  then __grouped=0;";
+    put '  if missing(__autospan)  then __autospan="' '&__mod_autospan' '";';
+    put "  if missing(__suff_&trtvar)  then __suff_&trtvar=" '"' '&__mod_suff' '";';
+    put "  if missing(__nline_&trtvar)  then __nline_&trtvar=" '"' '&__mod_nline' '";';
+    put "  if missing(__prefix_&trtvar)  then __prefix_&trtvar=" '"' '&__mod_prefix' '";';
+    put "  run;";
+    put "  proc print data=__pop;";
+    put "  title '__pop before adding trtid to dataset';";
+    put "  run;";
+    put "  title;";
+
+    
+    
+%end;    
+    
 data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-put;
+file "&rrgpgmpath./&rrguri..sas" mod;    
 put @1 "*------------------------------------------------------------------;";
 put @1 "* CREATE TREATMENT ID, ENUMERATING ALL TREATMENTS SEQUENTIALLY ;";
 put @1 "*------------------------------------------------------------------;";
@@ -626,44 +613,29 @@ put;
 
 %local tmp tmp1;
 %let tmp =%sysfunc(tranwrd(%sysfunc(compbl(
-      __grouped &trtvar __trtid /*&trtdec*/)), %str( ), %str(,)));
-%let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar __trtid)), %str( ), %str(,)));
+      __grouped &trtvar /*&trtdec*/)), %str( ), %str(,)));
+%let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar)), %str( ), %str(,)));
 put @1 "proc sql  noprint;";
 put @1 "create table __trt as select distinct ";
 put @1 "&tmp";
 put @1 "from __pop";
 put @1 "order by &tmp1;";
 put @1 "quit;";
-put;
-put "proc print data=__trt;";
-put "  title '4iza __trt dataset after sql take 1';";
-put "run;";
+
+put "  proc print data=__trt;";
+    put "  title '__trt before adding trtid to dataset';";
+    put "  run;";
+    put "  title;";
 put;
 put "*** 4iza creating trt id;";
 put;
-
-%__rrgpd(ds=__trt, title2='line 645');
-
 put @1 "data __trt;";
 put @1 "set __trt ;";
 put @1 "by &trtvar;";
-put @1 "retain __tmptrtid;";
-put @1 "if _n_=1 then __tmptrtid=0;";
-put @1 "if first.&trtvar then __tmptrtid+1;";
-put @1 "else __tmptrtid+1;";
+put @1 "retain __trtid;";
+put @1 "if _n_=1 then __trtid=0;";
+put @1 "if first.&trtvar then __trtid+1;";
 put @1 "run;";
-put @1 "data __trt;";
-put @1 "set __trt ;";
-put @1 "__trtid= __tmptrtid;";
-/*put @1 "drop __tmptrtid;";*/
-put @1 "run;";
-
-/*
-put @1 "data __trt;";
-put @1 "set __trt ;";
-put @1 "by &trtvar;";
-*/
-%__rrgpd(ds=__trt, title2='line 665');
 put;
 put @1 "*------------------------------------------------------------------;";
 put @1 "* MAXTRT IS THE NUMBER OF TREATMENT GROUPS;";
@@ -673,39 +645,21 @@ put;
 put @1 "proc sql noprint;";
 put @1 "   select max(__trtid) into:maxtrt separated by ' ' from __trt;";
 put @1 "quit;";
- put '%put final maxtrt  &maxtrt ;'; 
 put ;
-
+/*put "put 4iza maxtrt=&maxtrt;";*/
 put;
 put @1 "*------------------------------------------------------------------;";
 put @1 "%* ADD __TRTID VARIABLE TO DATASET WITH POPULATION COUNT;";
 put @1 "*------------------------------------------------------------------;";
 put;
 put "*** 4iza start adding __trtid to __pop;";
-put;
-
-put "proc sql  noprint;";
-put "create table __trt as select distinct ";
-put "__grouped,&trtvar,__trtid";
-put "from __pop";
-put "order by &trtvar;";
-put "quit;";
-put;
-
-
-put "proc print data=__pop;";
-put "  title '4iza __pop dataset after sql line 675';";
-put "run;";
-put "proc print data=__trt;";
-put "  title '4iza __trt dataset after sql line 678';";
-put "run;";
 run;
 
 
 
 %__joinds(data1=__pop,
         data2=__trt,
-          by = &trtvar __trtid,
+          by = &trtvar,
       mergetype=INNER,
         dataout=__pop);
 
@@ -713,10 +667,6 @@ run;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
-
-put "proc print data=__trt;";
-put "  title '4iza __trt dataset';";
-put "run;";
 put @1 "data __pop;";
 put @1 "set __pop;";
 put @1 "__pop = __pop_&numtrt;";
@@ -1428,7 +1378,6 @@ quit;
   put;
 
   put @1 '%let maxtrt=%eval(&maxtrt' "+&ovorder);";
-  put '%put final maxtrt ' "&maxtrt" ';'; 
   run;
 
 %end;

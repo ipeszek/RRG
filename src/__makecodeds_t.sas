@@ -6,12 +6,10 @@
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
 
-/* %macro __makecodeds_t (vinfods=, varid=, varname=,  dsin=, outds=, id=)/store;*/
-
-%macro __makecodeds_t (vinfods=, dsin=, outds=)/store;
+%macro __makecodeds_t (vinfods=, dsin=)/store;
 
 
-%local vinfods varid varname outds decode name fmt codelist codes codelistds
+%local vinfods varid varname  decode name fmt codelist codes codelistds
        delimiter dsin id var recodemissing desc ID;
 
 
@@ -47,12 +45,12 @@ quit;
 %*-------------------------------------------------------------;
 %* FIND OUT TYPE AND LENGTH OF CURRENT ANALYSIS VARIABLE;
 %*-------------------------------------------------------------;
-%*put 4iza dsin=&dsin var=&var;
+
 %local dsid vlen vnum vtype vnumd vtyped vlend rc suff;
 %let vnumd = 0;
 %let vlend=2000;
 %let  dsid = %sysfunc(open(&dsin));
-%PUT 4IZA in __makecodeds_t dsin=&dsin dsid=&dsid;
+
 
 %let  vnum = %sysfunc(varnum(&dsid,&var));
 %let vtype = %sysfunc(vartype(&dsid, &vnum));
@@ -66,9 +64,9 @@ quit;
 %end;
 %let    rc = %sysfunc(close(&dsid));
 
-%put 4iza in __makecodeds codes=&codes;
 
-data &outds._exec;
+
+data __CODES4TRT_exec;
    length string  __tmp $ 2000 __del $ 1 ;
    string = symget("codes");
    retain __order&suff;
@@ -89,12 +87,10 @@ data &outds._exec;
     end;
 run;
 
-proc print data=&outds._exec;
-  title "4iza &outds._exec in makecodeds_t";
-run;
 
-data &outds._exec;
-  set &outds._exec;
+
+data __CODES4TRT_exec;
+  set __CODES4TRT_exec;
   %if &vtype=C %then %do;
       length &var $ &vlen;
   %end;
@@ -113,12 +109,9 @@ data &outds._exec;
   %if %length(&fmt) and %length (&decode) %then %do;
       &decode = put(&var, &fmt);
   %end;
-  keep __order&suff &var &decode __trtid;
+  keep &var &decode __order&suff  __trtid;
 run;
 
-proc print data=__CODES4TRT_EXEC;
-  title '4iza __CODES4TRT_EXEC';
-run;
 
 %local tmp ;
 %let tmp=%str(length);
@@ -126,12 +119,13 @@ run;
       %let tmp = &tmp %str(&var $ &vlen);
 %end;
 %if %length (&decode) %then %do;
-  %let tmp =&tmp %str (&decode $ &vlend);
+  /* %let tmp =&tmp %str (&decode $ &vlend);*/
+  %let tmp =&tmp %str (__dec_&trtvar $ &vlend);
 %end;
 
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
-set &outds._exec end=eof;
+set __CODES4TRT_exec end=eof;
 length __var $ 2000;
 %if &vtype=C %then %do; 
 __var = quote(&var);
@@ -145,54 +139,32 @@ put @1 "*------------------------------------------------------------------;";
 put @1 "* CREATE A DATASET WITH LIST OF CODES FOR &var;";
 put @1 "*------------------------------------------------------------------;";
 put;
-put @1 "data &outds;";
+put @1 "data __CODES4TRT;";
 put @1 "&tmp ;";
 put;
 
 end;
 
-put "__order&suff = " __order&suff ";";
-put "__trtid = " __order&suff ";";  
+
 put "&var = " __var ";";
 %if %length (&decode) %then %do;
-  put "&decode = " '"' &decode '";';
+  
+   put "__dec_&trtvar = " '"' &decode '";';
 %end;
 put "output;";
 put;
 if eof then do;
   put "run;";
+  put '*** 4iza finished __CODES4TRT;';
 end;  
-put;
+
 
 run;
-  
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put @1 "proc sort data=&outds;";
-put @1 "  by __order&suff;";
-put @1 "run;";
-put;
-put "proc print data=__CODES4TRT;";
-put " title '4iza __CODES4TRT';";
-put "run;";
-put;
-put '*** 4iza finished &__CODES4TRT;';
+ 
+
 run;
 
-/*
-data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    put;
-    put @1 "   proc sql noprint;";
-    put @1 "   create table __poptmp as  select * from ";
-    put @1 "    (select distinct &tmp1";
-    put @1 "      from __dataset)";
-    put @1 "      cross  join";
-    put @1 "    (select distinct &tmp2";
-    put @1 "      from __pop);";
-    put @1 "   quit;";
-    put;  
-*/
+
 
 
 %exit:

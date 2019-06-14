@@ -1136,12 +1136,6 @@ data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
 
-/*
-put @1 "proc print data=__contstat3;";
-put @1 "  title '4iza __contstat3 in __cont';";
-put @1 "run;";
-*/
-
 put @1 "proc sort data=__contstat3;";
 put @1 "   by  &by &groupvars __tby __order  __fname  __disp __tmpalign;";
 put @1 "run;";

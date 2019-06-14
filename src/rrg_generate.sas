@@ -497,12 +497,7 @@ run;
         put "set __CODES4TRT2;";
         put "run;";
         
-        put "  proc print data=__CODES4TRT;";
-        put "    title '4iza __CODES4TRT';";
-        put "  run;";
-        
-        
-      
+     
     %end;
       
 
@@ -547,10 +542,7 @@ run;
     put "  if missing(__nline_&trtvar)  then __nline_&trtvar=" '"' '&__mod_nline' '";';
     put "  if missing(__prefix_&trtvar)  then __prefix_&trtvar=" '"' '&__mod_prefix' '";';
     put "  run;";
-    put "  proc print data=__pop;";
-    put "  title '__pop before adding trtid to dataset';";
-    put "  run;";
-    put "  title;";
+
 
     
     
@@ -574,10 +566,7 @@ put @1 "from __pop";
 put @1 "order by &tmp1;";
 put @1 "quit;";
 
-put "  proc print data=__trt;";
-    put "  title '__trt before adding trtid to dataset';";
-    put "  run;";
-    put "  title;";
+
 put;
 put "*** 4iza creating trt id;";
 put;
@@ -623,9 +612,7 @@ put @1 "data __pop;";
 put @1 "set __pop;";
 put @1 "__pop = __pop_&numtrt;";
 put @1 "run;";
-put @1 "proc print data=__pop;";
-put @1 "  title '4iza __pop after merging with __trt';";
-put @1 "run;";
+
 
 put;
 put @1 "*-------------------------------------------------------------------;";
@@ -656,9 +643,7 @@ put @1 "__trtvar=1;";
 
 put @1 "run;";
 put;
-put "proc print data=__poph;";
-put "title '4iza __poph;';";
-put "run;";
+
 put @1 "*-------------------------------------------------------------------;";
 put @1 "* ADD __TRTID TO __DATASET;";
 put @1 "*-------------------------------------------------------------------;";
@@ -810,9 +795,7 @@ quit;
     
   run;  
   
-  proc print data=__grpcodes_exec;
-    title '4iza __grpcodes_exec';
-  run;
+
   
   /* end of CREATE DATASET __GRPCODES_EXEC: */
   
@@ -2460,7 +2443,7 @@ run;
   put @1 "  * ADD EVENT COUNT TO TABLE;";
   put @1 "*----------------------------------------------------------------;";
   put;
-  put "proc print data=__fall; title '4iza fall'; run;";
+
   put @1 '  data __fall ;';
   put @1 "  set __fall;"; 
   put;

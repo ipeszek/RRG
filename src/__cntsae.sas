@@ -177,15 +177,7 @@ run;
                 cnt = __cnt, 
             dataout = &outds.2);
        
-       /*     
- data _null_;
-        file "&rrgpgmpath./&rrguri..sas" mod;
-        put;
-        put "proc print data=&outds.2;";
-        put "  title '4iza &outds.2';";
-        put "run;";
-      run;
-       */         
+       
 
 %end;
 
@@ -403,20 +395,6 @@ put @1 "by __tby &by &denomvars;";
 put @1 "run;";
 put;
 
-
-/*
-put @1 "proc print data=__varinfo;";
-put @1 "  title '__varinfo'; ";
-put @1 "var name varid mincnt minpct;";
-put @1 "run;";
-*/
-
-
-/*
-put @1 "proc print data=__catdenom2;";
-put @1 "  title '__catdenom2'; ";
-put @1 "run;";
-*/
 run;
 
 
@@ -527,12 +505,7 @@ put @1 "run;";
 
 put;
 
-/*
-put @1 "proc print data=__catcnt4;";
-put @1 "  title '__catcnt4 when denom is added'; ";
-put @1 "var aebodsys aellt aedecod __grpid;";
-put @1 "run;";
-*/
+
 
 put '%exca' "&varid.:";
 put;

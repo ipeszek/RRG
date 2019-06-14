@@ -160,9 +160,7 @@ ordervar=&ordervar
 */
 );
 
-proc print data=__varinfo;
-  title '4iza __varinfo after rrg_addgroup';
-run;
+
 
 data __timer;
 	set __timer end=eof;

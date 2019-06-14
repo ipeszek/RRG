@@ -340,11 +340,7 @@ put;
     put @1 "    id __trtid;";
     put @1 "    var __denom;";
     put @1 "run;";
-    /*
-    put @1 "proc print data=__catdenom2;";
-    put @1 "  title '__catdenom2';";
-    put @1 "run;";
-    */
+ 
 %end;
 
 %else %do;
@@ -353,18 +349,7 @@ put;
     put @1 "    var __denom;";
     put @1 "run;"; 
     
-    /*
-    put @1 "data __catdenom2;";
-    put @1 "  set __catdenom2;";
-   
-    put @1 "%do i=1 %to &maxtrt;";
-    put @1 "    __den_&i=__sden_1;";
-    put @1 "  %end;";
-    put @1 "run;";
-    put @1 "proc print data=__catdenom2;";
-    put @1 "  title '__catdenom2';";
-    put @1 "run;";
-    */
+ 
     
 %end;
 
@@ -445,12 +430,7 @@ put @1 "by __tby  &denomvars;";
 put @1 "run;";
 put;
 
-/*
-put @1 "proc print data=__trt;";
-put @1 "  title '__trt';";
-put @1 "run;";
-put @1 "title;";
-*/
+
 /*
 put @1 "proc sql noprint;";
 put @1 "   select max(__trtid) into:maxtrt separated by ' ' from __trt;";

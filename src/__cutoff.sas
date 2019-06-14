@@ -32,11 +32,6 @@ data __varinfo_cutoff;
   if eof then __grpid=999;
 run;
 
-proc print data=__varinfo_cutoff;
-  title '__varinfo_cutoff in __cutoff';
-  var name __grpid type mincnt minpct;
-run;
-
 proc sql;
 select name into: grpsrt separated by ' '
   from __varinfo_cutoff where type ne 'TRT'

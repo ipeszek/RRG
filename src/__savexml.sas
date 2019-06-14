@@ -107,7 +107,10 @@ run;
 %if &debug>0 %then %do;
 data _null_;
     set &data end = eof;
-    if 0 then __varbylab='';
+    if 0 then do;
+      __varbylab='';
+      __tcol='';
+    end;
     array cols{*} __col_0 - __col_&maxtrt;
     if __datatype ne 'RINFO' then do;
       
@@ -204,11 +207,7 @@ run;
     %__printvarl(var=__varbylab);
     %end;
     %__printvarl(var=__datatype);
-    /*
-    %if %upcase(&reptype) = L %then %do;      
-        %__printvarl(var=__tcol, name=__tcol);
-    %end;    
-    */
+  
     if __tcol ne '' then do;
       %__printvarl(var=__tcol, name=__tcol);
     end;

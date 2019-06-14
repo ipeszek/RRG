@@ -288,6 +288,7 @@ put @1 '  %put  PASSED DATASET IS EMPTY;';
 put @1 "  data __fall;";
 put @1 '  if 0;';
 put @1 "  __col_0 = '';";
+put @1 "  __indentlev = 0;";
 put @1 '  run;';
 put;
 put @1 '  %let maxtrt=1;';
@@ -371,12 +372,6 @@ run;
         
 %local tmptrt;
 %let tmptrt=__grouped &trt1 __dec_&trt1 __suff_&trt1 __prefix_&trt1 __nline_&trt1 __autospan;        
-
-
-
-   
-
-
 
 %* MAKE SURE THAT EACH DISTINCT VARBY HAS ALL TREATMENTS;
 
@@ -1084,7 +1079,12 @@ put @1 '  %put  DATASET WITH STATISTICS HAS NO RECORDS, ;';
 put @1 '  %put  SKIP TO MACRO GENERATING TABLE;';
 put @1 "     data __fall;";
 put @1 "     if 0;";
+put @1 "  __col_0 = '';";
+put @1 "  __indentlev = 0;";
 put @1 "     run;";
+put;
+put @1 '  %let maxtrt=1;';
+put;
 put @1 '     %goto dotab;';
 put @1 '%end;';
 put;
@@ -2966,7 +2966,9 @@ put @1 '%if %length(&vtypes)=0 %then %do;';
 put @1 "  data __fall;";
 put @1 "    if 0;";
 put @1 "  __col_0='';";
+put @1 "  __indentlev = 0;";
 put @1 "  run;  ";
+put @1 '  %let maxtrt=1;';
 put @1 '%end;';
 put;
 

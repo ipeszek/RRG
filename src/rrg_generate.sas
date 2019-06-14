@@ -53,49 +53,6 @@ Macro parameters:
 
 */
 
-%local islicenseok;
-%*let islicenseok=%__license;
-%let islicenseok=1;
-
-%local war ning;
-%let war=WAR;
-%let ning=NING;
-
-
-
-%if &islicenseok=0 %then %do;
-   %PUT ********************************************************************;;
-   %put *****&war.&ning.:   YOUR SAS SITE ID (&SYSSITE) IS NOT  AUTHORIZED FOR RRG USE;;
-   %put ********************************************************************;;
-   %window welcome color=white
-             #5 @28 'Welcome to RRG.' attr=highlight
-                color=blue
-             #7 @15
-                "YOUR SAS SITE ID (&SYSSITE) IS NOT  AUTHORIZED FOR RRG USE."
-             #12 @29 'Press ENTER to close this SAS session.';
-  
-  		   %display welcome;
-   endsas;
-%end; 
-%if %length(&islicenseok)>1 %then %do;
-   %put ********************************************************************;
-   %put &war.&ning.: This compilation of RRG expired on &islicenseok;
-   %put ********************************************************************;
-   %window welcome color=white
-             #5 @28 'Welcome to RRG.' attr=highlight
-                color=blue
-             #7 @15
-                "This compilation of RRG expired on &islicenseok."
-             #12 @29 'Press ENTER to close this SAS session.';
-  
-  		   %display welcome;   
-   endsas;
-%end;
-
-;
-
-
-
 
 
 proc printto;

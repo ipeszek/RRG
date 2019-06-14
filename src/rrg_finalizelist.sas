@@ -14,12 +14,6 @@
 
 %* Revision notes:  07Apr2014 commented out recoding of curly braces to #123 and #125 (superscript did not work except in header);
  
-%local islicenseok debug savexml ;
-%*let islicenseok=%__license;
-%let islicenseok=1;
-
-
-
 %local war ning;
 %let war=WAR;
 %let ning=NING;

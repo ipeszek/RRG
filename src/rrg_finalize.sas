@@ -401,7 +401,7 @@ run;
 
 %*put java2sas=&java2sas;
 
-%*put 4iza print=&print;
+
 
 %if %upcase(&print) ne Y %then %do;
   %put skipping;

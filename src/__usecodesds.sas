@@ -58,11 +58,11 @@ quit;
 /* catv is__varinfo subset on where varid=&varid */
 
 %if %length(&codelistds)=0 %then %do;
-  %put 4iza codelistds in usecodesds does not exist;
+ 
   %goto exit;
 %end;
 
-%put 4iza in usecodesds codelistds=&codelistds;
+
 
 %local execcl;
 %* this is the name of the dataset into which codelistds will be copied;

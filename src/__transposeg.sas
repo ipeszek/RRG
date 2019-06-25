@@ -145,9 +145,6 @@ quit;
 %end;
 
 
-%*put 4iza;
-%*put notinc1=&notinc1 notinc2=&notinc2 notinc3=&notinc3 inc1=&inc1 inc2=&inc2 inc3=&inc3 inc4=&inc4;
-%*put inc1_w_trt=&inc1_w_trt inc2_w_trt=&inc2_w_trt trtrow=&trtrow;
 
 
 data _null_;
@@ -335,7 +332,7 @@ proc sql noprint;
    %local nline&i;
    select distinct nline into:nline&i separated by ' ' 
     from __varinfo (where=(upcase(name)=upcase("%scan(&cgrps_w_trt,&i, %str( ))")));
-    %*put 4iza var= %scan(&cgrps_w_trt,&i, %str( )) nline&i=&&nline&i;
+    
  %end;
 quit;   
 
@@ -344,7 +341,7 @@ quit;
 %if &istrtacross=N %then %do;
   %let cgrps_w_trt = &cgrps &trtvar;
 %end;
-%put 4iza istrtacross=&istrtacross cgrps_w_trt=&cgrps_w_trt;
+
 %* does not work;
 */
 %local tmptrt;
@@ -439,7 +436,7 @@ put @1 "output;";
 %do i=&trtrow %to &ncgrps;
 %local j;
 %let j=%eval(&i+1);
-%*put 4iza j=&j nline&j=&&nline&j;
+
 put @1 "__rowid=&i+1;";
 put @1 "__prefix='';";
 put @1 "__col2=" "%scan(&inc3,&i, %str( ));" ";";

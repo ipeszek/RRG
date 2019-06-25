@@ -70,7 +70,7 @@ proc sql noprint;
   select trim(left(condfmt))   into:condfmt  separated by ' ' from  __contv;
 quit;
 
-%*put 4iza slfmt=&slfmt sdfmt=&sdfmt;
+
 
 %if %length(&where)=0 %then %let where=%str(1=1);
 %if %length(&tabwhere)=0 %then %let tabwhere=%str(1=1);
@@ -264,8 +264,7 @@ proc sql noprint;
 
 quit;
 
-%*put 4iza statlist=&statlist;
-%*put 4iza statlist2=&statlist2;
+
 
 %* IF &STAT HAS ONLY MODEL-BASED STATISTICS THEN SKIP THE REST OF STEPS;
    
@@ -303,13 +302,13 @@ run;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 set __contstatlist end=eof;
-/*put '4iza in contstatlist ' __basedec=;*/
+
 if missing(__basedec) then do;
   __basedec=0;
-/*  put '4iza __basedec is missing';*/
+
 end;
 
-/*put '4iza in contstatlist after setting to 0 ' __basedec=;*/
+
 if _n_=1 then do;
   put @1 "data __contstatlist;";
   put @1 "  length __fname __name __disp __dispname $ 2000;";
@@ -347,7 +346,7 @@ put;
 %let tmp = %sysfunc(tranwrd(%sysfunc(compbl(&by &trtvars 
       __tby &groupvars &decvar  &unit &var)) , 
        %str( ), %str(,)));
-%*put 4iza decvar=&decvar;       
+     
 
 put @1 "proc sql noprint;";
 put @1 "     create table __contds2 as select distinct";
@@ -513,7 +512,7 @@ quit;
        %str( ), %str(,)));
 
 
-%*put 4iza statlist=&statlist;
+
 
 data _null_;
 length __tabwhere __where $ 2000;
@@ -757,7 +756,7 @@ run;
 %mstat:
 
 
-%*put 4iza ovstat ovstat=&ovstat;
+
 
 %if %length(&ovstat)>0 %then %do;
     data __contstatlistm2;
@@ -918,7 +917,7 @@ run;
       
     %local modelds;
     
- %*put 4iza pass99 decvar=&decvar;  
+ 
     
     data _null_;
     file "&rrgpgmpath./&rrguri..sas" mod;
@@ -926,7 +925,7 @@ run;
     set __modelp;
     __macroname2 = cats('%', name,'(');
     put;
-   /* put @1 "4iza pass99 decvar=&decvar;";*/
+   
     put @1 __macroname2;
     put @1 "   var=&var,";
     put @1 "   trtvar=&trtvars,";

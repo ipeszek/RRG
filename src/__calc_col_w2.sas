@@ -79,7 +79,7 @@ data &rrguri.fcw;
       end;
   
       if  __datatype='HEAD' then do; 
-        %*put '4iza' maxft[__i]= cols[__i]=;
+        
       end;
 
       %* do not include header unless requested;

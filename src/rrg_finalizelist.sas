@@ -143,7 +143,6 @@ quit;
 %let appendm=mod;
 %end;
  
-%*put 4iza append=&append appendable=&appendable;
 
 
 
@@ -153,7 +152,7 @@ proc sql noprint;
   select gentxt into:gentxt separated by ' ' from __repinfo;
 quit;
 
-%*put 4iza savercd=&savercd gentxt=&gentxt append=&append;
+
 %local modstr;
 %if %upcase(&append)=Y %then %do;
     %let modstr=MOD;
@@ -487,7 +486,7 @@ run;
   %if %scan(&dist2next,%eval(&i+1), %str( ))=D %then %let tmp = &tmp 1;
   %else %do;
     %let tmp1 = %upcase(%scan(&dist2next,%eval(&i+1), %str( )));
-    %*put 4iza tmp1=&tmp1;
+    
     %if %index(&tmp1,CH)>0 %then %let tmp1 =  %sysfunc(tranwrd(&tmp1, CH, %str()));
     %else %if &tmp1<=12 %then %let tmp1=1;
     %let tmp = &tmp &tmp1;
@@ -512,7 +511,7 @@ run;
 %let dist2next=&tmp;
 %let colwidths = &tmpcw;
 %if &debug>0 %then %do;
-%*put 4iza colwidths=&colwidths dist2next=&dist2next;
+
 %end;
 
 %__calc_col_wt;

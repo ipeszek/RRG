@@ -36,7 +36,7 @@ quit;
 %end;
 
 %if %length(&codes)=0 or %length(&codelistds) %then %do;
-  %put 4iza codes nor codelistds for TRT not found;
+  
   %goto exit;
 %end;
 
@@ -155,7 +155,7 @@ put "output;";
 put;
 if eof then do;
   put "run;";
-  put '*** 4iza finished __CODES4TRT;';
+  
 end;  
 
 

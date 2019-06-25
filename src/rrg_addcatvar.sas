@@ -218,11 +218,6 @@ show0cnt=&show0cnt,
 show0cntvals=%nrbquote(&show0cntvals));
 
 
-proc print data=__varinfo;
-  title '4iza __varinfo after rrg_addcatvar';
-run;
-
-
 data __timer;
 	set __timer end=eof;
 	output;

@@ -84,7 +84,7 @@ quit;
 
           put @1 "quit;";
           put;
-         /* put " %put 4iza mincntstr= " &mincntstr "minpctstr= " &minpctstr ;;*/
+         
           put;
 
       %end;
@@ -103,7 +103,7 @@ quit;
           put @1 "       from __trt(where=(__grouped ne 1));";
           put @1 "quit;";
 
-         /* put " %put 4iza mincntstr= " &mincntstr "minpctstr= " &minpctstr;*/
+         
           put;
       %end;
 

@@ -235,7 +235,7 @@ put @1 "  &groupby &grpstuff __grpid  ";
 put @1 '  __grptype __indentlev ;';
 put @1 'run;';
 put;
-/*put "proc print data=__all;  ; title '4iza __all - before'; run;";*/
+
 
 put @1 "data &dsin;";
 put @1 "set &dsin;";
@@ -260,7 +260,7 @@ put @1 "  __align = trim(left(__align))||' '||trim(left(al[__i]));";
 put @1 'end;';
 put @1 'run;';
 put;
-/*put "proc print data=__all;  ; title '4iza __all - after'; run;";*/
+
 put @1 "proc sort data=&dsin;";
 put @1 "  by &varby __grptype __tby ";
 put @1 "     &groupby &grpstuff __grpid ;";

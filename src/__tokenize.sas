@@ -15,7 +15,7 @@
 
 %local s  string;
 
-%*put 4iza syspbuff=&syspbuff;
+
 
 data _null_;
 length x $ 2000;

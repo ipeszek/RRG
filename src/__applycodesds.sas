@@ -31,7 +31,7 @@ remove=
 
 %local missdec iscodelistds;
 %local ngrp tmpgrp i;
-%*put 4iza groupvars=&groupvars;
+
 %let ngrp = %sysfunc(countw(&groupvars, %str( )));
 %do i=1 %to &ngrp;
     %let tmpgrp = &tmpgrp %scan(&groupvars, &i, %str( ))%str(=);

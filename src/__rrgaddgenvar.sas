@@ -230,7 +230,7 @@ run;
   %let ordervar=&name;
 %end;
 
-%put 4iza ordervar=&ordervar;
+
 
 data &outds;
 set &outds __tmp;

@@ -271,7 +271,7 @@ run;
 %put colstr=&colstr;
 
 */
-%*put 4iza;
+
 %*do i=0 %to &numcol;
 %*put cw&i=&&cw&i;
 %*end;

@@ -102,7 +102,7 @@ select max(varid) into:numvars separated by ' ' from __listinfo;
     %if %length(&&d2n&i)=0 %then %let d2n&i=D;
   %end;  
   %if "&&stretch&i" ne "N" %then %let stretch&i=Y;
-  /*%put 4iza alias&i=&&alias&i keeptogether&i=&&keeptogether&i spanrow&i=&&spanrow&i; */
+
 %end;
 
 
@@ -164,7 +164,7 @@ quit;
 %let appendm=mod;
 %end;
  
-%*put 4iza append=&append appendable=&appendable;
+
 
 
 
@@ -337,7 +337,7 @@ put;
       */
 
     
-    /*%put 4iza alias&z=&&alias&z spanrow&z=&&spanrow&z keeptogether&z=&&keeptogether&z;*/
+   
     %if &&keeptogether&z=Y %then %do;
       put @1 "        if last.&&alias&z then __keepn = 0; else __keepn=1;";
     %end;
@@ -679,7 +679,7 @@ proc sql noprint;
   select gentxt into:gentxt separated by ' ' from __repinfo;
 quit;
 
-%*put 4iza savercd=&savercd gentxt=&gentxt append=&append;
+
 %local modstr;
 %if %upcase(&append)=Y %then %do;
     %let modstr=MOD;
@@ -1013,7 +1013,7 @@ run;
   %if %scan(&dist2next,%eval(&i+1), %str( ))=D %then %let tmp = &tmp 1;
   %else %do;
     %let tmp1 = %upcase(%scan(&dist2next,%eval(&i+1), %str( )));
-    %*put 4iza tmp1=&tmp1;
+   
     %if %index(&tmp1,CH)>0 %then %let tmp1 =  %sysfunc(tranwrd(&tmp1, CH, %str()));
     %else %if &tmp1<=12 %then %let tmp1=1;
     %let tmp = &tmp &tmp1;
@@ -1038,7 +1038,7 @@ run;
 %let dist2next=&tmp;
 %let colwidths = &tmpcw;
 %if &debug>0 %then %do;
-%*put 4iza colwidths=&colwidths dist2next=&dist2next;
+
 %end;
 
 %__calc_col_wt;

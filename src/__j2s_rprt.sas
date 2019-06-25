@@ -37,7 +37,7 @@ data __colinfo;
 run;
 
 %do i=0 %to  &numcol;
-%*put 4iza sp&i=&&sp&i;
+
 %end;
 
 data null;

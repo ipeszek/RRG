@@ -41,9 +41,10 @@
  
  %* fo&i is column id of columns that are to be cleared unless __first_colid =1;
 
+
+
 options missing='';
   
-
 data _null_;
   set &data;
   
@@ -52,7 +53,8 @@ data _null_;
     n = dim(cols)-1;
     call symput("maxtrt", cats(n));
 run;
-    
+   
+ 
 
     
 %macro __printvar(var=, name=);

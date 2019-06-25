@@ -248,7 +248,7 @@ quit;
 %end;
 
 %if &debug>0 %then %do; 
-  %put 4iza lines used for header: &hl;
+ 
   %put lines used for titles: &titcnt and &shcnt;
   %put lines used for foots: &footcnt and &sfcnt;
   %put available lines = &lpp;

@@ -289,10 +289,12 @@ put @1 "  data __fall;";
 put @1 '  if 0;';
 put @1 "  __col_0 = '';";
 put @1 "  __indentlev = 0;";
+put @1 "  __ROWID = 0;";
 put @1 '  run;';
 put;
 put @1 '  %let maxtrt=1;';
 put;
+
 put @1 '  %goto dotab;';
 put @1 '%end;';
 put;
@@ -345,7 +347,7 @@ quit;
   %let vby&i = %scan(&varby, &i, %str( ));
 %end;
 
-%*put 4iza varby4pop=&varby4pop;
+
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
@@ -528,7 +530,7 @@ run;
         
     put "quit;";
     put ;
-    put '%put 4iza __mod_nline=&__mod_nline;';
+   
     put ;
     
     
@@ -568,7 +570,7 @@ put @1 "quit;";
 
 
 put;
-put "*** 4iza creating trt id;";
+
 put;
 put @1 "data __trt;";
 put @1 "set __trt ;";
@@ -587,13 +589,13 @@ put @1 "proc sql noprint;";
 put @1 "   select max(__trtid) into:maxtrt separated by ' ' from __trt;";
 put @1 "quit;";
 put ;
-/*put "put 4iza maxtrt=&maxtrt;";*/
+
 put;
 put @1 "*------------------------------------------------------------------;";
 put @1 "%* ADD __TRTID VARIABLE TO DATASET WITH POPULATION COUNT;";
 put @1 "*------------------------------------------------------------------;";
 put;
-put "*** 4iza start adding __trtid to __pop;";
+
 run;
 
 
@@ -648,7 +650,7 @@ put @1 "*-------------------------------------------------------------------;";
 put @1 "* ADD __TRTID TO __DATASET;";
 put @1 "*-------------------------------------------------------------------;";
 put;
-put "*** 4iza adding __trtid to __dataset;";
+
 run;
 
 %__joinds(data1=__dataset,
@@ -807,7 +809,7 @@ quit;
   data _null_;
   file "&rrgpgmpath./&rrguri..sas" mod;
   put;
-  put "*** 4iza creating __grpcodes;";
+  
   put; 
   put @1 "data __grpcodes;";
   put @1 "    set &tmp ;";
@@ -933,7 +935,7 @@ groupvarsn4pop = &groupbyn4pop,
     data _null_;
     file "&rrgpgmpath./&rrguri..sas" mod;
     put;
-    put "*** 4iza after cmts; ";
+
     put;
     put @1 "data __all;";
     put @1 "set __all __fcat&i (in=__a);";
@@ -1064,6 +1066,7 @@ put @1 "     data __fall;";
 put @1 "     if 0;";
 put @1 "  __col_0 = '';";
 put @1 "  __indentlev = 0;";
+put @1 "  __ROWID = 0;";
 put @1 "     run;";
 put;
 put @1 '  %let maxtrt=1;';
@@ -1348,7 +1351,7 @@ quit;
            and type='GROUP' and page ne 'Y';
      %let decodestr=&decodestr &&grpdec_&tmp;
   %end;
-  %put 4iza nvarby=&nvarby;
+ 
   %do i=1 %to &nvarby;
      %local vby&i  vblabel&i;
      %let vby&i = %scan(&varby, &i, %str( ));
@@ -1666,7 +1669,7 @@ quit;
     %if %length(&vdecodestr)>0 %then %do;
       %let tmpdec = %sysfunc(tranwrd(&varby &vdecodestr, %str( ), %str(,))); 
     %end;
-    %*put 4iza all tmp=&tmp;
+   
     data _null_;
     file "&rrgpgmpath./&rrguri..sas" mod;
     put @1 "*------------------------------------------------------------;";
@@ -1893,7 +1896,7 @@ quit;
       %let tmpdec2=%sysfunc(compbl(&varby &&grps_no_cl &vdecodestr &vdecodestr2));
       %let tmpdec = %sysfunc(tranwrd(&tmpdec2, %str( ), %str(,))); 
     %end;
-    %*put 4iza tmp1=&tmp1 tmpdec=&tmpdec tmpdec2=&tmpdec2;
+ 
     %*put tmp3=&tmp3;
     %*put tmp2=&tmp2;
     %*put vdecodestr=&vdecodestr;
@@ -2979,6 +2982,13 @@ put;
 put @1 "data &rrguri;";
 put @1 "  set __report __fall ;";
 put @1 "run;";
+
+put @1 "proc print data=__fall;";
+put @1 "  title '__fall;';";
+put @1 "run;";
+put @1 "proc print data=__report;";
+put @1 "  title '__report;';";
+put @1 "run;";
 put;
 /*
 %if &append=N and &appendable=Y %then %do;
@@ -3014,6 +3024,7 @@ proc sql noprint;
   
 
 %if &isincol>0 %then %do;
+
   %__rrg_unindent(indentlev=%eval(&isincol-1));
 %end;
 
@@ -3029,6 +3040,7 @@ proc sql noprint;
   
 
 %if &isincolv=Y %then %do;
+ 
   %__rrg_unindentv;
 %end;
 

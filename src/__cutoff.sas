@@ -42,9 +42,7 @@ where not missing (minpct) or not missing (mincnt);
 quit;
 
 
-
-
-  
+ 
 proc sql noprint;
  
   
@@ -53,6 +51,12 @@ proc sql noprint;
   
   select min(__grpid) into:grpidmincnt separated by ' ' from __varinfo_cutoff 
     (where=(not missing(mincnt)));
+  
+  %if %length(&grpidmincnt)<=0 %then %let grpidmincnt=999;
+  %*put 4iza grpidmincnt=&grpidmincnt;
+  
+  %if %length(&grpidminpct)<=0 %then %let grpidminpct=999;
+  %*put 4iza grpidminpct=&grpidminpct;
   
   select trim(left(mincnt)) into:mincnt separated by ' ' from __varinfo_cutoff
   (where=(__grpid=&grpidmincnt));

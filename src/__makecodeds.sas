@@ -85,7 +85,8 @@ in GENERATED PROGRAM:
 */
 
 %local vinfods varid varname outds decode name fmt codelist codes codelistds
-       delimiter dsin id var recodemissing desc;
+       delimiter dsin id var recodemissing desc show0cnt
+       noshow0cntvals;
 
 
 /*** ----------------------------------------------------------------------------------------------
@@ -116,6 +117,8 @@ proc sql noprint;
   select trim(left(codelist))  into:codes  separated by ' ' from  __catv;
   select trim(left(codelistds))into:codelistds separated by ' ' from  __catv;
   select trim(left(delimiter)) into:delimiter separated by ' ' from  __catv;
+  select trim(left(show0cnt)) into:show0cnt separated by ' ' from  __catv;
+  select trim(left(noshow0cntvals)) into:noshow0cntvals separated by ' ' from  __catv;
 quit;
 
 
@@ -217,15 +220,28 @@ __var = quote(&var);
 __var=&var;
 %end;
 if _n_=1 then do;
-put;
-put @1 "*------------------------------------------------------------------;";
-put @1 "* CREATE A DATASET WITH LIST OF CODES FOR &var;";
-put @1 "*------------------------------------------------------------------;";
-put;
-put @1 "data &outds;";
-put @1 "&tmp ;";
-put;
+  put;
+  put @1 "*------------------------------------------------------------------;";
+  put @1 "* CREATE A DATASET WITH LIST OF CODES FOR &var;";
+  put @1 "*------------------------------------------------------------------;";
+  put;
+  put @1 "data &outds;";
+  put @1 "&tmp ;";
+  put;
 end;
+put @1 '__show0cnt="Y";';
+ 
+%if %upcase(&show0cnt)= N %then %do;
+   
+    %if %length(&noshow0cntvals) %then %do;
+      put @1 '__show0cnt="N";';
+    %end;
+    %else %do;
+      put @1 '__show0cnt="N";';
+      
+    %end;
+%end;
+
 
 put "__order&suff = " __order&suff ";";
    
@@ -245,6 +261,11 @@ put @1 "proc sort data=&outds;";
 put @1 "  by __order&suff;";
 put @1 "run;";
 put;
+
+put @1 "proc print data=&outds;";
+put @1 "title 'dataset from makecodesds';";
+put @1 "run;";
+
 run;
 
 %* UPDATE &VINFODS SO NEXT STEPS KNOW ABOUT CREATED DATASET WITH CODES;

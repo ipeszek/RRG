@@ -2983,12 +2983,7 @@ put @1 "data &rrguri;";
 put @1 "  set __report __fall ;";
 put @1 "run;";
 
-put @1 "proc print data=__fall;";
-put @1 "  title '__fall;';";
-put @1 "run;";
-put @1 "proc print data=__report;";
-put @1 "  title '__report;';";
-put @1 "run;";
+
 put;
 /*
 %if &append=N and &appendable=Y %then %do;

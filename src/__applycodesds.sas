@@ -244,10 +244,14 @@ put @1 "    if missing(&var) then __col_0 =" __missdec ";";
 put @1 "    if __col_0='' then __col_0='" "&missdec"  "';";
 put @1 "  end;";  
 put @1 "__col__0=''; __cnt__0=.; __pct__0=.; __colevt__0='';";
+put @1 "if __fordelete=1 then delete;";
 put @1 "drop __col__: __cnt__: __pct__: __colevt__:;  ";
 
 put @1 "run;";
 put;
+put @1 "proc print data = &dsin;";
+put "title 'final data from applycodesds';";
+put "run;";
 
 run;
 

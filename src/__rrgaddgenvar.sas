@@ -65,7 +65,7 @@ showgroupcnt=,
 showemptygroups=,
 showmissing=Y,
 show0cnt=,
-show0cntvals=,
+noshow0cntvals=,
 pct4missing=,
 parms=,
 autospan=,
@@ -95,7 +95,7 @@ condfmtstats=)/store;
        splitrow preloadfmt pct4missing keepwithnext sdfmt decinfmt totalgrp
        totalwhere across incolumn colhead subjid misspos misstext delmods
        templatewhere show0cnt wholerow notcondition desc popsplit labelvar
-       condfmt condfmtstats slfmt pvalfmt DENOMINClTRT;
+       condfmt condfmtstats slfmt pvalfmt DENOMINClTRT noshow0cntvals;
 
 
 
@@ -133,7 +133,8 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
        denom worst totaltext events templateds sortcolumn freqsort mincnt 
        minpct popgrp newvalue values newlabel model statsetid cutoffcolumn 
        parms ovstat totalgrp totalwhere colhead delmods labelvar condfmt pvalfmt condfmtstats 
-       $ 2000 pctfmt  preloadfmt decinfmt sdfmt subjid $ 40;
+       noshow0cntvals $ 2000 pctfmt  preloadfmt decinfmt 
+       sdfmt subjid $ 40;
   events='';
   delmods = (trim(left(symget("delmods"))));  
   desc = (trim(left(symget("desc")))); 
@@ -222,7 +223,9 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   colhead = upcase(trim(left(symget("colhead"))));
   
   condfmt = upcase(trim(left(symget("condfmt"))));
-  condfmtstats=upcase(trim(left(symget("condfmtstats")))); 
+  condfmtstats=upcase(trim(left(symget("condfmtstats"))));
+
+  noshow0cntvals=upcase(trim(left(symget("noshow0cntvals"))));
   output;
 run;
 
@@ -236,5 +239,7 @@ data &outds;
 set &outds __tmp;
 run;
 
-
+proc print data=&outds;
+  title 'outds in __rrgaddgenvar';
+run;
 %mend;

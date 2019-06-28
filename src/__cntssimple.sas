@@ -22,8 +22,8 @@ totorder=)/store;
 %local  vinfods ds4var ds4pop ds4denom  outds varid unit  
         decode where popwhere var fmt denomvars denomwhere allstat totaltext
         totalpos stat popgrp pctfmt showmiss pct4missing totalgrp totalwhere
-        misstext misspos missorder totorder countwhat denomincltrt maxtrt;
-        ;
+        misstext misspos missorder totorder countwhat denomincltrt maxtrt
+        show0cnt noshow0cntvals;
 
 
 
@@ -74,6 +74,16 @@ proc sql noprint;
   select trim(left(countwhat))  into:countwhat separated by ' ' 
     from &vinfods;
     
+    select trim(left(show0cnt))  into:show0cnt separated by ' ' 
+    from &vinfods;
+    
+    select trim(left(noshow0cntvals))  into:noshow0cntvals separated by ' ' 
+    from &vinfods;
+    
+   /* %put 4iza show0cnt=&show0cnt;
+    %put 4iza noshow0cntvals=&noshow0cntvals;
+    */
+    
   
 
 
@@ -92,19 +102,7 @@ proc sql noprint;
 data _null_;
 file "&rrgpgmpath./&rrguri..sas" mod;
 put;
-/*
-put @1 "proc sql noprint;";
-put @1 "   select max(__trtid) into:maxtrt separated by ' ' from __trt;";
-put @1 "quit;";
-put ;
-*/
-/*
-put @1 "data _null_;";
-put @1 "  length x $ 200;";
-put @1 '  x=symget("maxtrt");';
-put @1 "  call symput('maxtrt',compress(x));";
-put @1 "run;";
-*/
+
 
 %if %upcase(&countwhat)=MAX %then %do;
 put @1 "proc sort data=&ds4var (where=(not missing(&var)));";
@@ -431,12 +429,6 @@ put @1 "run;";
 put;
 
 
-/*
-put @1 "proc sql noprint;";
-put @1 "   select max(__trtid) into:maxtrt separated by ' ' from __trt;";
-put @1 "quit;";
-put ;
-*/
 
 put @1 "data &outds;";
 put @1 "length __col_0  $ 2000 __stat $ 20;";
@@ -497,6 +489,37 @@ put;
 %end;
 put;
 put @1 "run;";
+
+put @1 "data &outds;";
+put @1 "  set &outds;";
+put @1 "if 0 then __fordelete=.;";
+put @1 'array cnt{*} __cnt_1-__cnt_&maxtrt;';
+put @1 '__isdata=0;';
+
+  %if %upcase(&show0cnt)= N %then %do;
+    %if %length(&noshow0cntvals) %then %do;
+        put @1 '      do __i=1 to dim(cnt);';
+        put @1 '        if cnt[__i]>0 then __isdata=1;';
+        put @1 '      end;  ';
+        put @1 "  if __isdata=0 and 
+          &var in (&noshow0cntvals) 
+          then __fordelete=1;";
+    %end;
+    %else %do;
+        put @1 '      do __i=1 to dim(cnt);';
+        put @1 '        if cnt[__i]>0 then __isdata=1;';
+        put @1 '      end;';
+        put @1 '  if __isdata=0 then __fordelete=1;';
+      
+    %end;
+  %end;
+
+
+put @1 'run;';
+
+put @1 "proc print data = &outds;";
+put "title '__cntssimple';";
+put "run;";
 
 
 data _null_;

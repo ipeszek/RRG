@@ -465,6 +465,10 @@ put @1 "        &tmp ";
 put @1 "      from &outds.2;";
 put @1 "      quit;";
 put;
+
+put @1 "proc print data = __grptemplate;";
+put "title '__grptemplate from ysecodesds';";
+put "run;";
 run;
 %end;
 /*%end;*/

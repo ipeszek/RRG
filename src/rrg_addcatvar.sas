@@ -54,7 +54,7 @@ desc=,
 remove=,
 DENOMINClTRT=Y,
 show0cnt=y,
-show0cntvals=)/store;
+noshow0cntvals=)/store;
 
 %* NOTE: POPGRP MUST BE A SUBSET OF TOTALGRP AND TOTALGRP MUST BE A SUBSET OF GROUPVARS (WITHOUT PAGEBY VARS);
 
@@ -67,9 +67,10 @@ show0cntvals=)/store;
        delimiter ordervar showgroupcnt showemptygroups showmissing pctfmt 
        overallstats sortcolumn preloadfmt labelline pct4missing totalgrp
        totalwhere  subjid misspos misstext denomgrp keepwithnext templatewhere
-       desc remove DENOMINClTRT show0cnt show0cntvals;
+       desc remove DENOMINClTRT show0cnt noshow0cntvals;
 
 %PUT STARTING RRG_ADDCATVAR USING VARIABLE &NAME;
+
 
 %if %length(&denom) %then %let denomgrp=&denom;
 
@@ -213,9 +214,11 @@ templatewhere=%nrbquote(&templatewhere),
 outds=__varinfo,
 desc=&desc,
 delmods=%nrbquote(&remove),
-DENOMINClTRT=%upcase(&DENOMINClTRT)
-show0cnt=&show0cnt,
-show0cntvals=%nrbquote(&show0cntvals));
+DENOMINClTRT=%upcase(&DENOMINClTRT),
+show0cnt=%nrbquote(&show0cnt),
+noshow0cntvals=%nrbquote(&noshow0cntvals)
+
+);
 
 
 data __timer;
@@ -227,7 +230,7 @@ data __timer;
 		output;
 	end;
 run;	
-
+ 
 %put RRG_ADDCATVAR USING VARIABLE &NAME COMPLETED SUCESSULLY;
 
 %mend;

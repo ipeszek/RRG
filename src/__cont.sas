@@ -883,11 +883,13 @@ run;
       length __fname $ 2000;
       call symput("currentmodel", cats(__modelname));
     run; 
-    
+   
+   /* 
     libname tmpout "&rrgoutpath";
     data tmpout.__modelstat;
       set __modelstat;
     run;
+    */
      
     %local nmoddef; 
     %let nmoddef=0;

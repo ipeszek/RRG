@@ -239,7 +239,9 @@ data &outds;
 set &outds __tmp;
 run;
 
+/*
 proc print data=&outds;
   title 'outds in __rrgaddgenvar';
 run;
+*/
 %mend;

@@ -249,9 +249,11 @@ put @1 "drop __col__: __cnt__: __pct__: __colevt__:;  ";
 
 put @1 "run;";
 put;
+/*
 put @1 "proc print data = &dsin;";
 put "title 'final data from applycodesds';";
 put "run;";
+*/
 
 run;
 

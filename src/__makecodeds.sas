@@ -261,11 +261,11 @@ put @1 "proc sort data=&outds;";
 put @1 "  by __order&suff;";
 put @1 "run;";
 put;
-
+/*
 put @1 "proc print data=&outds;";
 put @1 "title 'dataset from makecodesds';";
 put @1 "run;";
-
+*/
 run;
 
 %* UPDATE &VINFODS SO NEXT STEPS KNOW ABOUT CREATED DATASET WITH CODES;

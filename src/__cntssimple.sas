@@ -517,9 +517,11 @@ put @1 '__isdata=0;';
 
 put @1 'run;';
 
+/*
 put @1 "proc print data = &outds;";
 put "title '__cntssimple';";
 put "run;";
+*/
 
 
 data _null_;

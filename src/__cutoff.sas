@@ -228,12 +228,7 @@ put @1 "run;";
 
   
 
-put @1 'libname rrgop "C:\rrg_open_test\rrgout";';
 
-
-put @1 "data rrgop.__cutoff;";
-put @1 "  set &dsin;";
-put @1 "run;";
 
 run;
 

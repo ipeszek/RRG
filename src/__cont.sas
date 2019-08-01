@@ -730,7 +730,8 @@ put @1 "     if last.__order then do;";
 put @1 "        if compress(__ncol, '.,(): ')='' then __ncol='';     ";
 put @1 "        __col=strip(__ncol);";
 
-put @1 "        __tmpalign = 'C';";   
+put @1 "  __tmpalign = cats('" "&align" "');"; 
+/*put @1 "        __tmpalign = 'C';"; */  
 put @1 "        output;";
 put @1 "     end;";
 put @1 "end;";

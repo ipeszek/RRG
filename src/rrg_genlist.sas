@@ -671,7 +671,7 @@ put @1 "run;";
 put; 
 run;
 
-%if &finalize ne Y %then %goto exitlist;
+%if %upcase(&finalize) ne Y %then %goto exitlist;
 
 %local savercd gentxt;
 proc sql noprint;
@@ -685,13 +685,13 @@ quit;
     %let modstr=MOD;
 %end;
 
-%if &savercd=Y and &finalize=Y %then %do;
+%if %upcase(&savercd)=Y and %upcase(&finalize)=Y %then %do;
  
   %__savercd;
   
 %end;
 
-%if &gentxt=Y and &finalize=Y %then %do;
+%if %upcase(&gentxt)=Y and %upcase(&finalize)=Y %then %do;
 
   %__gentxt;
 

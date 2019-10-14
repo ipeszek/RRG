@@ -25,6 +25,7 @@ totorder=)/store;
         misstext misspos missorder totorder countwhat denomincltrt maxtrt
         show0cnt noshow0cntvals pct4total;
         
+%__rrgpd(ds=&vinfods, title2=vinfods)
 
 
 
@@ -83,7 +84,9 @@ proc sql noprint;
     select trim(left(noshow0cntvals))  into:noshow0cntvals separated by ' ' 
     from &vinfods;
     
-   
+   /* %put 4iza show0cnt=&show0cnt;
+    %put 4iza noshow0cntvals=&noshow0cntvals;
+    */
     
   
 
@@ -429,7 +432,9 @@ put @1 "by __tby  &denomvars;";
 put @1 "run;";
 put;
 
-
+put @1 "proc print data = &outds;";
+put @1 "title '4iza cntsimple 4 total;";
+put @1 "run;";
 
 put @1 "data &outds;";
 put @1 "length __col_0  $ 2000 __stat $ 20;";
@@ -467,18 +472,16 @@ put;
   put @1 "if __total ne 1 then __col_0 = put(" __stat0  ", &statf.);";
   put @1 "__stat=" __stat0 ";";
 
-  
-
  %if &pct4missing ne Y and &pct4total ne Y %then %do;
   put @1 "if (not missing(&var) and __total ne 1 )  then do;";    
 %end;
 %else %if &pct4missing ne Y and &pct4total = Y %then %do;
   put @1 "if (not missing(&var) or __total = 1 )  then do;";    
 %end; 
-%else %if &pct4missing = Y and &pct4total ne Y %then %do;
+%else %if &pct4missing = Y and &pct4total ne Y %do;
   put @1 "if ( __total ne 1 )  then do;";    
 %end; 
-%else %if &pct4missing = Y and &pct4total = Y %then %do;
+%else %if &pct4missing = Y and &pct4total = Y %do;
   put @1 "if 1  then do;";    
 %end;  
   put @1 "do __i=1 to dim(cnt);";
@@ -527,7 +530,9 @@ put @1 '__isdata=0;';
 put @1 'run;';
 
 
-
+put @1 "proc print data = &outds;";
+put "title '__cntssimple';";
+put "run;";
 
 
 

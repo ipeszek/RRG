@@ -241,7 +241,11 @@ data &outds;
 set &outds __tmp;
 run;
 
+libname tmp "C:\rrg_open_test\pgm\tmp";
 
+data tmp.varinfo;
+  set &outds;
+run;
   
 
 

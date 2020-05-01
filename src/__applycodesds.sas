@@ -191,6 +191,7 @@ put ;
 put @1 "  if 0 then do;";
 put @1 "    __total=0;";
 put @1 "    __missing=0;";
+put @1 "    __fordelete=.;";
 put @1 "    do __i =1 to dim(__col);";
 put @1 "      __cnt[__i]=0;";
 put @1 "      __colevt[__i]='';";
@@ -249,11 +250,6 @@ put @1 "drop __col__: __cnt__: __pct__: __colevt__:;  ";
 
 put @1 "run;";
 put;
-/*
-put @1 "proc print data = &dsin;";
-put "title 'final data from applycodesds';";
-put "run;";
-*/
 
 run;
 

@@ -939,8 +939,7 @@ run;
         put @1 "   decvar=__decvar,";
     %end;
     %else %do;
-        put @1 "   decvar=&decvar,";
-        /*put @1 "   if missing(decvar) then decvar=0;";*/
+    put @1 "   decvar=&decvar,";
     %end;
     if parms ne '' then do;
       put @1 parms ",";

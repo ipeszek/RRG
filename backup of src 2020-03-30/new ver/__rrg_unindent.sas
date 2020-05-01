@@ -28,6 +28,7 @@ put @1 "    length " %do i=0 %to &indentlev; " __newcol&i " %end; " $ 2000;";
 put @1 "    retain " %do i=0 %to &indentlev; " __newcol&i " %end; ";";
 put @1 "    if 0 then do; ";
 put @1 "      __indentlev=0;";
+put @1 "     __fordelete=.;";
 %do i=0 %to &indentlev; 
 put @1 "       __col_&i = ''; ";
 %end; 

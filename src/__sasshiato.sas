@@ -57,7 +57,9 @@ quit;
 %else
     %let __outpath_c=; 
 
+
 %put RRG INFO: THE XML FILE IS TO BE SAVED IN &__xmlpath..xml;
+
 
 %__savexml(
 data=&dataset, 
@@ -91,7 +93,11 @@ data _null_;
    tmp ="out_dir=&rrgoutpath.";
    tmp = tranwrd(tmp, "\", "/");
    put tmp;
+   tmp ="work_dir=&__workdir.";
+   tmp = tranwrd(tmp, "\", "/");
+   put tmp;
  %end;
+
  put "log2=file";
  tmp="log2f=&__tmpfilepath..str";
  tmp = tranwrd(tmp, "\", "/");
@@ -109,6 +115,8 @@ data _null_;
  put tmp;
 
 run; 
+
+
  
 data _null_;
   if fileexist("&__workdir.&__dirdel.sasshiato.props") then put 

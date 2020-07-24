@@ -80,6 +80,7 @@ put @1 '  %end;';
 put;      
 put @1 "  data &dataset " '(rename=(&rename2));';
 put @1 "    set &dataset " '(rename=(&rename1));';
+put @1 "    if 0 then __fordelete=.;";
 put @1 "    if __align = '' then __align = 'L';";
 put @1 "    if __stretch = '' then __stretch = 'Y';";
 put @1 "    if __fordelete=1 then delete; ";

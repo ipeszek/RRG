@@ -78,7 +78,7 @@ quit;
   run;
   
   %if &i>1 %then %do;
-    proc sql noprint;
+    proc sql noprint nowarn;
       create table tmp as select * from __tokends1
        cross join __tokends&i;
     create table __tokends1 as select * from __tmp;

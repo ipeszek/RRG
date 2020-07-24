@@ -12,6 +12,34 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
 
+09Jul2020
+  RRG_ANOVA: removed untangling of interaction terms 
+
+16Jun2020
+   RRG_ADDVAR: added showneg0 parameter 
+    (to show "-" if rounded value of stat =0 but is negative).
+    Usage: specify showneg0=y in rrg_addvar.
+    To apply to all tables in a project, add a line
+    showneg0   Y 
+    in section D3 of configuration file
+    
+  RRG_ANOVA, RRG_BINOMEX: fixed bug: parameter print_stats was referred to but not specified 
+        as rrg_anova/rrg_binomex parameter
+        
+  made handling of missing stats consistent (if n=0, other stats are shown as blanks)   
+
+27May2020
+  RRG_ADDVAR: condfmt applied only to stats specified in condfmt
+  stats=. replaced with blank
+  (.) in stats replaced with (NA)
+  added maxdec parameter (max number of decimals for continous stats)
+  added pvfmt parameter (format to print p-vals from ttest)
+  ALL: fixed __warning about __fordelete 
+  ALL: fixed warning about "variable already exists" in proc sql
+  ALL:  removed unnecessary proc sql printouts
+  categorical plug-ins: fixed bug which resulted in error when stat models was used with MINPCT or MINCNT in event-like reports
+  RRG_ANOVA: fixed bug when pairwise stats were printed in wrong columns
+  RRG_BINOMEX: added print_stats parameter
 
 --------------------------------------------------------------------------------------  
   11Nov2015

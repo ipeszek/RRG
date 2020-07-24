@@ -4,6 +4,8 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
+
+ * 2020-07-06: removed unused and incorrect piece of code (untangling interaction terms)
  */
 
 %macro rrg_anova(
@@ -19,7 +21,8 @@
   interactions=,
   subjid=,
   pvalf=__rrgpf.,
-  alpha=0.05)/store;
+  alpha=0.05,
+  print_stats=n)/store;
  
 %*-------------------------------------------------------------------------------
 * RRG SUPPLEMENTAL MACRO FOR DISTRIBUTION ON SYSTEMS WITHOUT RRG INSTALLED
@@ -59,7 +62,7 @@
 
 %*-------------------------------------------------------------------------------;  
   %local dataset where trtvar groupvars var refvals covariates strata
-   interactions alpha decvar war ning pvalf;
+   interactions alpha decvar war ning pvalf print_stats;
    
  
    
@@ -92,14 +95,7 @@ run;
     
    %end; 
    
-%*------------------------------------------------------------;   
-%* DETANGLE INTERACTION TERMS;
-%*------------------------------------------------------------;
-   
-   %local inter2;
-   %if %length(&interactions) %then %do;
-     %let inter2 = %tranwrd(%nrbquote(&interactions),%str(*), %str( ));
-   %end;
+;
    
 %*------------------------------------------------------------;
 %* DELETE GROUPS THAT HAVE DATA ON ONE TREATMENT GROUP ONLY;
@@ -574,7 +570,7 @@ run;
   
 %if %length(&refvals) %then %do;  
       %*------------------------------------------------------------;  
-      %** DIFFERENCES BETWEEN LSMEANS;
+      %** DIFFERENCES BETWEEN LSMEANS and CIs for DIFFERENCE;
       %*------------------------------------------------------------; 
          
         data __trts1;
@@ -587,7 +583,8 @@ run;
           by &groupvars i;
         run;
         
-        data __anova_lsmeandb(rename=(_i=i _j=j)) ;
+        
+        data __anova_lsmeandb (rename=(_i=i _j=j __tmp1=&trtvar __tmp2=_&trtvar));
           set __anova_lsmeand;
           difference = -1*difference;
           lowercl0=lowercl;
@@ -596,7 +593,9 @@ run;
           lowercl = -1*uppercl0;
           _i=j;
           _j=i;
-          drop i j uppercl0 lowercl0;
+          __tmp2=&trtvar;
+          __tmp1=_&trtvar;
+          drop i j &trtvar _&trtvar uppercl0 lowercl0;
         run;
         
         data __anova_lsmeand;
@@ -956,5 +955,15 @@ proc print data=rrg_anova;
   *where __stat_name in ('DIFFCI','LSMEANDIFF');
 run;
 */
+
+%if %upcase(&print_stats)=Y %then %do;   
+  title 'The following statistics are available from rrg_anova:';
+  
+  proc sql ;
+    select distinct __overall, __stat_name, __stat_label from rrg_anova;
+    quit;
+  title;   
+
+%end;
 
 %mend;

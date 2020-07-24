@@ -82,7 +82,7 @@ quit;
 %if %sysfunc(exist(__grpcodes_exec)) %then %do;
 
   %* CROSS-JOIN __GRPCODES WITH CODELISTDS;    
-  proc sql noprint;
+  proc sql noprint nowarn;
     create table __tmp as select * from __grpcodes_exec
        cross join &execcl;
      create table &execcl as select * from __tmp;
@@ -96,7 +96,7 @@ quit;
   *----------------------------------------------------;
   * CROSS-JOIN __GRPCODES WITH CODELISTDS;
   *----------------------------------------------------;
-  put @1 "proc sql noprint;";
+  put @1 "proc sql noprint nowarn;";
   put @1 "    create table __tmp as select * from __grpcodes";
   put @1 "       cross join &codelistds;";
   put @1 "     create table &codelistds as select * from __tmp;";
@@ -369,7 +369,7 @@ put;
 %if %length(&missgrp) %then %do;
     %local tmp;
     %let tmp = %sysfunc(tranwrd(%sysfunc(compbl(&missgrp)),%str( ),%str(,)));
-    put @1 "proc sql noprint;";
+    put @1 "proc sql noprint nowarn;";
     put @1 "      create table &outds.2 as  select * from ";
     put @1 "       (select distinct ";
     put @1 "         &tmp";

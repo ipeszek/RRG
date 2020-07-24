@@ -333,7 +333,7 @@ run;
 %if %upcase(&print_stats)=Y %then %do;   
   title 'The following statistics are available from rrg_binom:';
   
-  proc sql;
+  proc sql ;
     select distinct __overall, __stat_name, __stat_label from rrg_binom;
     quit;
   title;   

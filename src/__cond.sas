@@ -299,7 +299,7 @@ put;
     %let gvsql = %sysfunc(tranwrd(&gvsql,%str( ),%str(,)));
 
     put ;
-    put @1 "    proc sql noprint;";
+    put @1 "    proc sql noprint nowarn;";
     put @1 "      create table __tmp as select * from __condcnt ";
     put @1 "      cross join (select distinct &gvsql ";
     put @1 "      from __dataset (where=(&tabwhere)));";
@@ -311,7 +311,7 @@ put @1 '%end;';
 
 %* merge ____conddenom with __groupcodes;
 %if %sysfunc(exist(__grpcodes_exec)) and %upcase(&grouping)=Y %then %do;
-  put @1 'proc sql noprint;';
+  put @1 'proc sql noprint nowarn;';
   put @1 '  create table __tmp1 as select * from __grpcodes ';
   %if %length(&templatewhere) %then %do;
    put @1 " (where=(&templatewhere))";

@@ -23,7 +23,7 @@ groupvars=)/store;
 
 
 data __varinfo_cutoff;
-  set __varinfo (where=( type ne 'TRT'));
+  set __varinfo (where=( upcase(strip(type)) not in ('TRT',"'MODEL'")));
 run;
 
 data __varinfo_cutoff;
@@ -32,9 +32,9 @@ data __varinfo_cutoff;
   if eof then __grpid=999;
 run;
 
-proc sql;
+proc sql noprint;
 select name into: grpsrt separated by ' '
-  from __varinfo_cutoff where type ne 'TRT'
+  from __varinfo_cutoff where type not in ('TRT',"'MODEL'")
   order by __grpid;
 select name into: mincntpctvar    separated by ''
 from __varinfo_cutoff
@@ -188,7 +188,7 @@ quit;
       put @1 "drop __i;";
       put @1 "    run;";
       
-      put '%put _all_;';
+      /*put '%put _all_;';*/
 
 data _null_;
       file "&rrgpgmpath./&rrguri..sas" mod;

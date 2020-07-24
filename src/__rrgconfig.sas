@@ -174,6 +174,7 @@ put "[D3]";
 put "# DEFAULTS FOR RRG_ADDVAR";
 put "stats           n MEAN+SD Median MIN+MAX";
 put "ALIGN           D";
+put "showneg0        N";
 
 put "[D4]";
 put "# DEFAULTS FOR RRG_defreport";
@@ -185,6 +186,7 @@ put "dest            APP";
 put "java2sas        N";
 put "savercd         N";
 put "gentxt          N";
+
 
 run;
 

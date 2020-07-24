@@ -420,7 +420,7 @@ run;
     data _null_;
     file "&rrgpgmpath./&rrguri..sas" mod;
     put;
-    put @1 "   proc sql noprint;";
+    put @1 "   proc sql noprint nowarn;";
     put @1 "   create table __poptmp as  select * from ";
     put @1 "    (select distinct &tmp1";
     put @1 "      from __dataset)";
@@ -470,7 +470,7 @@ run;
 %if %sysfunc(exist(__CODES4TRT_exec)) %then %do;
   
     %local varby4sql;
-     proc sql;
+     proc sql noprint;
      select name into:varby4sql separated by ', ' 
      from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y')); 
      quit;
@@ -490,7 +490,7 @@ run;
           
        
         
-        put "proc sql;";
+        put "proc sql nowarn;";
         put "  create table __CODES4TRT2 as";
         put "  select * from varbytbl cross join __CODES4TRT;";
         put "quit;";
@@ -764,7 +764,7 @@ quit;
     set &tmp._exec ;
   run;
 
-  proc sql noprint;
+  proc sql noprint nowarn;
   %do i=2 %to &ngs;
     %local tmp;
     %let tmp = %scan(&gdsset,&i,%str( ));
@@ -815,7 +815,7 @@ quit;
   put @1 "    set &tmp ;";
   put @1 "  run;";
   put;  
-  put @1 "proc sql noprint;";
+  put @1 "proc sql noprint nowarn;";
   %do i=2 %to &ngs;
     %local tmp;
     %let tmp = %scan(&gdsset,&i,%str( ));
@@ -1280,7 +1280,7 @@ quit;
   %if %length(&varby) %then %do;
   %local tmp;
   %let tmp = %sysfunc(tranwrd(&varby, %str( ), %str(,))) ;
-  put @1 "proc sql noprint;";
+  put @1 "proc sql noprint nowarn;";
   put @1 "    create table __tmp as ";
   put @1 "  select * from __overallstats (drop=&varby) cross join";
   put @1 "  (select distinct &tmp from __poph);";
@@ -1923,7 +1923,7 @@ quit;
     put @1 "* WITH ALL COMBOS OF GROUPING VARIABLES WITHOUT CODELIST);";
     put @1 "*-------------------------------------------------------------;";
     put;
-    put @1 "proc sql noprint;";
+    put @1 "proc sql noprint nowarn;";
     put @1 "  create table __tmp1g as select distinct &tmpdec from __dataset;";
     put @1 "  create table __tmp2g as select * from";
     put @1 "    __grpcodes cross join __tmp1g;";

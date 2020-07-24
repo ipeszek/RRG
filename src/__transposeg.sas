@@ -203,7 +203,7 @@ put @1 "proc sort data=__all2 nodupkey out = __all4(keep= __trtid) ;";
 put @1 "by __trtid;";
 put @1 "run;";
 put;
-put @1 "proc sql noprint;";
+put @1 "proc sql noprint nowarn;";
 put @1 "create table __all5 as select * from";
 put @1 "__all3 cross join __all4;";
 put @1 "quit;";
@@ -308,7 +308,7 @@ put;
 */
 put;
 %if %length(&varby) %then %do;
-put @1 "proc sql noprint;";
+put @1 "proc sql noprint nowarn;";
 put @1 "  create table __all5a as select * from ( select * from __all5)";
 put @1 "  cross join ";
 put @1 "  (select distinct &varby from __poph);";

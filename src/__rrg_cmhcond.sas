@@ -11,6 +11,7 @@
   where=,
   trtvar=,
   groupvars=,
+  strata=,
   pageby=,
   refvals=,
   subjid=,
@@ -32,6 +33,7 @@
 *  WHERE           =  where clause to apply to input dataset
 *  TRTVAR          =  name of treatment variable
 *  GROUPVARS       =  names of grouping variables
+*  STRATA          = names of stratification variables
 *  PAGEBY          =  names of grouping "pageby" variables 
 *                     (defining population pools)
 *  REFVALS         =  the value(s) of treatment variable which are reference 
@@ -64,7 +66,7 @@
 %*-------------------------------------------------------------------------------;
 
 %local dataset where trtvar groupvars pageby var  refvals subjid label_pvalga 
-       label_opvalga pvalf
+       label_opvalga pvalf strata
        label_pvalnc label_opvalnc label_pvalrmsd label_opvalrmsd;
 
 %if %length(&where)=0 %then %let where=%str(1=1);

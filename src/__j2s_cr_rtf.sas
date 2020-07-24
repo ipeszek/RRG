@@ -22,7 +22,7 @@
 
 %local fs;
 
-proc sql;
+proc sql noprint;
   select __fontsize into:fs separated by ' ' from __report;
 quit;
 

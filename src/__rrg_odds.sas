@@ -205,7 +205,7 @@ run;
          run;
          
          %if %length(&groupvars) %then %do;
-           proc sql noprint;
+           proc sql noprint nowarn;
             create table __tmp as select * from __rr cross join __f0;
             create table __rr as select * from __tmp;
            quit;

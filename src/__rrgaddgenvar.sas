@@ -4,6 +4,11 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
+ 
+ * 2002-05-26 added maxdec parameter (max number of decimals for continous stats)
+ *    TODO: handle ordervar same as other parms
+ *    2020-06-16 added showneg0 parameter, see __cont for functionality 
+ 
  */
 
 %macro __rrgaddgenvar(
@@ -85,7 +90,9 @@ pvalfmt=,
 notcondition=,
 desc=,
 condfmt=,
-condfmtstats=)/store;
+condfmtstats=,
+maxdec=,
+showneg0=)/store;
 
 %local where popwhere cond name decode label labelline suffix stat countwhat 
        totaltext totalpos skipline indent denom denomwhere  popgrp fmt
@@ -96,7 +103,8 @@ condfmtstats=)/store;
        splitrow preloadfmt pct4missing keepwithnext sdfmt decinfmt totalgrp
        totalwhere across incolumn colhead subjid misspos misstext delmods
        templatewhere show0cnt wholerow notcondition desc popsplit labelvar
-       condfmt condfmtstats slfmt pvalfmt DENOMINClTRT noshow0cntvals pct4total;
+       condfmt condfmtstats slfmt pvalfmt DENOMINClTRT noshow0cntvals pct4total
+       maxdec showneg0;
 
 
 
@@ -135,7 +143,7 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
        minpct popgrp newvalue values newlabel model statsetid cutoffcolumn 
        parms ovstat totalgrp totalwhere colhead delmods labelvar condfmt pvalfmt condfmtstats 
        noshow0cntvals $ 2000 pctfmt  preloadfmt decinfmt 
-       sdfmt subjid $ 40;
+       sdfmt subjid maxdec showneg0 $ 40;
   events='';
   delmods = (trim(left(symget("delmods"))));  
   desc = (trim(left(symget("desc")))); 
@@ -228,6 +236,8 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   condfmtstats=upcase(trim(left(symget("condfmtstats"))));
 
   noshow0cntvals=upcase(trim(left(symget("noshow0cntvals"))));
+  maxdec = upcase(trim(left(symget("maxdec"))));
+  showneg0 = upcase(trim(left(symget("showneg0"))));
   output;
 run;
 

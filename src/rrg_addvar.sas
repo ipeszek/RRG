@@ -4,6 +4,9 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
+ 
+ * 2020-05-26 added maxdec parameter (max number of decimals for continous stats)
+ * 2020-06-16 added showneg0 parameter, see __cont for functionality 
  */
 
 %macro rrg_addvar(
@@ -27,12 +30,15 @@ keepwithnext=N,
 templatewhere=,
 popgrp=,
 condfmt=,
-condfmtstats=)/store;
+condfmtstats=, /* not used */
+maxdec=,
+showneg0=N
+)/store;
 
 
 %local where name label labelline suffix stats statsetid
        skipline indent align basedec ovstats keepwithnext
-       templatewhere popgrp condfmt condfmtstats;
+       templatewhere popgrp condfmt condfmtstats maxdec showneg0;
 
 %PUT STARTING RRG_ADDVAR USING VARIABLE &NAME;
 
@@ -72,6 +78,8 @@ pvalfmt=%nrbquote(&pvfmt),
 decinfmt=%nrbquote(&statdecinfmt),
 condfmt=%nrbquote(&condfmt),
 condfmtstats=%nrbquote(&condfmtstats),
+maxdec=%nrbquote(&maxdec),
+showneg0=%nrbquote(&showneg0),
 outds=__varinfo);
 
 data __timer;

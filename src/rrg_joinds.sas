@@ -33,11 +33,11 @@ Parameters:
 Modifications:
 
 Notes:
-  if type is not given then merge is used
+  if type is not given then MERGE is used
   cond is additional subsetting condition (where) applied
     after merge
   mergetype = INNER keeps only matching records from both datasets
-  mergetype = OUTER keeps all observations
+  mergetype = OUTER keeps all observations (full join)
 
 *****************************************************************************/;
 
@@ -80,7 +80,7 @@ Notes:
 %end;
 
 %if %length(&notin1) and %length(&notin2) %then %do;
-   proc sql noprint;
+   proc sql noprint nowarn;
     create table __tmp as select distinct 
        %sysfunc(tranwrd(&notin1,%str( ), %str(,)))
     from &data2;
@@ -103,7 +103,7 @@ Notes:
 %end;
 
 %if %length(&notin1) and %length(&notin2)=0 %then %do;
-   proc sql noprint;
+   proc sql noprint nowarn;
     create table __tmp as select distinct 
        %sysfunc(tranwrd(&notin1,%str( ), %str(,)))
     from &data2;
@@ -121,7 +121,7 @@ Notes:
 %end;
 
 %if %length(&notin1)=0 and %length(&notin2) %then %do;
-   proc sql noprint;
+   proc sql noprint nowarn;
     create table __tmp as select distinct 
        %sysfunc(tranwrd(&notin2,%str( ), %str(,)))
     from &data1;
@@ -165,7 +165,7 @@ Notes:
 data __rrghd0;
   length record $ 2000;
 %if %length(&notin1) and %length(&notin2) %then %do;
-record= "proc sql noprint;"; output;
+record= "proc sql noprint nowarn;"; output;
 record= "  create table __tmp as select distinct ";output;
 record= "       %sysfunc(tranwrd(&notin1,%str( ), %str(,)))";output;
 record= "    from &data2;";output;
@@ -189,7 +189,7 @@ record= "  run;";output;
 record= " ";output;
 %end;
 %if %length(&notin1) and %length(&notin2)=0  %then %do;
-record= "proc sql noprint;";output;
+record= "proc sql noprint nowarn;";output;
 record= "  create table __tmp as select distinct ";output;
 record= "       %sysfunc(tranwrd(&notin1,%str( ), %str(,)))";output;
 record= "    from &data2;";output;
@@ -208,7 +208,7 @@ record= "  run;";output;
 record= " ";output;
 %end;
 %if %length(&notin1)=0 and %length(&notin2)  %then %do;
-record= "proc sql noprint;";output;
+record= "proc sql noprint nowarn;";output;
 record= "  create table __tmp as select distinct ";output;
 record= "       %sysfunc(tranwrd(&notin2,%str( ), %str(,)))";output;
 record= "    from &data1;";output;

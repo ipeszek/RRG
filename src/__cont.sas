@@ -4,6 +4,15 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
+
+ * 2020-05-26 added handling of maxdec (max number of decimal for addvar stats)
+ *            condfmt applied only to stats specified in condfmt
+ *            stats=. replaced with blank
+ *            (.) in stats replaced with (NA)
+ * 2020-06-16 added handling of showneg0 parameter: if Y then small neg number which rounds to 0 is shown as e.g. -0.000
+               otherwise e.g. -0.000 is shown as 0.000
+               made handling of missing stats consistent
+
  */
 
 %macro __cont (
@@ -25,7 +34,8 @@ run;
 %local varid tabwhere where unit var groupvars trtvars stat statsetid
        indent skipline   label labelline indent groupvars4pop groupvarsn4pop
        basedec basedecds outds align j outds by ovstat by4pop byn4pop
-       decinfmt sdfmt keepn templatewhere popgrp popwhere groupvars  condfmt pvfmt;
+       decinfmt sdfmt keepn templatewhere popgrp popwhere groupvars  condfmt 
+       pvfmt maxdec showneg0;
 
 %let by = &by4pop &byn4pop;
 %if %length(&by) %then %let by = %sysfunc(compbl(&by));
@@ -47,27 +57,30 @@ run;
 
 %let indent=0;
 proc sql noprint;
-  select trim(left(where))     into:where     separated by ' ' from  __contv;
-  select trim(left(popwhere))  into:popwhere  separated by ' ' from  __contv;
-  select trim(left(popgrp))    into:popgrp    separated by ' ' from  __contv;
+  select trim(left(where))     into:where         separated by ' ' from  __contv;
+  select trim(left(popwhere))  into:popwhere      separated by ' ' from  __contv;
+  select trim(left(popgrp))    into:popgrp        separated by ' ' from  __contv;
   select trim(left(templatewhere))    
-     into:templatewhere     separated by ' ' from  __contv;
-  select trim(left(name))      into:var       separated by ' ' from  __contv;
-  select trim(left(stat))      into:stat      separated by ' ' from  __contv;
-  select trim(left(statsetid)) into:statsetid separated by ' ' from  __contv;
-  select indent                into:indent    separated by ' ' from  __contv;
-  select upcase(skipline)      into:skipline  separated by ' ' from  __contv;
-  select trim(left(label))     into:label     separated by ' ' from  __contv;
-  select labelline             into:labelline separated by ' ' from  __contv;
-  select basedec               into:basedec   separated by ' ' from  __contv;
-  select trim(left(align))     into:align     separated by ' ' from  __contv;
-  select trim(left(ovstat))    into:ovstat    separated by ' ' from  __contv;
-  select trim(left(sdfmt))     into:sdfmt     separated by ' ' from  __contv;
-  select trim(left(slfmt))     into:slfmt     separated by ' ' from  __contv;
-  select trim(left(pvalfmt))     into:pvfmt     separated by ' ' from  __contv;
-  select trim(left(decinfmt))  into:decinfmt  separated by ' ' from  __contv;
-  select trim(left(keepwithnext))   into:keepn  separated by ' ' from  __contv;
-  select trim(left(condfmt))   into:condfmt  separated by ' ' from  __contv;
+                               into:templatewhere separated by ' ' from  __contv;
+  select trim(left(name))      into:var           separated by ' ' from  __contv;
+  select trim(left(stat))      into:stat          separated by ' ' from  __contv;
+  select trim(left(statsetid)) into:statsetid     separated by ' ' from  __contv;
+  select indent                into:indent        separated by ' ' from  __contv;
+  select upcase(skipline)      into:skipline      separated by ' ' from  __contv;
+  select trim(left(label))     into:label         separated by ' ' from  __contv;
+  select labelline             into:labelline     separated by ' ' from  __contv;
+  select basedec               into:basedec       separated by ' ' from  __contv;
+  select trim(left(align))     into:align         separated by ' ' from  __contv;
+  select trim(left(ovstat))    into:ovstat        separated by ' ' from  __contv;
+  select trim(left(sdfmt))     into:sdfmt         separated by ' ' from  __contv;
+  select trim(left(slfmt))     into:slfmt         separated by ' ' from  __contv;
+  select trim(left(pvalfmt))   into:pvfmt         separated by ' ' from  __contv;
+  select trim(left(decinfmt))  into:decinfmt      separated by ' ' from  __contv;
+  select trim(left(keepwithnext))
+                               into:keepn         separated by ' ' from  __contv;
+  select trim(left(condfmt))   into:condfmt       separated by ' ' from  __contv;
+  select trim(left(maxdec))    into:maxdec        separated by ' ' from  __contv;
+  select trim(left(showneg0))  into:showneg0      separated by ' ' from  __contv;
 quit;
 
 
@@ -536,7 +549,7 @@ put @1 " drop __i __statlist;";
 put @1  "run;";
 put;
 %if %length(&gv_wt) %then %do;
-put @1 "proc sql noprint;";
+put @1 "proc sql noprint nowarn;";
 put @1 "  create table __tmp1 as select * from ";
 put @1 "  (select distinct";
 put @1 "     &tmp_nt";
@@ -546,7 +559,7 @@ put @1 "  create table __tmp as select * from ";
 put @1 "  __tmp1 cross join __contstat0;";
 %end;
 %else %do;
-put @1 "proc sql noprint;";
+put @1 "proc sql noprint nowarn;";
 put @1 "  create table __tmp as select * from ";
 put @1 "  (select distinct";
 put @1 "     &tmp_nt";
@@ -646,15 +659,18 @@ put @1 "data __contstat2;";
 put @1 " set  __contstat;";
 put @1 " length __col $ 2000;";
 %if %length(&decvar)>0 %then %do;
-    put @1 "    if missing(&decvar) then &decvar=0;";
-put @1 "   if __name in ('N','NMISS') then __basedec=0;";
-put @1 "   else __basedec = &decvar + input(upcase(__name), &decinfmt);";
+    put @1 "   if missing(&decvar) then &decvar=0;";
+    put @1 "   if __name in ('N','NMISS') then __basedec=0;";
+    put @1 "   else __basedec = &decvar + input(upcase(__name), &decinfmt);";
 %end;
-
-put @1 "   length __decfmt $ 20;";
-put @1 "   __decfmt = '12.'; ";
-put @1 "   if __basedec>0 then __decfmt = cats(__decfmt, __basedec);";
-
+%if %length(&maxdec) %then %do;
+    put @1 "   if   __basedec>&maxdec then __basedec = &maxdec;";
+%end;
+put @1 "       length __decfmt $ 20;";
+put @1 "       __decfmt = '12.'; ";
+put @1 "       if __basedec>0 then __decfmt = cats(__decfmt, __basedec);";
+put @1 "       put __basedec=;";
+  
 put;
 
 run;
@@ -667,25 +683,36 @@ put @1 "*--------------------------------------------------------------;";
 put @1 "* CREATE DISPLAY OF STATISTICS (FORMAT);";
 put @1 "*--------------------------------------------------------------;";
 
-%if %length(&condfmt)=0 %then %do;
-    put @1 "   if __name='PROBT' then do;";
-    put @1 "     __val=round(__val, 0.000000001);";
-    put @1 "     __col = put(__val, &pvfmt);";
-    put @1 "   end;";
-    put @1 "   else do;";
-    put @1 "     __val = round(__val, 10**(-1*__basedec));";
-    put @1 "     __col = compress(putn(__val, __decfmt));";
-    put @1 "   end;";
-%end;
 
-%else %do;
+put @1 "   if __name='PROBT' then do;";
+put @1 "     __val2=round(__val, 0.000000001);";
+put @1 "     __col = put(__val2, &pvfmt);";
+put @1 "   end;";
+put @1 "   else do;";
+put @1 "      __sign='';";
+put @1 "      if .<__val<0 then __sign='-';";
 
-  %put condfmt=&condfmt;
-  %__condfmt(condfmt=%nrbquote(&condfmt));
+put @1 "     __val2 = round(__val, 10**(-1*__basedec));";
+put @1 "     __col = compress(putn(__val2, __decfmt));";
+
+put @1 "   end;";
+
+%if %length(&condfmt) %then %do;
+   %__condfmt(condfmt=%nrbquote(&condfmt));
 %end;
 
 put;
-put @1 "   if compress(__col, '-0.')='' then __col = tranwrd(__col,'-','');";
+
+%if %upcase(&showneg0)=Y %then %do;
+  put @1 "  if compress(__col,'0.')='' and __sign='-' and __col ne '' then __col='-'||strip(__col);";
+%end;
+%else %do;
+  put @1 "  if compress(__col, '-0.')='' then __col = tranwrd(__col,'-','');";
+%end;
+
+/*put @1 "   __col = tranwrd(strip(__col),'(.','(NA');";*/
+
+put @1 "   drop   __sign;";
 put @1 "   run;";
 put;
 put;
@@ -735,10 +762,14 @@ put @1 "  __tmpalign = cats('" "&align" "');";
 put @1 "        output;";
 put @1 "     end;";
 put @1 "end;";
-put @1 "run;";
+
 put;
 
-
+put;
+put @1 "data __contstat2;";
+put @1 "set __contstat2;";
+put @1 "   __col = tranwrd(strip(__col),'(.','(NA');";
+put @1 "run;";
 put;
 run;
 

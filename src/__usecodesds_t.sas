@@ -268,7 +268,7 @@ put;
 %if %length(&missgrp) %then %do;
     %local tmp;
     %let tmp = %sysfunc(tranwrd(%sysfunc(compbl(&missgrp)),%str( ),%str(,)));
-    put @1 "proc sql noprint;";
+    put @1 "proc sql noprint nowarn;";
     put @1 "      create table &outds.2 as  select * from ";
     put @1 "       (select distinct ";
     put @1 "         &tmp";

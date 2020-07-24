@@ -22,7 +22,8 @@
   pctfmt=6.1,
   subjid=,
   label_pctci=%str(CI for PCT),
-  label_exact=N
+  label_exact=N,
+  print_stats=n
   )/store;
 
 %*-------------------------------------------------------------------------------
@@ -46,6 +47,7 @@
 *  PCTFMT          = format to display CI for percentages
 *  SUBJID          = name of variabel denoting unique subject id
 *  LABEL_PCTCI     = display label for CI for percentages 
+*  PRINT_STATS     = whether to print generated statistics 
 
 * DO NOT MODIFY THIS FILE IN ANY WAY
 
@@ -70,7 +72,7 @@
 
 %local   dataset where cntds   trtvar  pageby groupvars   var   refvals 
     subjid alpha maxtrt pctfmt events label_pctci Label_pctdiff
-    label_pctdiffci label_exact CONTCORR whereafter
+    label_pctdiffci label_exact CONTCORR whereafter PRINT_STATS
     ;
 %if %length(&where)=0  %then %let where=%str(1=1);
 
@@ -124,7 +126,7 @@ run;
 
 
 ods output close;
-ods output binomialProp=__rrg_binom_exci;
+ods output binomial=__rrg_binom_exci;
 
 proc freq data=__rrg_binom_EX ;
 by &groupvars __trtid;
@@ -210,6 +212,16 @@ data rrg_binomex;
   set rrg_binomex;
   where &whereafter;
 run;
+
+%end;
+
+%if %upcase(&print_stats)=Y %then %do;   
+  title 'The following statistics are available from rrg_binomex:';
+  
+  proc sql ;
+    select distinct __overall, __stat_name, __stat_label from rrg_binomex;
+    quit;
+  title;   
 
 %end;
    

@@ -5,6 +5,65 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
+ 
+ 
+ /* PROGRAM FLOW:
+    10Aug2020     
+    
+    note: this.xxx below refers to macro parameter xxx of this macro; __repinfo.xxx refers to variable xxx in __repinfo dataset                                 
+  called in RRG_GENERATE and RRG_GENLIST
+ 
+ create and run macro __metadata  which creates dataset __REPORT, 
+  seting __datatype   = 'RINFO',  __rowid, __varbygrp to MISSING (numeric), 
+   and variables
+    __fontsize, __bookmarks_rtf, __bookmarks_pdf, __sfoot_fs, __indentsize, __orient, __filename,
+    __nodatamsg, __stretch, __colwidths, __dist2next,  __rtype, __gcols, __lastcheadid, __extralines,
+    __margins=, __papersize, __outformat, __watermark, __font, __stretch, __sprops, __colhead1
+    __title1 - __title6, __footnot1 - __footnot8,
+    __shead_l, __shead_r, __shead_m, __sfoot_l, __sfoot_m, __sfoot_r
+    to corresponding variables from __REPINFO DS
+    
+    in __shead_l, __shead_r, __shead_m, __sfoot_l, __sfoot_m, __sfoot_r,__colhead1, replace
+     "#rpar" with ")", "#squot" with "'" , "#lpar" with "("
+    
+    __breakokat is set to &BREAKOKAT 
+      for listings, &BREAKOKAT is created in RRG_GENLIST and is the list of number of columns 
+         with DEFCOL.BREAKOKAT=Y (case insensitive)
+      for tables, &BREAKOKAT is created ???? 
+    __dest is set to RTF, RTF PDF or PDF according to __REPINFO.OUTFORMAT variable
+    __filename is set to __filename or - if &java2sas=Y - to __filename_j
+    __path is set to &RRGOUTPATH if provided, or to &RRGOUTPATHLAZY otherwise 
+        (RRGOUTPATH is defined in init file, and RRGOUTPATHlazy is it's copy)
+   
+    __version is set to value created by macro %__VERSION
+    
+    (also __systile is set to __shead_l)
+    
+    if __REPINFO.__COLWIDTHS is null then set  set to __colwidths to "LW"
+    
+    if __repinfo.__COLWIDTHS consist of a single word then : 
+     for listings: if THIS.NUMCOL>0 then set __colwidths to this word repeated THIS.NUMCOL number of times
+     for tables:  set __colwidths  to this word repated  &MAXTRT number of times
+     
+    if __repinfo.__COLWIDTHS consist of 2 or more words then : 
+     for listings: set __colwidths to __REPINFO.__COLWIDTH followed by the last word in __REPINFO.__COLWIDTHS
+      repated as many times as needed until THIS.NUMCOL  is reached 
+     for tables: set __colwidths to __REPINFO.__COLWIDTH followed by the last word in __REPINFO.__COLWIDTHS
+      repated as many times as needed until &MAXTRT is reached
+         
+    if __stretch is null then set it to "Y" 
+     extend variable __stretch adding it's last word at the end as many times as  THIS.NUMCOL (for listings)
+      or as  &MAXTRT  (for tables)
+      
+     if this macro is invoked in rrg_genlist (for listings) then THIS.NUMCOL is set to NUMCOL macro parameter defined in rrg_genlist
+        as number of times RRG_DEFCOL is called
+     if this macro is invoked in rrg_generate (for tables) then THIS.NUMCOL null
+                                     
+     if this macro is invoked in rrg_genlist (for listings) then &MAXTRT us not used  
+     if this macro is invoked in rrg_generate (for tables) then &MAXTRT is generated in ???
+
+ */
+ 
 
 %macro __makerepinfo (outds=, numcol=, islist=N)/store;
 
@@ -42,7 +101,6 @@ put @1 '%let __bookmarks_pdf=%str(' bookmarks_pdf ");";
 
 put @1 '%let __sfoot_fs=' sfoot_fs ";";
 put @1 '%let __indentsize=' indentsize ";";
-/*put @1 '%let __breakokat=' breakokat ";";*/
 put @1 '%let __orient=' orient ";";
 if index (upcase(outformat),'RTF')=0 then do;
   if index (upcase(outformat),'PDF')>0 then do;

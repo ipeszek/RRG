@@ -5,6 +5,182 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
+ 
+ /* PROGRAM FLOW:
+    10Aug2020     
+    
+    note: this.xxx below refers to macro parameter xxx of this macro; yyy.xxx refers to variable xxx in yyy dataset                                 
+
+
+AT GENERATION TIME:
+=====================
+create macro variables dataset, orderby from variables in __REPINFO with the same names
+
+in dataset __LISTINFO:
+ create variable __orderby seting it to &orderby
+ set variable __fm to 1 for variables whose names match "word" in  __orderby variable
+ for variables not in __orderby, issue warning if GROUP, SKIPLINE, SPANROW, KEEPTOGETHER, PAGE are 'Y' and set them to 'N'
+
+create macro variables XXX&i from each recod in __LISTINFO ds where XXX =  label, width, group, spanrow, align, 
+  halign, page, id, alias, skipline, decode, format, stretch, keeptogether, breakok (as BREAK), dist2next (as D2N)
+  create macro variables java2sas, indentsize from corresponding variables in  __LISTINFO (which are constant in __listinfo???) 
+
+  if page=Y then set spanrow, group and id to blank
+  if spanrow=Y then set  group and  id to blank
+
+  set defaults for align (L), halign(=align), width (LW)
+
+  if any of spanrow&i=Y then mv isspanrow=1
+  if any of page&i=Y then mv ispage=1
+  d2n is not specified then set it to 1 (if &java2sas=Y) or to D otherwise
+  if stretch is not N then set it to Y
+
+The following macro variables are defined:
+ NUMVARS=number of records in __LISTINFO
+ VCN0, VCN1, VCN2 etc where VCNx=column number (in order of invokation of RRG_DEFCOL) with PAGE ne Y and SPANROW ne Y
+   (that is, if 1st , 2nd and 4th call of RRG_DEFCOL has PAGE ne Y and SPANROW ne Y, and other calls have
+     either PAGE=Y or SPANROW=Y then VCN0=1, VCN1=2, VCN3=4) 
+ PVN1, PVN2, PVN3 etc where PVNx= column number with PAGE=Y
+ LASTVB=RRG_DEFCOL.name from last invokation of RRG_DEFCOL with page=Y
+ SVN1, SVN2, SVN3 etc where SVNx= column number with SPANROW=Y
+ LASTSPAN=RRG_DEFCOL.name from last invokation of RRG_DEFCOL with SPANROW=Y
+ 
+If &append ne Y then Write  to &rrgpgmpath./&rrguri..sas all __rrght.record records  and set __rrght to empty  
+
+Start creating &RRGPGMPATH./&RRGURI.0.SAS file :
+  write all __rrght.record records 
+
+in this dataset write sas code to do the following:
+
+1. create dummy format $ best which prints ' ' as ' '
+
+2. create datasets &rrguri by sorting input dataset by &ORDERBY
+   create macro variable numobs which is 0 if number of records in &rrguri
+
+3. create datasets &rrguri and __head from &rrguri dataset:
+
+    the following is done if &NUMOBS>0:
+
+              ceate variable __VTYPEx=vartype of x-th RRG_DEFCOL.NAME and retain them
+              set variables  __spanrowtmp, __varbylab, __tcol, __varbylab, __suffix, __tmp, __tmp2 to ''
+                __keepn to 0,       __rowid to _n_,       __datatype to 'TBODY'
+
+                if &isspanrow=1 then  initialize __fospanvar to 0 and retain
+                if &ispage='Y' then initialize __varbygrp to 0 and retain
+                create variable __varbylab from all variabes with RRG_DEFCOL.PAGE=Y
+                   showing RRG_DEFCOL.NAME variable as (1) formatted with RRG_DEFCOL.FORMAT if specified,
+                   or (2) as RRG_DEFCOL.DECODE if specified, or (3) just as RRG_DEFCOL.NAME (in this order)
+                  prefixed with RRG_DEFCOL.LABEL and space, and concatenating such text from all "PAGE" variables
+
+          4. numcol = number of variables which are neither PAGE nor SPANROW
+
+              increment __varbygrp by 1 on change of &lastvb
+
+              if &isspanrow=1 then:
+
+               create variable __TCOL from all variabes with RRG_DEFCOL.SPANROW=Y
+                       showing RRG_DEFCOL.NAME variable as (1) formatted with RRG_DEFCOL.FORMAT if specified,
+                       or (2) as RRG_DEFCOL.DECODE if specified, or (3) just as RRG_DEFCOL.NAME (in this order)
+                      prefixed with RRG_DEFCOL.LABEL and space, and concatenating such text from all "PAGE" variables,
+                      with line break ("//") separating them
+                      
+                     On change in variable with SPANROW=Y: if first.&lastspan then set __fospan=1 and increment __fospanvar by 1
+                      
+                      IF RRG_DEFCOL.LABEL is not specified then set name of the variable (specified in rrg_DEFCOL.NAME)
+                        to formatted or decoded value (if format or decode is given)
+                      
+                      Set keepn to 1 and if &keeptogether=Y then set __keepn to 0 on last.name where name=rrg_DEFCOL.NAME
+                      
+                      For each  variable which  is neither PAGE nor SPANROW
+                        create variable __col_x (sequentially starting with 0)
+                         showing RRG_DEFCOL.NAME variable as (1) formatted with RRG_DEFCOL.FORMAT if specified,
+                         or (2) as RRG_DEFCOL.DECODE if specified, or (3) just as RRG_DEFCOL.NAME (in this order)
+                         
+                        create variable __align by concatenating RRG_DEFCOL.ALIGN from all such variables
+                        
+                        if RRG_DEFCOL.SKIPLINE=Y then set __suffix='~-2n' on last.name
+                        
+                        for each variable witch GROUP=Y:
+                          set __first_&i=1 on first.name where  &i is column number of this variable
+                          if this variable also has KEEPTOGETHER=Y then on last.name set __keepn = 0 and set __keepn=1 elsewhere
+            
+            
+                OUTPUT to &RRGURI dataset
+                
+        the following is done regardless of value of  &NUMOBS:
+          
+             
+  
+  CREATE records for HEADER:
+  
+    create __align for header records by concatenating HALIGNx (RRG_DEFCOL.HALIGN) 
+    output last record (if no PAGE variables or &numobs=0) or records where 
+      last.&LASTVB (if at least one column has PAGE=Y)
+
+SUBMIT the PROGRAM GENERATED SO FAR
+
+add the portion generated so far (&rrgpgmpath./&rrguri.0.sas)
+  to final generated program (&rrgpgmpath./&rrguri..sas)
+
+Clear &rrgpgmpath./&rrguri.0.sas
+
+AT PROGRAM GENERATING STEP: 
+
+    create macro variable BREAKOKAT by concatenating all column numbers (space delimited) 
+      with &BREAKz  (i.e RRG_DEFCOL.BREAKOKAT =Y)
+    create macro variable LASTCHEADID = number of last column with IDz=Y (i.e. RRG_DEFCOL.BREAKOKAT =Y)
+    create macro variable GCOLS by concatenating all column numbers (space delimited) 
+      with &GROUPz  (i.e RRG_DEFCOL.GROUP =Y)
+    create macro variable COLWIDTHS by concatenating all WIDTHz macro varaible (i.e RRG_DEFCOL.WIDTH)
+    create macro variable DIST2NEXT by concatenating all D2Nz macro varaible (i.e RRG_DEFCOL.DIST2NEXT)
+    create macro variable STRETCH by concatenating all STRETCHz macro varaible (i.e RRG_DEFCOL.STRETCH)
+    create macro variable ALIGN by concatenating all ALIGNz macro varaible (i.e RRG_DEFCOL.ALIGN)
+
+    TO DATASET __REPINFO, add variables
+      lastcheadid, gcols, colwidths, dist2next, stretch, breakokat (from macro variables above) and rtype = 'LISTING';
+
+call %__makerepinfo(outds=&rrguri.0.sas, numcol=&numcol, islist=Y)
+  to create dataset __REPORT with RINFO record for final RCD
+  
+  Process headers:
+  
+   AT GENERATION TIME, create dataset __head0 with __datatype='HEAD'.
+    The headers are crated based on labels (RRG_DEFCOL.LABEL) and stored in __col_0, __col_1 etc
+    If there are no spanned columns (label has "span" separator" "/-/" then __col_0,__col_1 etc are just labels
+    If there are spanned columns then for each level of "spanning" a separate row is created
+    __rowid variable starts with 1 
+    
+    Macro variable LASTHRID is the number of levels for headers
+    
+    Add records to file "&RRGPGMPATH./&RRGURI.0.SAS", to 
+    1. create __head0 dataset at runtime,
+    which is a copy of __head0 created at generation time, keeping __col_: __rowid and __datatype
+    
+    2. create dataset __HEAD1 by adding __ALIGN lifted from __HEAD dataset created previously,
+        and if there are PAGE variables then cross-join it with all values/display 
+        of __VARBYGRP __VARBYLAB from __HEAD dataset. 
+        If there are spanned headers then set allignemt of all except last one to "C" 
+          (this can be adjusted in rrg_codeafterlist)   
+    3. add  __HEAD1 to &rrguri and create variables      
+       __cellfonts, __cellborders, __topborderstyle, __bottomborderstyle, __label_cont, __title1_cont
+       all set to ''. These are placeholders to be specified if desired in rrg_codeafterlist
+    4. ADD __REPORT dataset to &rrguri dataset           
+    
+    
+    THE FOLLOWING STEPS ARE ONLY PERFORMED IF THIS.FINALIZE =Y (DEFAULT)     
+    
+    add records to &rrgpgmpath./&rrguri.0.sas and to "&rrgpgmpath./&rrguri..sas" to:
+
+    save text version of &rrguri datset (%gentxt), save copy of &rrguri (%savercd),
+    if _sasshiato_home macro variable exists and ??? then call sasshiato and save xml if requested  
+    call &rrgpgmpath./&rrguri.0.sas program
+    clear &rrgpgmpath./&rrguri.0.sas file
+
+    at program-generation, collect metadata info and add to __metadata file
+    if java2sas=Y then perform steps to use proc report (DEPRECATED) 
+    perform cleanup of created temp files      
+
+*/
 
 %macro rrg_genlist(debug=0, savexml=, finalize=y)/store;
 %* note: for now, colsize and dist2next (if in units) shoudl be number of chars if java2sas is used; 
@@ -13,7 +189,7 @@
 %* ignores __keepn;
 
 %* Revision notes:  07Apr2014 commented out recoding of curly braces to #123 and #125 (superscript did not work except in header);
- 
+%*                  12Aug2020 added handling of no data so that headers and footnotes are displayed 
  
 %local debugc;
 %let debugc=%str(%%*);
@@ -184,13 +360,17 @@ quit;
 
 %end;
  
- 
+ %local nodatamsg;
+proc sql noprint;
+  select nodatamsg into: nodatamsg separated by ' '   from __repinfo;
+quit;
   
 data _null_;
 set __rrght;
 file "&rrgpgmpath./&rrguri.0.sas"  ;
 put record;
 run;  
+
 
 
 data _null_;
@@ -203,6 +383,9 @@ put @1 "  ' ' = ' ';";
 put @1 "run;";
 put;
 put;
+
+put @1 '%macro dolist;';
+
 put @1 "*---------------------------------------------------------------------;";
 PUT @1 "** TRANSFORM DATASET APPLYING FORMATS AND DECODES AS NEEDED;";
 put @1 "*---------------------------------------------------------------------;";
@@ -211,9 +394,26 @@ put @1 "proc sort data=&dataset out = &rrguri;";
 put @1 "  by &orderby;";
 put @1 "run;";
 put;
+put @1 "*---------------------------------------------------------------------;";
+put @1 "** CHECK IF INPUT DATASET HAS ANY RECORDS ;";
+put @1 "*---------------------------------------------------------------------;";
+PUT;
+
+
+put @1 '%local dsid  numobs rc;';
+put @1 '  %let dsid = %sysfunc(open(' "&rrguri));";
+put @1 '  %let numobs = %sysfunc(attrn(&dsid, nobs));';
+put @1 '  %let rc = %sysfunc(close(&dsid));';
+put @1 '  %put numobs=&numobs;';
+
+
+
+
 put @1 "data &rrguri __head;";
+put @1 '%IF &NUMOBS>0 %then %do;';
 put @1 "  set &rrguri end=eof;";
 put @1 "  by &orderby;";
+
 put @1 "  length __datatype $ 8 __suffix  $ 20";
 put @1 "  __spanrowtmp __varbylab  __tcol __align __tmp __tmp2 $ 2000";
 put @1  %do i=0 %to &numcol; "__col_&i " %end; "  $ 2000 ; ";
@@ -282,10 +482,7 @@ put;
        put @1 '        else __varbylab = cats(__varbylab,"//","' "&&label&z" '"||" "' "||strip(put(&&alias&z, best.)));";
 
     %end;
-      /*
-      PUT @1 "     __varbylab = tranwrd(trim(__varbylab), '{','/#123');";
-      PUT @1 "     __varbylab = tranwrd(trim(__varbylab), '}','/#125');";
-      */
+
     
   %end;
  
@@ -314,7 +511,6 @@ put;
 
     %end;
     %if %length(&&label&z) %then %do;
-      /*put @1 "       &&alias&z" ' = cats("' "&&label&z" '")||" "||cats(__tmp);';*/
        put @1 "       __tmp2" ' = cats("' "&&label&z" '")||" "||cats(__tmp);';
     %end;
     
@@ -324,19 +520,11 @@ put;
     %end;
     
     %if &i>1 %then %do;
-      /*put @1 "          __tcol = cats(__tcol,'//',&&alias&z);";*/
       put @1 "          __tcol = cats(__tcol,'//',__tmp2);";
     %end;
     %else %do;
-      /*put @1 "          __tcol = cats(&&alias&z);";*/
       put @1 "          __tcol = cats(__tmp2);";
     %end;
-      /*
-      PUT @1 "     __tcol = tranwrd(trim(__tcol), '{','/#123');";
-      PUT @1 "     __tcol = tranwrd(trim(__tcol), '}','/#125');";
-      */
-
-    
    
     %if &&keeptogether&z=Y %then %do;
       put @1 "        if last.&&alias&z then __keepn = 0; else __keepn=1;";
@@ -392,6 +580,33 @@ put @1 "  __align = '';";
  
  
 put @1 "  output &rrguri;";
+put @1 '%end;';
+
+
+put @1 '%else %do;';
+put @1 "  length  __align  $ 2000;";
+put @1 "__varbygrp=.; __varbylab='';";
+%do i=0 %to &numcol;
+  put @1 "__first_&i=0;";
+%end;
+/* create "no data" as __tcol;*/
+put @1 "__tcol='&nodatamsg';";
+put @1 "__col_0=' ';";
+put @1 "__datatype='TBODY';";
+put @1 "__align='C';";
+put @1 "__rowid=1;";
+
+
+put @1 "  output &rrguri;";
+
+put @1 '%end;';
+
+put;
+put @1 "***-------------FOR HEADER: --------------------------------------------***;";
+put;
+
+
+
 put;
 put @1 "__align='';";
 %do i=0 %to &numcol;
@@ -400,20 +615,31 @@ put @1 '     __align = cats(__align)||" "||cats("' "&&halign&z" '");';
 %end;
 put;
 %if &ispage=1 %then %do;
-put @1 "  if first.&lastvb then output __head;";
+  put @1 '%if &numobs>0 %then %do;';
+  put @1 "  if first.&lastvb then output __head;";
+  put @1 '%end;';
+  put @1 '%else %do;';
+  put @1 "  output __head;";
+  put @1 '%end;';
 %end;
 %else %do;
-put @1 "  if eof then do;";
-put @1 "     output __head;";
-put @1 "  end;";
-put;
+    put @1 '%if &numobs>0 %then %do;';
+      put @1 "  if eof then do;";
+      put @1 "     output __head;";
+      put @1 "  end;";
+    put @1 '%end;';
+    put @1 '%else %do;';
+    put @1 "     output __head;";
+    put @1 '%end;';
+  put;
 %end;
  
 put @1 "  keep __:;";
 put @1 "run;       ";
 put;
+put '%mend;';
 put;
-put;
+put '%dolist;';
 run;
 quit;
  
@@ -444,8 +670,6 @@ put ' ';
 run; 
  
  
-%* NOTE: THIS CLEARS __VARBYLAB, __SPANROWTMP
-VARIABLES UNLESS THIS IS A CHANGE IN THEIR VALUES;
  
 %* define breakokat;
 %local breakokat;
@@ -456,7 +680,6 @@ VARIABLES UNLESS THIS IS A CHANGE IN THEIR VALUES;
 %end;
 %end;
  
-%* DEFINE LASTHEADID and __gcols and colwidths;
  
 %local lastcheadid gcols colwidths stretch dist2next align;
 %let lastcheadid=0;
@@ -490,53 +713,10 @@ run;
 data _null_;
 file "&rrgpgmpath./&rrguri.0.sas" mod ;
 set __repinfo;
+*** the following 3 lines seem to have no effect whatsoever;
 %__makerepinfo(outds=&rrguri.0.sas, numcol=&numcol, islist=Y);
 
 
- 
-/* 
-data __repinfo0 (rename=(
-%do i=1 %to 6; title&i=__title&i %end;
-%do i=1 %to 8; footnot&i=__footnot&i %end;
-fontsize=__fontsize
-indentsize=__indentsize
-orient=__orient
-nodatamsg =__nodatamsg
-font=__font
-margins=__margins
-shead_l = __shead_l
-shead_m=__shead_m
-shead_r=__shead_r
-sfoot_l=__sfoot_l
-sfoot_m=__sfoot_m
-sfoot_r=__sfoot_r
-papersize=__papersize
-sprops = __sprops
-sfoot_fs = __sfoot_fs
-filename = __filename
-pgmname = __pgmname
-watermark=__watermark
-outformat=__outformat
-));
-length filename $ 1000;
-set __repinfo;
- 
-length __gcols  __colwidths __stretch  __breakokat $ 2000
-__datatype $ 8 __rtype $ 20;
-__lastcheadid=&lastcheadid;
-__gcols = cats(symget("gcols"));
-__colwidths = cats(symget("colwidths"));
-__dist2next = cats(symget("dist2next"));
-__stretch = cats(symget("stretch"));
-__datatype = 'RINFO';
-__breakokat = trim(left(symget('breakokat')));
-__rtype = 'LISTING';
-%if &java2sas=Y %then %do;
-filename = strip(filename)||'_j';
-%end;
-run;
-*/ 
- 
  
 %* DEFINE COLUMN HEADERS;
 
@@ -547,13 +727,15 @@ data   __head0;
 length __datatype $ 8
 %do i=0 %to &numcol; __col_&i  __ncol_&i %end;
 $ 2000 ;
+numspan=0; *** added to account for more than one level;
+*** test this;
 %do i=0 %to &numcol;
   %let z = &&vcn&i;
   __ncol_&i = cats("&&label&z");
   numspan0 = count(__ncol_&i, '/-/');
   __ncol_&i = tranwrd(cats(__ncol_&i), '/-/', byte(30));
    
-  if numspan0>numspan then numspan=numspan0;
+  if numspan0>numspan then numspan=numspan0; *** numspan not defined yet?;
 %end;
 __datatype='HEAD';
 call symput('numspan', strip(put(numspan, best.)));
@@ -601,7 +783,6 @@ set __head0;
 put @1 "__col_&i = " '"' __col_&i '";';
 %end;
 put @1 "__rowid = " __rowid 5. ";";
-/*put @1 "__align = '" __align "';";*/
 put @1 "output;";
 put; 
 run;
@@ -614,7 +795,12 @@ file "&rrgpgmpath./&rrguri.0.sas" mod lrecl=5000;
  
 put @1 "data __head;";
 put @1 "set __head;";
-put @1 "keep __varbygrp __varbylab __ALIGN;";
+/*put @1 '%if &numobs>0 %then %do;';*/
+  put @1 "keep __varbygrp __varbylab __ALIGN;";
+/*put @1 '%end;';
+put @1 '%else %do;';
+  put @1 "keep  __ALIGN;";
+put @1 '%end;';*/
 put @1 "run;";
 put; 
 %end;
@@ -721,7 +907,6 @@ put;
 put @1 '  %if %symexist(__sasshiato_home) %then %do;';
 put @1 '    %if &objname=__SASSHIATO  and  %length(&__sasshiato_home) %then %do;';
 %if %upcase(&savexml)=Y %then %do;
- /*put @1 '     %__sasshiato(path=' "%str(&rrgoutpath), debug=&debug, dataset=&rrguri,reptype=L);";*/
  put @1 '   %__sasshiato(path=&__path,' " debug=&debug, dataset=&rrguri, reptype=L);";
 %end; 
 %else %do;
@@ -1241,14 +1426,7 @@ run;
 %* run proc report;
 %*-------------------------------------------------------------------------------------;
 
-/*
-  data null;
-  file "&rrgpgmpath./&rrguri.0.sas"  mod lrecl=5000;
-  put;
-  put @1 "proc printto print = '" "&rrgoutpath./&fname..out" "' new;";
-  put;
-  put;
-*/
+
 
 %__j2s_rpr(ls=&ls, ps=&ps, ispage=&ispage, isspanrow=&isspanrow, __spanvar=&__spanvar);
 
@@ -1296,11 +1474,9 @@ put;
 put @1 "data _null_;";
 put @1 "fname='tempfile';";
 
-/*put @1 "rc=filename(fname,'" "&rrgoutpath./&rrguri..out0" "');";*/
 put @1 'rc=filename(fname,"' '&__path./' "&rrguri..out0" '");';
 put @1 "if rc = 0 and fexist(fname) then rc=fdelete(fname);";
 put @1 "rc=filename(fname);";
-/*put @1 "rc=filename(fname,'" "&rrgoutpath./&rrguri.0.txt" "');";*/
 put @1 'rc=filename(fname,"' '&__path./' "&rrguri.0.txt" '");';
 put @1 "if rc = 0 and fexist(fname) then rc=fdelete(fname);";
 put @1 "rc=filename(fname);";
@@ -1368,16 +1544,13 @@ put;
 put @1 "data _null_;";
 put @1 "fname='tempfile';";
 
-/*put @1 "rc=filename(fname,'" "&rrgoutpath./&fname..out0" "');";*/
 put @1 'rc=filename(fname,"' '&__path./' "&fname..out0" '");';
 put @1 "if rc = 0 and fexist(fname) then rc=fdelete(fname);";
 put @1 "rc=filename(fname);";
-/*put @1 "rc=filename(fname,'" "&rrgoutpath./&rrguri.0.txt" "');";*/
 put @1 'rc=filename(fname,"' '&__path./' "&rrguri.0.txt" '");';
 put @1 "if rc = 0 and fexist(fname) then rc=fdelete(fname);";
 put @1 "rc=filename(fname);";
 
-/*put @1 "rc=filename(fname,'" "&rrgoutpath./&fname..out" "');";*/
 put @1 'rc=filename(fname,"' '&__path./' "&fname..out" '");';
 put @1 "if rc = 0 and fexist(fname) then rc=fdelete(fname);";
 put @1 "rc=filename(fname);";
@@ -1432,13 +1605,6 @@ rc=filename(fname);
   if rc = 0 and fexist(fname) then
   rc=fdelete(fname);
   rc=filename(fname);
-  /*
-  %if %upcase(&appendable) ne Y %then %do;
-  rc=filename(fname,"&rrgoutpath./&fname._j.rtf");
-  if rc = 0 and fexist(fname) then
-  rc=fdelete(fname);
-  rc=filename(fname);
-  */
   rc=filename(fname,"&rrgoutpath./&fname..out");
   if rc = 0 and fexist(fname) then
   rc=fdelete(fname);
@@ -1452,16 +1618,30 @@ rc=filename(fname);
   rc=fdelete(fname);
   rc=filename(fname);  
 %end;
-/*
-rc=filename(fname,"&rrgoutpath./&rrguri..xml");
-if rc = 0 and fexist(fname) then
-rc=fdelete(fname);
-rc=filename(fname);
-*/
  
 run;
 
+
+
+
+
+
 %exitlist:
+
+options msglevel=i;
+filename __infile "&rrgpgmpath./&rrguri..sas" lrecl=1000;
+filename __outfil " &rrgpgmpath0./&rrguri..sas" lrecl=1000;
+
+data _null_;
+  length msg $ 384;
+   rc=fcopy('__infile', '__outfil');
+   if rc=0 then
+      put 'Copied generated program.';
+   else do;
+      msg=sysmsg();
+      put rc= msg=;
+   end;
+run;
 
 %mend;
 

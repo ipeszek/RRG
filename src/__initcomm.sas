@@ -5,6 +5,21 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
+ 
+ /* 24JUl2020 Program flow
+  check if output location is defined
+  cancel out possible proc prinnto destination
+  delete all filesin work directory  starting with "__"
+  store user options in __rrgpgminfo
+  check if configuration file exists. 
+    If no, create default config file (__rrgconfig); 
+    if yes then read it into __rrgconfig ds
+    (type=sectio (e.g. [A0]), w1=keyword (e.g. fontsize) w2=value of keyword (e.g. 12)
+    If configuration file has name of TOC file defined and key for records in TOC defined
+    then store it in __rrgxml ds, adding where __fn=TFL_FILE_PGMNAME and __outname=TFL_FILE_OUTNAME
+    __fn is "redefined" &rrguri and &rrguri is replace in its value (thus, config file can replace &uri with something else)
+ 
+ */
 
 %macro __initcomm /store;
 

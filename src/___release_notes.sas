@@ -11,6 +11,14 @@
   TODO:
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
+  
+18Aug2020: changed location of generated program to work directory (later it is copied to specified &rrgoutpath);
+
+12Aug2020 modified listing module so if there is no data, the headers and footnotes are displayed.
+          if it is desired not to show headers and footnotes (as before this realese)
+          then user can delete all records from &rrguri, except where __datatype='RINFO', in rrg_codeafterlist  
+          modified table module so if there is no data, the footnotes are displayed. 
+          Adding header is not possible in such case because the headers are generated from of input dataset
 
 09Jul2020
   RRG_ANOVA: removed untangling of interaction terms 

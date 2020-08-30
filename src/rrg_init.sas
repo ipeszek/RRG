@@ -29,6 +29,7 @@ Parameters:
   
   
 Modifications:
+18AUG2020: changed location of generated program to work directory;
 
 Notes:
  
@@ -37,8 +38,17 @@ Notes:
 
 %local uri purpose outname;
 %global rrguri;
+%global rrgpgmpath0;
 %local  purpose;
 %local __workdir __dirdel DELRRGCONF;    
+
+%let __workdir = %sysfunc(getoption(work));
+
+%if %index(&__workdir, %str(\))>0 %then %let __dirdel=%str(\);
+%else %let __dirdel=%str(/);
+%let rrgpgmpath0=&rrgpgmpath;
+%let rrgpgmpath=&__workdir;
+%put 4iza rrgpgmpath=&rrgpgmpath;
 
 
 

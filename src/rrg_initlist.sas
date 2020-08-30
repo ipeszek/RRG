@@ -13,20 +13,50 @@ Purpose: A macro to clean up work directory of files starting with __
 
 Author:  Iza Peszek, 30Sep2008
 
-Parameters:
-  
   
 Modifications:
-
-Notes:
- 
+18AUG2020: changed location of generated program to work directory;
 
 ****************************************************************************/;
 
+/*
+24Jul2020 rrg_initlist PROGRAM FLOW
+Note: this.xxx refers to macro parameter xxx of this macro
+
+calls %__initcomm
+
+if outname defined in %rrg_intitlist then replace __outname value in __rrgxml with the one defined in %rrg_intitlist
+  (and if __rrgxml does not exist, creates in with __outname=this.outname)
+  
+cancel out possible proc prinnto destination
+
+copy [E1] section of __rrgconfig into __rrght ds and make substitutions for 
+  _URI_     (this.uri), 
+  _USERID_  (&sysuserid, 
+  _DATE_    (current date), 
+  _PGMNAME_ (rrguri from __rrgconfig), 
+  _PURPOSE_  (from this.purpose) 
+  
+  If there is no [E1] section then creates __rrght ds with rudimentary "header", which includes 
+  &rrguri (typically , this.uri, unless redevined in config file, 
+  creator (&sysuserid), date (date of program run), and this.purpose
+  
+  
+*/  
+   
+
+
 %local uri purpose outname;
-%global rrguri;
+%global rrguri rrgpgmpath0;
 %local  purpose;
 %local __workdir __dirdel DELRRGCONF;    
+
+%let __workdir = %sysfunc(getoption(work));
+
+%if %index(&__workdir, %str(\))>0 %then %let __dirdel=%str(\);
+%else %let __dirdel=%str(/);
+%let rrgpgmpath0=&rrgpgmpath;
+%let rrgpgmpath=&__workdir;
 
   
 %__initcomm;

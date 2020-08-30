@@ -5,6 +5,16 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
+ 
+ /*
+ 24JUL2020 PROGRAM FLOW
+ Note: this.xxx refers to macro parameter xxx of this macro
+
+ calls %__defcomm
+ adds this.dataset to __rrginlibs ds
+ 
+ 
+ */
 
 %macro rrg_deflist(
 Dataset=,

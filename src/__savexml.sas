@@ -48,7 +48,7 @@ options missing='';
 data _null_;
   set &data;
   
-  
+  if 0 then __col_0='';
   array cols{*} $ 2000 __col_:;
     n = dim(cols)-1;
     call symput("maxtrt", cats(n));
@@ -112,6 +112,10 @@ data _null_;
     if 0 then do;
       __varbylab='';
       __tcol='';
+         %do i=0 %to &maxtrt;
+          __col_&i='';
+        %end;
+      
     end;
     array cols{*} __col_0 - __col_&maxtrt;
     if __datatype ne 'RINFO' then do;

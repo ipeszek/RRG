@@ -934,7 +934,21 @@ rc=filename(fname);
  
 run;
 
-%exitlist:
+options msglevel=i;
+filename __infile "&rrgpgmpath./&rrguri..sas" lrecl=1000;
+filename __outfil " &rrgpgmpath0./&rrguri..sas" lrecl=1000;
+
+data _null_;
+  length msg $ 384;
+   rc=fcopy('__infile', '__outfil');
+   if rc=0 then
+      put 'Copied generated program.';
+   else do;
+      msg=sysmsg();
+      put rc= msg=;
+   end;
+run;
+
 
 %mend;
 

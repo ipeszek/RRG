@@ -1062,14 +1062,39 @@ put;
 put @1 '%if &numobs=0 %then %do;';
 put @1 '  %put  DATASET WITH STATISTICS HAS NO RECORDS, ;';
 put @1 '  %put  SKIP TO MACRO GENERATING TABLE;';
+
+
+
 put @1 "     data __fall;";
-put @1 "     if 0;";
-put @1 "  __col_0 = '';";
+/*put @1 "     if 0;";*/
+put @1 "  __col_0 = ' ';";
 put @1 "  __indentlev = 0;";
-put @1 "  __ROWID = 0;";
+put @1 "  __ROWID = 10;";
+put @1 "  __tcol = 'new no data tcol';";
+put @1 "  __VTYPE = 'DUMMY';";
+PUT @1 "__DATATYPE='TBODY';";
+PUT @1 "__colwidths='NH NH';";
+PUT @1 "__ALIGN='C';";
+
+
+
 put @1 "     run;";
 put;
-put @1 '  %let maxtrt=1;';
+put @1 '  %let maxtrt=10;';
+PUT;
+put @1 "proc transpose data=__poph out=__head prefix=__col_;";
+put @1 "by &varby __rowid __trtvar __autospan __prefix;";
+put @1 "id __trtid;";
+put @1 "var __col;";
+put @1 "run;";
+put;
+
+put @1 "data __fall;";
+put @1 "  set __head (in=a) __fall;";
+put @1 "  if a then do;";
+put @1 "   __datatype='HEAD';";
+put @1 "  end;;";
+put @1 "run;  ";
 put;
 put @1 '     %goto dotab;';
 put @1 '%end;';
@@ -2950,10 +2975,35 @@ put @1 ' quit; ';
 put;
 put @1 '%if %length(&vtypes)=0 %then %do;';
 put @1 "  data __fall;";
-put @1 "    if 0;";
-put @1 "  __col_0='';";
+/*put @1 "    if 0;";*/
+put @1 "  __col_0=' ';";
+put @1 "  __ROWID = 10;";
 put @1 "  __indentlev = 0;";
+put @1 "  __tcol='new no data tcol';";
+put @1 "  __VTYPE = 'DUMMY';";
+PUT @1 "__DATATYPE='TBODY';";
+PUT @1 "__colwidths='NH NH';";
+PUT @1 "__ALIGN='C';";
+
 put @1 "  run;  ";
+
+PUT;
+put @1 "proc transpose data=__poph out=__head prefix=__col_;";
+put @1 "by &varby __rowid __trtvar __autospan __prefix;";
+put @1 "id __trtid;";
+put @1 "var __col;";
+put @1 "run;";
+put;
+
+
+put @1 "data __fall;";
+put @1 "  set __head (in=a) __fall;";
+put @1 "  if a then do;";
+put @1 "   __datatype='HEAD'; ";
+put @1 "  end;";
+put @1 "run;  ";
+
+
 put @1 '  %let maxtrt=1;';
 put @1 '%end;';
 put;

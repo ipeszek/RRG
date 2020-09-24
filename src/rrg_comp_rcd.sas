@@ -134,7 +134,7 @@ options mautosource sasautos=(sasautos);
     array ts{*} t1-t6;
     array fs{*} f1-f8;
     array titles{*} __title1-__title6;
-    array foots{*} __footnot1-__footnot8;
+    array foots{*} __footnot1-__footnot14;
     
     __numcol = dim(cols)-1;
     if eof then call symput('oldnumrec', strip(put(_N_, best.)));
@@ -188,7 +188,7 @@ options mautosource sasautos=(sasautos);
     array ts{*} t1-t6;
     array fs{*} f1-f8;
     array titles{*} __title1-__title6;
-    array foots{*} __footnot1-__footnot8;
+    array foots{*} __footnot1-__footnot14;
     
     __numcol = dim(cols)-1;
     if eof then call symput('newnumrec', strip(put(_N_, best.)));
@@ -237,7 +237,7 @@ options mautosource sasautos=(sasautos);
     quit;
     
     data d2;
-    length __title1-__title6 __footnot1-__footnot8 $ 2000;
+    length __title1-__title6 __footnot1-__footnot14 $ 2000;
     set d2;
     by __varbylab __varbygrp __rowid;
     diff2=0;
@@ -270,7 +270,7 @@ options mautosource sasautos=(sasautos);
     quit;
     
     data d1;
-    length __title1-__title6 __footnot1-__footnot8 $ 2000;
+    length __title1-__title6 __footnot1-__footnot14 $ 2000;
     set d1;
     by __varbylab __varbygrp __rowid;
     diff2=0;

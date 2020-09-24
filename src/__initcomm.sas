@@ -35,8 +35,7 @@
 ENDSAS;
 %end;
 
-proc printto;
-run;
+%local dirdel ;
 
 proc datasets memtype=data nolist nowarn;
 delete __:;
@@ -47,7 +46,6 @@ data __timer;
 	length task $ 100;
 		task = "Program Starts";
 		time=time();
-
 run;	
 
 *----------------------------------------------------------------;
@@ -72,12 +70,11 @@ run;
 proc optsave out=__sasoptions;
   
 
-
-
-
 %let rrguri=&uri;
 
-%* CHECK IF CONFGURATION FILE WAS DEFINED, IF NOT, CREATE IT; 
+* CHECK IF CONFGURATION FILE WAS DEFINED, IF NOT, CREATE IT; 
+
+%local DELRRGCONF __workdir;
 
 %if %symexist(rrg_configpath)=0 %then %do;
   %global rrg_configpath;
@@ -91,11 +88,11 @@ proc optsave out=__sasoptions;
   %put rrg_configpath=&rrg_configpath;
 %end;
 
-%* READ-IN CONFIGURATION FILE;
+* READ-IN CONFIGURATION FILE;
 data __rrgconfig;
 infile "&rrg_configpath" length=len lrecl=2000; 
-   input record $varying2000. len; 
-   length RECORD w1 w2 type $ 2000;
+   input record $varying200. len; 
+   length RECORD w1 w2 type $ 200;
    retain type;
    if record='' then delete;
    else do;
@@ -113,25 +110,26 @@ run;
 
 
 * DELETE TEMPORARY CONFIGURATION FILE;
+
 %if &DELRRGCONF=1 %then %do;
-data _null_;
-  fname="__tempfile";
-    rc=filename(fname,"&rrg_configpath");
-    if rc = 0 and fexist(fname) then
-      rc=fdelete(fname);
-      rc=filename(fname);
-run;
+    data _null_;
+      fname="__tempfile";
+        rc=filename(fname,"&rrg_configpath");
+        if rc = 0 and fexist(fname) then
+          rc=fdelete(fname);
+          rc=filename(fname);
+    run;
 %end;
 
-*** REDEFINE RRGURI;
+* REDEFINE RRGURI;
 %local  TFL_FILE_KEY TFL_FILE_NAME TFL_FILE_PGMNAME TFL_FILE_OUTNAME;
 
 data _null_;
   set __rrgconfig(where=(type='[B0]'));
   call symput(cats(w1),cats(w2));
-  /*put w1= w2=;*/
 run;
 
+*** READ INFO FROM CONFIGUREATION FILE into __RRGXML dataset;
 
 %if %length(&TFL_FILE_NAME)>0 and %length(&TFL_FILE_KEY)>0 %then %do;
 
@@ -143,20 +141,23 @@ run;
     data __rrgxml;
       set __rrgxml (where=(&TFL_FILE_KEY));
       %if %length(&TFL_FILE_PGMNAME) %then %do;
-      length __fn $ 200;
-      __fn = &TFL_FILE_PGMNAME;
-      call symput("rrguri", cats(__fn));
+          length __fn $ 200;
+          __fn = &TFL_FILE_PGMNAME;
+          call symput("rrguri", cats(__fn));
       %end;
       %if %length(&TFL_FILE_OUTNAME) %then %do;
-      length __outname $ 200;
-      __outname=&TFL_FILE_OUTNAME;
+          length __outname $ 200;
+          __outname=&TFL_FILE_OUTNAME;
       %end;
     run;
 
 %end;
 
-%put RRG INFO: file/program/output root, rrguri=&rrguri;
+%put RRG INFO: file/program/output root, rrguri = &rrguri;
 %__verifyuri(&rrguri);
+
+/*
+* FOR METADATA, METADATA FUNTIONALITY IS TEMPORARILY DISABLED;
 
 data __usedds;
   if 0;
@@ -167,6 +168,8 @@ run;
 data __codebvars;
   if 0;
 run;
+
+*/
 
 
 %mend;

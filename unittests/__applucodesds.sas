@@ -1,70 +1,30 @@
-/*
- * RRG: statistical reporting system.
- *  
- * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
- * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
- * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
- */
 
-%macro __applycodesds(
-codelistds=,
-codes=,
-codesds=,
-grptemplateds=,
-countds=,
-dsin=,
-by=,
-groupvars =,
-var =,
-decode=,
-warn_on_nomatch=1,
-fmt=,
-misstext=,
-missorder=,
-showmiss=,
-remove=
-)/store;
+%macro test;
+  
+  options ls=200 nocenter mprint;
+  
+%let Missdec=Missing;
 
-%local codelistds codes codesds grptemplateds countds dsin by 
-       groupvars var decode warn_on_nomatch fmt misstext missorder
-       showmiss remove;
+%let codes=1;
+%let groupvars=siteid sex;
+%let warn_on_nomatch=1;
+%let remove='F';
+%let showmiss=Y;
+%let fmt=sexf.;
+%let decode=sexc;
+%let codesds=;
+%let codelistds=;
+%let countds=cnts;
+%let by=;
+%let var=age;
+%let dsin=__dataset;
+%let missorder=99;
+%let tmpgrp=;
+%let aetable=EVENTS;
 
-%local missdec iscodelistds;
-%local ngrp tmpgrp i;
-
-%let ngrp = %sysfunc(countw(&groupvars, %str( )));
-%do i=1 %to &ngrp;
-    %let tmpgrp = &tmpgrp %scan(&groupvars, &i, %str( ))%str(=);
-%end;
-%let missdec = %nrbquote(&misstext);
-
-*------------------------------------------------------------;
-* IF CODELISTDS EXIST THEN MERGE IT IN TO DELETE MODALITIES;
-*   NOT ON THE LIST;
-*------------------------------------------------------------;
-
-    
-%if %sysfunc(exist(&codelistds._exec)) %then %do; 
-    %if %length(&decode) %then %do;
-        proc sql noprint;
-          select distinct &decode into:missdec separated by ' ' 
-           from &codelistds._exec(where=(missing(&var)));
-        quit;   
-    %end;  
-    
-    %if &missorder=999999 %then %do;
-        proc sql noprint;
-        select distinct __order into:missorder separated by ' '
-          from &codelistds._exec(where=(missing(&var)));
-        quit;  
-    %end;
-%end;
-
-%if %length(%nrbquote(&missdec))=0 %then %let missdec=Missing;
-
-data rrgpgmtmp;
-length record $ 200;
-keep record;
+data test;
+  length record $ 200;
+  keep record;
 
 
 record=" "; output;
@@ -72,6 +32,7 @@ record=" "; output;
 length __missdec $ %eval(%length(&missdec)+2);
 __missdec = dequote(symget("missdec"));
 __missdec=quote(strip(__missdec));
+*__missdec = symget("missdec");
 
 %if &codes=1 or &codesds=1  %then %do; 
 
@@ -246,14 +207,11 @@ record= "drop __col__: __cnt__: __pct__: __colevt__:;  ";                       
                                                                                       
 record= "run;";                                                                        output;
 record=" ";                                                                            output;
-
 run;
 
-proc append data=rrgpgmtmp base=rrgpgm;
+proc print data=test width=min;
 run;
-
 
 %mend;
 
-
-
+%test;

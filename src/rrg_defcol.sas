@@ -76,6 +76,11 @@
 
 
    Use // to indicate new line, and /t1, /t2 etc to indicate tab
+   
+   ds used __listinfo
+   ds initialized __listinfo (if does not exist)
+   ds created none
+   ds updated   __listinfo (if exists)
 
 
   -----------------------------------------------------------------------;
@@ -123,7 +128,6 @@
   
 
     varid=&varid;
-    /*formula = cats(symget("formula"));*/
     format = cats(symget("format"));
     decode = cats(symget("decode"));
     label = cats(symget("label"));
@@ -142,9 +146,9 @@
     keeptogether= upcase(cats(symget("keeptogether")));
   run;
 
-  data __listinfo;
-    set __listinfo __tmp;
+  proc append base=__listinfo data=__tmp;
   run;
+ 
 
 
     

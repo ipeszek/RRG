@@ -1,0 +1,31 @@
+collect info from __repinfo and listinfo
+---%if &append ne Y then write content of rrght to rrguri and clear rrght
+write __rrght (empty if append ne y) to rrguri0
+create  RRGPGMTMP (to be added to rrguri0.sas) pgm, creating and submitting %dolist macro
+    this macro creates rrguri dataset and __head dataset for this part of the report
+    submits this macro
+    
+    deletes __rrght ds
+    
+   appends rrguri0 pgm to rrguri pgm
+   
+    clears rrguri0 pgm; 
+    
+    updates repinfo
+    
+      
+    runs __makerepinfo using __repinfo ds -- writing to &rrguri0
+    creates ds __head0 (at generation time)
+    
+    appends to rrguri0 pgm using __head0 ds 
+    
+    nothing else if finalize) ne Y
+    -------
+    otherwise: write to rrguri0 stmts to
+       gentxt if requested, savercd if requested, update metadata if requested
+       write to rrguri0 tmp call sasshiato
+       submits rrguri0
+       appends rrguri0 to to rrguri
+       clears rrguri0
+                 
+       

@@ -30,13 +30,12 @@ proc sql noprint;
 quit;
 
 %if %length(&codelistds) %then %do;
-  data __&codelistds._exec __&codelistds; 
-    set &codelistds;
-  run;
+    data __&codelistds._exec __&codelistds; 
+      set &codelistds;
+    run;
 %end;
 
 %if %length(&codes)=0 or %length(&codelistds) %then %do;
-  
   %goto exit;
 %end;
 
@@ -56,11 +55,11 @@ quit;
 %let vtype = %sysfunc(vartype(&dsid, &vnum));
 %let  vlen = %sysfunc(varlen(&dsid,&vnum));
 %if %length (&decode) %then %do;
-  %let  vnumd = %sysfunc(varnum(&dsid,&decode));
+    %let  vnumd = %sysfunc(varnum(&dsid,&decode));
 %end;  
 %if &vnumd>0 %then %do;
-  %let vtyped = %sysfunc(vartype(&dsid, &vnumd));
-  %let  vlend = %sysfunc(varlen(&dsid,&vnumd));
+    %let vtyped = %sysfunc(vartype(&dsid, &vnumd));
+    %let  vlend = %sysfunc(varlen(&dsid,&vnumd));
 %end;
 %let    rc = %sysfunc(close(&dsid));
 
@@ -119,52 +118,47 @@ run;
       %let tmp = &tmp %str(&var $ &vlen);
 %end;
 %if %length (&decode) %then %do;
-  /* %let tmp =&tmp %str (&decode $ &vlend);*/
-  %let tmp =&tmp %str (__dec_&trtvar $ &vlend);
+    %let tmp =&tmp %str (__dec_&trtvar $ &vlend);
 %end;
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
+data rrgpgmtmp;
+length record $ 200;
+keep record;
 set __CODES4TRT_exec end=eof;
 length __var $ 2000;
 %if &vtype=C %then %do; 
-__var = quote(&var);
+    __var = quote(&var);
 %end;
 %else %do;
-__var=&var;
+    __var=&var;
 %end;
 if _n_=1 then do;
-put;
-put @1 "*------------------------------------------------------------------;";
-put @1 "* CREATE A DATASET WITH LIST OF CODES FOR &var;";
-put @1 "*------------------------------------------------------------------;";
-put;
-put @1 "data __CODES4TRT;";
-put @1 "&tmp ;";
-put;
+    record = " "; output;
+    record =  "*------------------------------------------------------------------;"; output;
+    record =  "* CREATE A DATASET WITH LIST OF CODES FOR &var;"; output;
+    record =  "*------------------------------------------------------------------;"; output;
+    record = " "; output;
+    record =  "data __CODES4TRT;"; output;
+    record =  "&tmp ;"; output;
+    record = " "; output;
 
 end;
 
 
-put "&var = " __var ";";
+record= "&var = "||strip(__var)|| ";";
 %if %length (&decode) %then %do;
-  
-   put "__dec_&trtvar = " '"' &decode '";';
+     record= "__dec_&trtvar = "|| '"'||strip(&decode)|| '";'; output;
 %end;
-put "output;";
-put;
+record= "output;"; output;
+record = " "; output;
 if eof then do;
-  put "run;";
-  
+   output; "run;"; output;
 end;  
 
-
-run;
- 
-
 run;
 
-
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 
 %exit:

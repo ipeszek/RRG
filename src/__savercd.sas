@@ -54,14 +54,10 @@
     put @1 "        __fname='';";
     put @1 "        __rowid=.;";
     put @1 "        __col_0=''; ";
-    put @1 "        __footnot1='';";
-    put @1 "        __footnot2='';";
-    put @1 "        __footnot3='';";
-    put @1 "        __footnot4='';";
-    put @1 "        __footnot5='';";
-    put @1 "        __footnot6='';";
-    put @1 "        __footnot7='';";
-    put @1 "        __footnot8='';";
+    %do i=1 %to 14;
+        put @1 "        __footnot&i='';";
+    %end;
+    
     put @1 "        __title1=''; ";
     put @1 "        __title2=''; ";
     put @1 "        __title3=''; ";
@@ -120,14 +116,10 @@
     put @1 "         __fname='';";
     put @1 "         __rowid=.;";
     put @1 "         __col_0=''; ";
-    put @1 "         __footnot1='';";
-    put @1 "         __footnot2='';";
-    put @1 "         __footnot3='';";
-    put @1 "         __footnot4='';";
-    put @1 "         __footnot5='';";
-    put @1 "         __footnot6='';";
-    put @1 "         __footnot7='';";
-    put @1 "         __footnot8='';";
+    %do i=1 %to 14;
+        put @1 "        __footnot&&i='';";
+    %end;
+   
     put @1 "         __title1=''; ";
     put @1 "         __title2=''; ";
     put @1 "         __title3=''; ";

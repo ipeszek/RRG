@@ -129,6 +129,7 @@ data _null_;
 
     end;
     else do;
+     
       %__checkic(__sprops);
       %__checkic(__nodatamsg);
       %__checkic(__title1);
@@ -137,14 +138,10 @@ data _null_;
       %__checkic(__title4);
       %__checkic(__title5);
       %__checkic(__title6);
-      %__checkic(__footnot1);
-      %__checkic(__footnot2);
-      %__checkic(__footnot3);
-      %__checkic(__footnot4);
-      %__checkic(__footnot5);
-      %__checkic(__footnot6);
-      %__checkic(__footnot7);
-      %__checkic(__footnot8);
+      %do i=1 %to 14;
+         %__checkic(__footnot&i);
+      %end;
+      
       %__checkic(__shead_l);
       %__checkic(__shead_m);
       %__checkic(__shead_r);
@@ -250,14 +247,10 @@ run;
       %__printvarl(var=__title4);
       %__printvarl(var=__title5);
       %__printvarl(var=__title6);
-      %__printvar(var=__footnot1);
-      %__printvar(var=__footnot2);
-      %__printvar(var=__footnot3);
-      %__printvar(var=__footnot4);
-      %__printvar(var=__footnot5);
-      %__printvar(var=__footnot6);
-      %__printvar(var=__footnot7);
-      %__printvar(var=__footnot8);
+      %do i=1 %to 14;
+         %__printvar(var=__footnot&i);
+      %end;
+      
       %__printvarl(var=__shead_l);
       %__printvarl(var=__shead_m);
       %__printvarl(var=__shead_r);

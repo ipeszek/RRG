@@ -1,0 +1,134 @@
+The SAS System                                                                                                                                                       09:16 Friday, September 4, 2020   1
+
+Obs    record
+
+  1                                                                      
+  2                                                                      
+  3    *----------------------------------------------------------------;
+  4    * TAKE ONLY COUNTS FOR MODALITIES NOT IN DATASET FROM codelist  ; 
+  5    *----------------------------------------------------------------;
+  6                                                                      
+  7    data ;                                                            
+  8      set cnts;                                                       
+  9      if 0 then __total=.;                                            
+ 10      if __trtid<0 and __total ne 1;                                  
+ 11      keep  __tby siteid sex __order age __grpid sexc ;               
+ 12    run;                                                              
+ 13                                                                      
+ 14    *------------------------------------------------------;          
+ 15    * MERGE COUNTS DATASET WITH CODELIST DATASET           ;          
+ 16    * KEEPING ONLY ANALYSIS VARIABLE VALUES FROM TEMPLATE  ;          
+ 17    *------------------------------------------------------;          
+ 18                                                                      
+ 19    data ;                                                            
+ 20    set ;                                                             
+ 21    if missing(age) then __order=99;                                  
+ 22    run;                                                              
+ 23                                                                      
+ 24    proc sort data= nodupkey;                                         
+ 25      by  __tby siteid sex __order  age __grpid sexc ;                
+The SAS System                                                                                                                                                       09:16 Friday, September 4, 2020   2
+
+Obs                            record
+
+ 26    run;                                                   
+ 27                                                           
+ 28    proc sort data=__dataset;                              
+ 29      by  __tby siteid sex   __order age __grpid sexc ;    
+ 30    run;                                                   
+ 31                                                           
+ 32    data __dataset;                                        
+ 33      merge __dataset  (in=__a);                           
+ 34      by  __tby siteid sex   __order age __grpid sexc ;    
+ 35      if 0 then do;                                        
+ 36        __total=1;                                         
+ 37        __missing=0;                                       
+ 38      end;                                                 
+ 39    ** KEEP ONLY REQUESTED MODLAITIES;                     
+ 40    **  and MISSIGN MODALITY AND TOTAL IF REQUESTED;       
+ 41    if not __a and __total ne 1 and __missing ne 1 then do;
+ 42       put 'WAR' 'NING: deleting the following modality ;' 
+ 43    '     as not found in codelist : '  age=;              
+ 44       delete;                                             
+ 45    end;                                                   
+ 46    if __total ne 1  then do;                              
+ 47       if age  in ( 'F' ) then delete;                     
+ 48    end;                                                   
+ 49    end;                                                   
+ 50                                                           
+The SAS System                                                                                                                                                       09:16 Friday, September 4, 2020   3
+
+Obs    record
+
+ 51                                                                       
+ 52    *-----------------------------------------------------------------;
+ 53    * CREATE DISPLAY OF ANALYSIS VARIABLE;                             
+ 54    *-----------------------------------------------------------------;
+ 55                                                                       
+ 56    data __dataset;                                                    
+ 57      length __col_0 $ 2000;                                           
+ 58      set __dataset;                                                   
+ 59      by  __tby siteid sex   __order age __grpid sexc ;                
+ 60                                                                       
+ 61      array __col{*} $ 2000 __col_1 -__col_&maxtrt;                    
+ 62      array __cnt{*} __cnt_1 -__cnt_&maxtrt;                           
+ 63      array __colevt{*} $ 2000 __colevt_1 -__colevt_&maxtrt;           
+ 64                                                                       
+ 65      if 0 then do;                                                    
+ 66        __total=0;                                                     
+ 67        __missing=0;                                                   
+ 68        __fordelete=.;                                                 
+ 69        do __i =1 to dim(__col);                                       
+ 70          __cnt[__i]=0;                                                
+ 71          __colevt[__i]='';                                            
+ 72        end;                                                           
+ 73       end;                                                            
+ 74                                                                       
+ 75                                                                       
+The SAS System                                                                                                                                                       09:16 Friday, September 4, 2020   4
+
+Obs                           record
+
+ 76    __rowtotal=0;                                        
+ 77    do __i =1 to dim(__col);                             
+ 78      if __col[__i]='' then __col[__i]='0';              
+ 79      if __cnt[__i]=.  then __cnt[__i]=0;                
+ 80      if __colevt[__i]='' then __colevt[__i]='0';        
+ 81       __rowtotal=__rowtotal+__cnt[__i];                 
+ 82    end;                                                 
+ 83                                                         
+ 84    if __missing ne 1 and __total ne 1 then do;          
+ 85      __col_0 = cats(age);                               
+ 86                                                         
+ 87                                                         
+ 88      %* THIS CLEARS 0-COUNT ROWS FOR MISSING MODALITY: ;
+ 89      if missing(age) and __rowtotal=0 then delete;      
+ 90      if missing(age) and __rowtotal=0 then delete;      
+ 91      if __grpid=999 and  missing(age) and __col_0 = ''  
+ 92         and not first.__grpid then do;                  
+ 93      * __GRPID = 999 CORRESPONDS TO COUNT OF age;       
+ 94       __col_0 = cats('Missing');                        
+ 95       __order = 99;                                     
+ 96      end;                                               
+ 97      else do;                                           
+ 98         __col_0=put(age, sexf.);                        
+ 99         __col_0=sexc;                                   
+100      end;                                               
+The SAS System                                                                                                                                                       09:16 Friday, September 4, 2020   5
+
+Obs                           record
+
+101      end;                                              
+102      else if __missing=1 then do;                      
+103        __order = 99;                                   
+104        if missing(age) and __rowtotal=0 then delete;   
+105        __col_0=sexc;                                   
+106        if missing(age) then __col_0 ="Missing";        
+107        if missing(age) then __col_0 ="Missing";        
+108        if __col_0='' then __col_0="Missing";           
+109      end;                                              
+110    __col__0=''; __cnt__0=.; __pct__0=.; __colevt__0='';
+111    if __fordelete=1 then delete;                       
+112    drop __col__: __cnt__: __pct__: __colevt__:;        
+113    run;                                                
+114                                                        

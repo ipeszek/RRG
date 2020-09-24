@@ -144,235 +144,192 @@ quit;
   %end;   
 %end;
 
-
-
-
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put @1 "*------------------------------------------------------------;";
-put @1 "* TRANSPOSE DATASET TO PLACE REQUESTED GROUPS IN COLUMNS    ;";
-put @1 "*------------------------------------------------------------;";
-put;
-run;
-
-
-*** MAKE DATASET LONG AND SKINNY - RECREATE __TRTID ;
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-%if %upcase(aetable) ne N %then %do;
-put @1 "data &dsin;";
-put @1 "  set &dsin;";
-put @1 "  if __grpid in (&cleargrp) then delete;";
-put @1 "run;  ";
-put;
-%end;
-put @1 "data __all2;";
-put @1 "set &dsin;";
-put @1 "length __colx __col0 $ 2000;";
-put @1 'array cols{*} __col_1-__col_&maxtrt;';
-put @1 'array cnts{*} __cnt_1-__cnt_&maxtrt;';
-put @1 'array pcts{*} __pct_1-__pct_&maxtrt;';
-put @1 'array cevs{*} __colevt_1-__colevt_&maxtrt;';
-/*put @1 "  __col0=cats(__suffix)||cats(__col_0);";*/
-put @1 "  __col0=cats(__col_0);";
-put @1 '%do i=1 %to &maxtrt;';
-put @1 '__trtid=&i;';
-put @1 '__colx = cats(__col_&i);';
-put @1 '__cnt = __cnt_&i;';
-put @1 '__pct = __pct_&i;';
-put @1 '__colevt = __colevt_&i;';
-put @1 "__nalign = scan(__align, &i+1, ' ');";
-put @1 "output;";
-put @1 '%end;';
-put @1 "drop __col_: __pct_: __cnt_: __colevt_:;";
-put @1 "run;";
-put;
-put @1 "***************************************************************;";
-put @1 "*** GET ALL COMBINATIONS OF __TRTID AND ALL GROUPING VARIABLES ;";
-put @1 "*** THAT ARE TO BE PLACED IN COLUMNS;";
-put @1 "*** --- DATASET __ALL5";
-put @1 "***************************************************************;";
-put;
-put;
-put @1 "proc sort data=__all2 nodupkey out = __all3(keep=&inc1) ;";
-put @1 "by &inc2;";
-put @1 "run;";
-put;
-put @1 "proc sort data=__all2 nodupkey out = __all4(keep= __trtid) ;";
-put @1 "by __trtid;";
-put @1 "run;";
-put;
-put @1 "proc sql noprint nowarn;";
-put @1 "create table __all5 as select * from";
-put @1 "__all3 cross join __all4;";
-put @1 "quit;";
-put;
-put @1 "proc sort data=__all5;";
-put @1 "by &inc2_w_trt ;";
-put @1 "run;";
-put;
-put @1 "*** CREATE NEW __NTRTID (COLUMN INDICATOR);";
-put;
-put @1 "data __all5;";
-put @1 "set __all5 end=eof;";
-put @1 "by &inc2_w_trt;";
-put @1 "__ntrtid=_n_;";
-put @1 "if eof then call symput('maxtrt', cats(__ntrtid));";
-put @1 "run;";
-put;
-put @1 "*** MERGE __NTRTID INTO __ALL2 DATASET;";
-put;
-put @1 "proc sort data=__all2;";
-put @1 "by &inc2_w_trt;";
-put @1 "run;";
-put;
-put @1 "data __all6;";
-put @1 "merge __all2 __all5(in=__a);";
-put @1 "by &inc2_w_trt;";
-put @1 "if __a;";
-put @1 "run;";
-put;
-put @1 "proc sort data=__all6;";
-put @1 "by &varby  __varbylab __tby &notinc1  __grpid  __grptype ";
-put @1 " __blockid __order __labelline __varlabel __vtype __indentlev ";
-put @1 "   __skipline  __col0 ;";
-put @1 "run;";
-put;
-put @1 "proc transpose data=__all6 out=__all7 prefix=__col_;";
-put @1 "var __colx;";
-put @1 "by  &varby  __varbylab __tby &notinc1 __grpid  ";
-put @1 "__grptype __blockid __order __labelline __varlabel __vtype ";
-put @1 "   __indentlev __skipline  __col0 ;";
-put @1 "id __ntrtid;";
-put @1 "run;";
-put;
-put @1 "proc transpose data=__all6 out=__all7a prefix=__al_;";
-put @1 "var __nalign;";
-put @1 "by  &varby  __varbylab __tby &notinc1 __grpid __grptype __blockid";
-put @1 "  __order __labelline __varlabel __vtype __indentlev ";
-put @1 "  __skipline  __col0 ;";
-put @1 "id __ntrtid;";
-put @1 "run;";
-
-put;
-put @1 "data &dsin;";
-put @1 "length __align $ 2000;";
-put @1 "merge  __all7 __all7a;";
-put @1 "by &varby  __varbylab __tby &notinc1 __grpid  ";
-put @1 "   __grptype __blockid __order __labelline __varlabel __vtype ";
-put @1 "   __indentlev __skipline __col0;";
-put;
-put @1 "array cols{*} __col_:;";
-put @1 'array al{*} __al_1-__al_&maxtrt;';
-put @1 "__align='L';";
-put @1 "do __i=1 to dim(cols);";
-put @1 "  if __vtype in ('CONT') and compress(cols[__i],',.(): ')='' ";
-put @1 "   then cols[__i]='';";
-put @1 "  if __vtype in ('CONT') and al[__i]='' then al[__i]='D';";
-put @1 "  else if al[__i]='' then al[__i]='RD';";
-put @1 "   __align = trim(left(__align))||' '||trim(left(al[__i]));";
-put @1 "end;";
-put @1 "run;";
-put;
-put @1 "proc sort data=&dsin;";
-put @1 "  by &varby __grptype __tby &notinc2 __grpid __blockid __order ;";
-put @1 "run;";
-put ;
-put @1 "data &dsin (rename=(__col0=__col_0));";
-put @1 "  set &dsin;";
-put @1 "  length __suffix $ 2000;";
-put @1 "  by &varby __grptype __tby &notinc2 __grpid __blockid __order ;";
-put @1 "  __tmprowid=_n_;";
-put @1 "  if last.__blockid then __keepn=0;";
-put @1 "  else __keepn=1;";
-put @1 "  if last.__blockid and __skipline='Y' then __suffix='~-2n';";
-put @1 "  __indentlev = max(0, __indentlev-&ncgrps);";
-put @1 "run;";
-put ;
-/*
-put @1 "*** ADD &VARBY TO __ALL5 DATASET;";
-put @1 "proc sort data=__all2 nodupkey out = __all3(keep=&inc1) ;";
-put @1 "by &inc2;";
-put @1 "run;";
-put;
-put @1 "proc sort data=__all2 nodupkey out = __all4(keep=&varby __trtid) ;";
-put @1 "by &varby __trtid;";
-put @1 "run;";
-put;
-put @1 "proc sql noprint;";
-put @1 "create table __all5 as select * from";
-put @1 "__all3 cross join __all4;";
-put @1 "quit;";
-put;
-*/
-put;
-%if %length(&varby) %then %do;
-put @1 "proc sql noprint nowarn;";
-put @1 "  create table __all5a as select * from ( select * from __all5)";
-put @1 "  cross join ";
-put @1 "  (select distinct &varby from __poph);";
-put @1 "create table __all5 as select * from __all5a;";
-put @1 "quit;";
-put;
-%end;
-put @1 "*** MERGE GROUPING VARIABLE LABELS INTO UNTRANSPOSED HEADER DATASET;";
-put;
-put @1 "proc sort data=__poph;";
-put @1 "by  &varby __trtid;";
-put @1 "run;";
-put ;
-run;
-
-** if one of the ncgroups has n_line, we need to calculate n;
-
-
 proc sql noprint;
  %do i=1 %to &ncgrps_w_trt;
    %local nline&i;
    select distinct nline into:nline&i separated by ' ' 
     from __varinfo (where=(upcase(name)=upcase("%scan(&cgrps_w_trt,&i, %str( ))")));
-    
  %end;
 quit;   
 
 
-/*
-%if &istrtacross=N %then %do;
-  %let cgrps_w_trt = &cgrps &trtvar;
-%end;
+*** UPDATE ___PGMINFO TO STORE NEW  GROUPING VARIABLES;
 
-%* does not work;
-*/
+proc sql noprint;
+  update __rrgpgminfo set value="&notinc2" where key = "newgroupby";
+  insert into __rrgpgminfo (key, value, id)
+    values("newtrt", "&trtvar &inc4", 301);
+quit;
+
+
+
+
+
+data rrgpgmtmp;
+length record $ 200;
+keep record;
+record=   "*------------------------------------------------------------;"; output;
+record=   "* TRANSPOSE DATASET TO PLACE REQUESTED GROUPS IN COLUMNS    ;"; output;
+record=   "*------------------------------------------------------------;"; output;
+record= " "; output;
+%if %upcase(aetable) ne N %then %do;
+    record=   "data &dsin;"; output;
+    record=   "  set &dsin;"; output;
+    record=   "  if __grpid in (&cleargrp) then delete;"; output;
+    record=   "run;  "; output;
+    record= " "; output;
+%end;
+record=   "data __all2;"; output;
+record=   "set &dsin;"; output;
+record=   "length __colx __col0 $ 2000;"; output;
+record=   'array cols{*} __col_1-__col_&maxtrt;'; output;
+record=   'array cnts{*} __cnt_1-__cnt_&maxtrt;'; output;
+record=   'array pcts{*} __pct_1-__pct_&maxtrt;'; output;
+record=   'array cevs{*} __colevt_1-__colevt_&maxtrt;'; output;
+record=   "  __col0=cats(__col_0);"; output;
+record=   '%do i=1 %to &maxtrt;'; output;
+record=   '__trtid=&i;'; output;
+record=   '__colx = cats(__col_&i);'; output;
+record=   '__cnt = __cnt_&i;'; output;
+record=   '__pct = __pct_&i;'; output;
+record=   '__colevt = __colevt_&i;'; output;
+record=   "__nalign = scan(__align, &i+1, ' ');"; output;
+record=   = " "; output;
+record=   '%end;'; output;
+record=   "drop __col_: __pct_: __cnt_: __colevt_:;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "***************************************************************;"; output;
+record=   "*** GET ALL COMBINATIONS OF __TRTID AND ALL GROUPING VARIABLES ;"; output;
+record=   "*** THAT ARE TO BE PLACED IN COLUMNS;"; output;
+record=   "*** --- DATASET __ALL5"; output;
+record=   "***************************************************************;"; output;
+record= " "; output;
+record= " "; output;
+record=   "proc sort data=__all2 nodupkey out = __all3(keep=&inc1) ;"; output;
+record=   "by &inc2;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "proc sort data=__all2 nodupkey out = __all4(keep= __trtid) ;"; output;
+record=   "by __trtid;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "proc sql noprint nowarn;"; output;
+record=   "create table __all5 as select * from"; output;
+record=   "__all3 cross join __all4;"; output;
+record=   "quit;"; output;
+record= " "; output;
+record=   "proc sort data=__all5;"; output;
+record=   "by &inc2_w_trt ;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "*** CREATE NEW __NTRTID (COLUMN INDICATOR);"; output;
+record= " "; output;
+record=   "data __all5;"; output;
+record=   "set __all5 end=eof;"; output;
+record=   "by &inc2_w_trt;"; output;
+record=   "__ntrtid=_n_;"; output;
+record=   "if eof then call symput('maxtrt', cats(__ntrtid));"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "*** MERGE __NTRTID INTO __ALL2 DATASET;"; output;
+record= " "; output;
+record=   "proc sort data=__all2;"; output;
+record=   "by &inc2_w_trt;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "data __all6;"; output;
+record=   "merge __all2 __all5(in=__a);"; output;
+record=   "by &inc2_w_trt;"; output;
+record=   "if __a;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "proc sort data=__all6;"; output;
+record=   "by &varby  __varbylab __tby &notinc1  __grpid  __grptype "; output;
+record=   " __blockid __order __labelline __varlabel __vtype __indentlev "; output;
+record=   "   __skipline  __col0 ;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "proc transpose data=__all6 out=__all7 prefix=__col_;"; output;
+record=   "var __colx;"; output;
+record=   "by  &varby  __varbylab __tby &notinc1 __grpid  "; output;
+record=   "__grptype __blockid __order __labelline __varlabel __vtype "; output;
+record=   "   __indentlev __skipline  __col0 ;"; output;
+record=   "id __ntrtid;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "proc transpose data=__all6 out=__all7a prefix=__al_;"; output;
+record=   "var __nalign;"; output;
+record=   "by  &varby  __varbylab __tby &notinc1 __grpid __grptype __blockid"; output;
+record=   "  __order __labelline __varlabel __vtype __indentlev "; output;
+record=   "  __skipline  __col0 ;"; output;
+record=   "id __ntrtid;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "data &dsin;"; output;
+record=   "length __align $ 2000;"; output;
+record=   "merge  __all7 __all7a;"; output;
+record=   "by &varby  __varbylab __tby &notinc1 __grpid  "; output;
+record=   "   __grptype __blockid __order __labelline __varlabel __vtype "; output;
+record=   "   __indentlev __skipline __col0;"; output;
+record= " "; output;
+record=   "array cols{*} __col_:;"; output;
+record=   'array al{*} __al_1-__al_&maxtrt;'; output;
+record=   "__align='L';"; output;
+record=   "do __i=1 to dim(cols);"; output;
+record=   "  if __vtype in ('CONT') and compress(cols[__i],',.(): ')='' "; output;
+record=   "   then cols[__i]='';"; output;
+record=   "  if __vtype in ('CONT') and al[__i]='' then al[__i]='D';"; output;
+record=   "  else if al[__i]='' then al[__i]='RD';"; output;
+record=   "   __align = trim(left(__align))||' '||trim(left(al[__i]));"; output;
+record=   "end;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "proc sort data=&dsin;"; output;
+record=   "  by &varby __grptype __tby &notinc2 __grpid __blockid __order ;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "data &dsin (rename=(__col0=__col_0));"; output;
+record=   "  set &dsin;"; output;
+record=   "  length __suffix $ 2000;"; output;
+record=   "  by &varby __grptype __tby &notinc2 __grpid __blockid __order ;"; output;
+record=   "  __tmprowid=_n_;"; output;
+record=   "  if last.__blockid then __keepn=0;"; output;
+record=   "  else __keepn=1;"; output;
+record=   "  if last.__blockid and __skipline='Y' then __suffix='~-2n';"; output;
+record=   "  __indentlev = max(0, __indentlev-&ncgrps);"; output;
+record=   "run;"; output;
+record= " "; output;
+record= " "; output;
+%if %length(&varby) %then %do;
+    record=   "proc sql noprint nowarn;"; output;
+    record=   "  create table __all5a as select * from ( select * from __all5)"; output;
+    record=   "  cross join "; output;
+    record=   "  (select distinct &varby from __poph);"; output;
+    record=   "create table __all5 as select * from __all5a;"; output;
+    record=   "quit;"; output;
+    record= " "; output;
+%end;
+record=   "*** MERGE GROUPING VARIABLE LABELS INTO UNTRANSPOSED HEADER DATASET;"; output;
+record= " "; output;
+record=   "proc sort data=__poph;"; output;
+record=   "by  &varby __trtid;"; output;
+record=   "run;"; output;
+record= " "; output;
+
+** if one of the ncgroups has n_line, we need to calculate n;
+
+
 %local tmptrt;
 
 
-  %do i=1 %to &ncgrps_w_trt;
+%do i=1 %to &ncgrps_w_trt;
   
     %if %upcase(%scan(&cgrps_w_trt, &i, %str( )))=%upcase(&trtvar) %then 
-     %let tmptrt=&tmptrt __trtid;
-     
+      %let tmptrt=&tmptrt __trtid;
     %else %let tmptrt=&tmptrt %scan(&cgrps_w_trt, &i, %str( ));
     
-  ** CODE MODIFICATION 21AUG2010;
-  /*
-    %__getcntg(datain=__dataset, 
-          unit=&subjid, 
-          group=&varby &tmptrt,
-          cnt=__nline_&i, 
-          dataout=__nline_&i);
 
-
-
-
-    %__joinds(
-    data1=__all5, 
-    data2=__nline_&i, 
-    by=&varby &tmptrt,
-    dataout=__all5, cond=,
-    mergetype=left);
-
-  */
   
     %__getcntg(datain=__dataset, 
           unit=&subjid, 
@@ -390,144 +347,125 @@ quit;
     dataout=__all5, cond=,
     mergetype=left);
 
- %end;
+%end;
 
 
-
-
-
-
-
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-put @1 "proc sort data=__all5;";
-put @1 "by  &varby __trtid;";
-put @1 "run;";
-put ;
-put @1 "data __poph;";
-put @1 "merge __poph __all5;";
-put @1 "by &varby  __trtid;";
-put @1 "drop __trtid;";
-put @1 "run;";
-put;
-put @1 "data __poph;";
-put @1 "set __poph;";
-put @1 "length __col2 $ 2000;";
-put @1 "__rowid=&trtrow;";
-put @1 "__col2=__col;";
+record= " "; output;
+record=   "proc sort data=__all5;"; output;
+record=   "by  &varby __trtid;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "data __poph;"; output;
+record=   "merge __poph __all5;"; output;
+record=   "by &varby  __trtid;"; output;
+record=   "drop __trtid;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "data __poph;"; output;
+record=   "set __poph;"; output;
+record=   "length __col2 $ 2000;"; output;
+record=   "__rowid=&trtrow;"; output;
+record=   "__col2=__col;"; output;
 %if %upcase(&&nline&trtrow)=Y %then %do;
-put @1 "if __nline_&trtrow = . then __nline_&trtrow=0;";
-put @1 "if __overall ne 1 then __col2 = cats(__col2,'//(N=', __nline_&trtrow,')');"; 
+    record=   "if __nline_&trtrow = . then __nline_&trtrow=0;"; output;
+    record=   "if __overall ne 1 then __col2 = cats(__col2,'//(N=', __nline_&trtrow,')');";  output;
 %end;
-
-put @1 "output;";
-
-put @1 "__autospan='N ';";
+record=   "output;"; output;
+record=   "__autospan='N ';"; output;
 %do i=1 %to %eval(&trtrow-1);
-put @1 "__rowid=&i;";
-put @1 "__col2=" "%scan(&inc3,&i, %str( ));" ";";
-%if %upcase(&&nline&i)=Y %then %do;
-put @1 "if __nline_&i = . then __nline_&i=0;";
-put @1 "if __overall ne 1 then  __col2 = cats(__col2,'//(N=', __nline_&i,')');"; 
-%end;
-put @1 "output;";
+    record=   "__rowid=&i;"; output;
+    record=  " __col2= %scan(&inc3,&i, %str( ));" ; output;
+    %if %upcase(&&nline&i)=Y %then %do;
+        record=   "if __nline_&i = . then __nline_&i=0;"; output;
+        record=   "if __overall ne 1 then  __col2 = cats(__col2,'//(N=', __nline_&i,')');";  output;
+    %end;
+    record=   "output;"; output;
 %end;
 %do i=&trtrow %to &ncgrps;
-%local j;
-%let j=%eval(&i+1);
-
-put @1 "__rowid=&i+1;";
-put @1 "__prefix='';";
-put @1 "__col2=" "%scan(&inc3,&i, %str( ));" ";";
-%if %upcase(&&nline&j)=Y %then %do;
-put @1 "if __nline_&j = . then __nline_&j=0;";
-put @1 "if __overall ne 1 then __col2 = cats(__col2,'//(N=', __nline_&j,')');"; 
+    %local j;
+    %let j=%eval(&i+1);
+        record=   "__rowid=&i+1;"; output;
+        record=   "__prefix='';"; output;
+        record=   "__col2=" "%scan(&inc3,&i, %str( ));" ";"; output;
+        %if %upcase(&&nline&j)=Y %then %do;
+            record=   "if __nline_&j = . then __nline_&j=0;"; output;
+            record=   "if __overall ne 1 then __col2 = cats(__col2,'//(N=', __nline_&j,')');";  output;
+        %end;
+        record=   "output;"; output;
 %end;
+record=   "run;"; output;
+record= " "; output;
+record=   "data __poph;"; output;
+record=   "set __poph;"; output;
+record=   "__trtid=__ntrtid;"; output;
+record=   "__col=__col2;"; output;
+record=   "drop __ntrtid __col2;"; output;
+record=   "run;"; output;
+record= " "; output;
+record= " "; output;
+record=   "proc sort data=__poph;"; output;
+record=   "by __rowid __trtid ;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "*--------------------------------------------------------------;"; output;
+record=   "* DETERMINE WHICH COLUMNS ARE FOR OVERALL STATISTICS;"; output;
+record=   "*--------------------------------------------------------------;"; output;
+record= " "; output;
+record=   '%local ovcols;'; output;
+record=   "proc sql noprint;"; output;
+record=   "select distinct __trtid+1 into:ovcols separated by ' '"; output;
+record=   " from __poph (where=(__overall=1));"; output;
+record=   "quit;"; output;
+record= " "; output;
+record=   "*--------------------------------------------------------------;"; output;
+record=   "* SET MISSING COUNT TO 0 COUNT ;"; output;
+record=   "*--------------------------------------------------------------;"; output;
+record= " "; output;
+record=   "data &dsin;"; output;
+record=   " set &dsin;"; output;
+record=   "array cols{*} __col_:;"; output;
+record=   "do __i=1 to dim(cols);"; output;
+record=   "  if __vtype in ('CAT', 'COND') and __i not in "|| '(&ovcols -99)'; output;
+record=   "      and cols[__i]='' then cols[__i]='0';"; output;
+record=   "end;"; output;
+record=   "run;"; output;
 
-put @1 "output;";
-%end;
-
-put @1 "run;";
-put ;
-put @1 "data __poph;";
-put @1 "set __poph;";
-put @1 "__trtid=__ntrtid;";
-put @1 "__col=__col2;";
-put @1 "drop __ntrtid __col2;";
-put @1 "run;";
-put ;
-put ;
-put @1 "proc sort data=__poph;";
-put @1 "by __rowid __trtid ;";
-put @1 "run;";
-put;
-put @1 "*--------------------------------------------------------------;";
-put @1 "* DETERMINE WHICH COLUMNS ARE FOR OVERALL STATISTICS;";
-put @1 "*--------------------------------------------------------------;";
-put;
-put @1 '%local ovcols;';
-put @1 "proc sql noprint;";
-put @1 "select distinct __trtid+1 into:ovcols separated by ' '";
-put @1 " from __poph (where=(__overall=1));";
-put @1 "quit;";
-put;
-put @1 "*--------------------------------------------------------------;";
-PUT @1 "* SET MISSING COUNT TO 0 COUNT ;";
-put @1 "*--------------------------------------------------------------;";
-put;
-put @1 "data &dsin;";
-put @1 " set &dsin;";
-put @1 "array cols{*} __col_:;";
-put @1 "do __i=1 to dim(cols);";
-put @1 "  if __vtype in ('CAT', 'COND') and __i not in " '(&ovcols -99)';
-put @1 "      and cols[__i]='' then cols[__i]='0';";
-put @1 "end;";
-put @1 "run;";
-put ;
-run;
 
 *** IF THERE ARE OVERALL STATISTICS, THEN WE SHOUDL NOT SET THEIR VALUES TO 0 WHEN MISSING;
 
 
 *** UPDATE BREAKOKAT MACRO PARAMETER;
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;  
-put;
-put @1 "*** UPDATE HEADER AND BREAKOKAT MACRO PARAMETER;";
-put @1 "proc sort data=__poph;";
-put @1 "by &inc1_w_trt ;";
-put @1 "run;";
-put ;
-put @1 "data __poph;";
-put @1 "  set __poph;";
-put @1 "by &inc1_w_trt ;";
-put @1 "  __cb=.;";
-put @1 "  if first.&breakvar then __cb=1;";
-put @1 "run;";
-put ;
-put @1 "proc sort data=__poph;";
-put @1 "  by __trtid;";
-put @1 "run;";
-put;
-put ;
-put @1 "proc sql noprint;";
-put @1 "  select __trtid into:breakokat separated by ' ' ";
-put @1 '    from __poph(where=(__cb=1));';
-put @1 "quit;";
-put;
-put @1 '%put breakokat=&breakokat;';
-put ;
+
+record= " "; output;
+record=   "*** UPDATE HEADER AND BREAKOKAT MACRO PARAMETER;"; output;
+record=   "proc sort data=__poph;"; output;
+record=   "by &inc1_w_trt ;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "data __poph;"; output;
+record=   "  set __poph;"; output;
+record=   "by &inc1_w_trt ;"; output;
+record=   "  __cb=.;"; output;
+record=   "  if first.&breakvar then __cb=1;"; output;
+record=   "run;"; output;
+record= " "; output;
+record=   "proc sort data=__poph;"; output;
+record=   "  by __trtid;"; output;
+record=   "run;"; output;
+record= " "; output;
+record= " "; output;
+record=   "proc sql noprint;"; output;
+record=   "  select __trtid into:breakokat separated by ' ' "; output;
+record=   '    from __poph(where=(__cb=1));'; output;
+record=   "quit;"; output;
+record= " "; output;
+/*record=   '%put breakokat=&breakokat;';*/
+record= " "; output;
 run;
 
-*** UPDATE ___PGMINFO TO STORE NEW  GROUPING VARIABLES;
-
-proc sql noprint;
-  update __rrgpgminfo set value="&notinc2" where key = "newgroupby";
-  insert into __rrgpgminfo (key, value, id)
-    values("newtrt", "&trtvar &inc4", 301);
-quit;
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 
 

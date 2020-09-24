@@ -12,13 +12,6 @@
 %macro rrg_inc(string)/ store;
 
 %local string pgmpath;
-
-
-  
-  
-
-
-
 %local st dost;
 %let st=%str();
 
@@ -58,16 +51,17 @@
 
 
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod lrecl=8192;
-length string  $ 32000;
-string = '%inc '||"'"||cats(symget("string"))||"' ;";;
-put;
-put string;
+data rrgpgmtmp;
+length record  $ 200;
+keep record;
+record = '%inc '||"'"||cats(symget("string"))||"' ;";;
 call symput("st", string);
-put;
+output;
+record=' '; output;
 run;
 
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 &st;
 

@@ -170,7 +170,7 @@ run;
 %end;
 
 
-%put SASSHIATO INVOCATION LOG;
+%put BRGIN SASSHIATO INVOCATION LOG;
 %put - - - - - - - - - - - - - - - - ;
 
 data _null_; 

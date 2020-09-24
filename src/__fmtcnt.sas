@@ -10,29 +10,29 @@
   outvar=, pctfmt=%nrbquote(__rrgp1d.))/store;
 %local cntvar pctvar denomvar stat outvar pctfmt;
 
-put @1 "if &cntvar=. then &cntvar=0; ";
-put @1 "if &denomvar>0  then &pctvar = 100*&cntvar/&denomvar;";
-put @1 "if &denomvar=. then &denomvar=0;";
+record =  "if &cntvar=. then &cntvar=0; "; output;
+record =  "if &denomvar>0  then &pctvar = 100*&cntvar/&denomvar;";output;
+record =  "if &denomvar=. then &denomvar=0;";output;
 
 %if %qupcase(%qcmpres(&stat))=N  %then %do;
-put @1 "&outvar = compress(put(&cntvar, 12.));";
+record =  "&outvar = compress(put(&cntvar, 12.));";output;
 %end;
 %if %qupcase(%qcmpres(&stat))=D  %then %do;
-put @1 "&outvar = compress(put(&denomvar, 12.));";
+record =  "&outvar = compress(put(&denomvar, 12.));";output;
 %end;
 %else %if %qupcase(%qcmpres(&stat))=PCT  %then %do;
-  put @1 "&outvar=cats(put(&pctvar, &pctfmt));";
+  record =  "&outvar=cats(put(&pctvar, &pctfmt));";output;
 %end;
 %else %if %qupcase(%qcmpres(&stat))=NPCT or
   %qupcase(%qcmpres(&stat))=%nrbquote(N+PCT) %then  %do;
-  put @1 "&outvar = cats(&cntvar)||' '||cats(put(&pctvar, &pctfmt));";
+  record =  "&outvar = cats(&cntvar)||' '||cats(put(&pctvar, &pctfmt));";output;
 %end;   
 %else %if %qupcase(%qcmpres(&stat))=NNPCT  or
    %qupcase(%qcmpres(&stat))=%nrbquote(N+D+PCT)  %then %do;
-   put @1 "&outvar = cats(&cntvar,'/', &denomvar)||' '||cats(put(&pctvar, &pctfmt));";
+   record =  "&outvar = cats(&cntvar,'/', &denomvar)||' '||cats(put(&pctvar, &pctfmt));";output;
 %end;   
 %else %if %qupcase(%qcmpres(&stat))=%nrbquote(N+D)  %then %do;
-   put @1 "&outvar = cats(&cntvar,'/', &denomvar);";
+   record =  "&outvar = cats(&cntvar,'/', &denomvar);";output;
 %end;   
 
 %mend;

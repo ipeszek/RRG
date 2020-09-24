@@ -5,6 +5,17 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
+ 
+ /*
+11Sep2020 PROGRAM FLOW
+
+
+MANIPULATES THIS.STRING IN __TMPCBA DATASET, writes it to rrgpgmtmp and appends rrgpgmtmp to rrgpgm
+
+ds used:
+ ds created/updated: __TMPCBA (TEMPORARY) rrgpgmtmp, rrgpgm
+ ds initialized as empty: 
+*/
 
 %macro rrg_codeafter(string)/ parmbuff store ;
 
@@ -205,36 +216,40 @@ if eof then do;
 end;
 run;
 
-data __tmpcba;
-file "&rrgpgmpath./&rrguri..sas" mod lrecl=8192;
+
+data rrgpgmtmp;
+length record $ 200;
+keep record;
 set __tmpcba end=eof;
 if index(ns,';')>0 then xx=1;
 else xx=0;
 wascolon=lag(xx);
 
 if _n_=1 then do;
-  put '*----------------------------------------------------------------;';
-  put '*   BEGIN CUSTOM CODE;';
-  put '*----------------------------------------------------------------;';
-  put;
+  record= '*----------------------------------------------------------------;';output;
+  record= '*   BEGIN CUSTOM CODE;';output;
+  record= '*----------------------------------------------------------------;';output;
+  record=' ';output;
 end;
 ns = tranwrd(ns, '/#32', ' ');
 ns = tranwrd(trim(left(ns)), '"'||byte(12)||'"','""');
 ns = tranwrd(trim(left(ns)), "'"||byte(12)||"'","''");
 
-if _n_=1 or wascolon=1  then put @1 ns;
-else put @5 ns;
-if upcase(ns) in ('RUN;','QUIT;') then put;
+if _n_=1 or wascolon=1  then do; record=  strip(ns);output; end;
+else do; record='     ' ||strip(ns); output; end;
+if upcase(ns) in ('RUN;','QUIT;') then do; record=' ';output; end;
 
 if eof then do;
-  put ;
-  put @1 '*----------------------------------------------------------------;';
-  put @1 '*   END CUSTOM CODE;';
-  put @1 '*----------------------------------------------------------------;';
+  record= ' '; output;
+  record=  '*----------------------------------------------------------------;';output;
+  record= '*   END CUSTOM CODE;';output;
+  record= '*----------------------------------------------------------------;';output;
 end;
 
 run;
 
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 %mend rrg_codeafter;
 

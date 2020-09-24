@@ -7,6 +7,11 @@
  
  * there are no user-provided parameters for this macro
  
+ * 24Sep2020 Program flow:
+    
+    processes this.string in __tmpcba dataset, appends __tmcba to __rrght dataset
+    
+ 
  */
 
 
@@ -214,9 +219,9 @@ if eof then do;
 end;
 run;
 
-data __rrght0;
+data __tmpcba;
 set __tmpcba end=eof;
-length record $ 2000;
+length record $ 200;
 if index(ns,';')>0 then xx=1;
 else xx=0;
 wascolon=lag(xx);
@@ -249,40 +254,15 @@ end;
 keep record;
 run;
 
-
-data __rrght;
-  set  __rrght __rrght0;
+*data __rrght;
+data __codebefore;
+  set __rrght __tmpcba;
 run;
 
 
-%if %length(&inlibs)>0 %then %do;
-/*
- data __rrginlibs0;
-  length tmp tmp1 dataset $ 200;
-  set __rrght0;
-  tmp = upcase(cats(symget("inlibs")));
 
-  if index(upcase(record), cats(tmp))>0 then do;
-      do i = 1 to countw(record);
-       tmp1 = scan(record, i, ' =(');
-       
-       if index(upcase(tmp1), cats(tmp))>0 then do;
-         %* dataset = scan(upcase(tmp1),2, '.; ')||'.SAS7BDAT';
-         dataset = scan(upcase(tmp1),1, '; ');
-         
-         output;
-       end;
-      end;    
-  end;
-  keep dataset;
- run; 
- 
- data __rrginlibs;
-  set __rrginlibs __rrginlibs0;
-run;
-*/
 
-%end;
+
 
 %***************************************************************************************;
 %*  scan codebefore for datasets and variables;
@@ -483,7 +463,12 @@ run;
 
 %skipmeta:
 
-&st;
+/* &st;*/
+
+data _null_;
+  set __codebefore;
+  call execute(record);
+run;
 
 %mend;
 

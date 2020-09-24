@@ -17,7 +17,7 @@ NOTE: Assumes &var passed to the macro is >0
 -------------------------------------------------------------------*/
 
 
-%macro m_gmean(
+%macro rrg_gmean(
   dataset=,         /* passed by RRG */
   where=%str(1=1),  /* passed by RRG */
   trtvar=,          /* passed by RRG */
@@ -26,7 +26,7 @@ NOTE: Assumes &var passed to the macro is >0
   decvar=,          /* passed by RRG */
   subjid=,          /* passed by RRG */
   gmlabel=          /* label for geometric mean */
-)
+)/store
 ;      
   
 %local dataset  where  trtvar groupvars var decvar subjid gmlabel; 
@@ -98,13 +98,13 @@ proc means data=__gmean0 noprint;
     *keep &trtvar &groupvars __overall __stat_label  __stat_value __stat_name __stat_align;
   run;
   
-  proc print data=m_gmean width=min;
-    title "m_gmean";
+  proc print data=rrg_gmean width=min;
+    title "rrg_gmean";
   run;
   
   title;
   
-%mend m_gmean;
+%mend rrg_gmean;
     
     
     

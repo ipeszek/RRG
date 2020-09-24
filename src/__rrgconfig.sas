@@ -11,7 +11,7 @@
 
 
 data _null_;
-  file "&__workdir.&__dirdel.rrgconfig.ini" lrecl=1000;
+file "&__workdir.&__dirdel.rrgconfig.ini" lrecl=1000;
   
 put "[A1]";
 put "#STAT LABELS";
@@ -183,7 +183,6 @@ put "indentsize      2";
 put "warnonnomatch   N  ";
 put "nodatamsg       No data";
 put "dest            APP";
-put "java2sas        N";
 put "savercd         N";
 put "gentxt          N";
 

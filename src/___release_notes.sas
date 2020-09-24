@@ -12,6 +12,8 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
   
+31Aug2020 Removed java2sas modules
+
 18Aug2020: changed location of generated program to work directory (later it is copied to specified &rrgoutpath);
 
 12Aug2020 modified listing module so if there is no data, the headers and footnotes are displayed.

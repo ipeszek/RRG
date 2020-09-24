@@ -14,7 +14,7 @@
 %*** READ SUBJID, INDENTSIZE, NODATAMSG DEST AND WARNONNOMATCH FROM CONFIGURATION FILE;
 %*** IF NOT GIVEN IN MACRO CALL THEN USE VALUES FROM CONFIGURATION FILE;
 
-%local njava2sas nsavercd ngentxt nmetadatads;
+%local  nsavercd ngentxt nmetadatads;
 
 data _null_;
   set __rrgconfig(where=(type ='[D4]'));
@@ -30,10 +30,6 @@ run;
 %let dest=%upcase(&dest);
 %if %length(&dest)=0 %then %let dest = APP;
 
-%let njava2sas = %upcase(&njava2sas);
-%let java2sas = %upcase(&java2sas);
-%if %length(&java2sas)=0 %then %let java2sas=&njava2sas;
-%if &java2sas ne Y %then %let java2sas=N;
 
 %if %length(&savercd)=0 %then %let savercd=&nsavercd;
 %if %length(&gentxt)=0 %then %let gentxt=&ngentxt;
@@ -44,7 +40,6 @@ run;
 %let gentxt = %upcase(&gentxt);
 %if &gentxt ne Y %then %let gentxt=N;
 
-%if %upcase(&java2sas)=Y %then %let gen_size_info=simple;
 
 
 
@@ -62,7 +57,7 @@ run;
 %do i=1 %to 6;
   %if %length(&&title&i)>0 %then %let istitle=Y;
 %end; 
-%do i=1 %to 8;
+%do i=1 %to 14;
   %if %length(&&footnot&i)>0 %then %let isfoot=Y;
 %end; 
 
@@ -70,7 +65,7 @@ run;
 data _null_;
   set __rrgconfig(where=(type='[B0]'));
  call symput(cats(w1),cats(w2));
- put w1= w2=;
+%* put w1= w2=;
 run;
 
 %if %length(&TFL_FILE_NAME)>0 and %length(&TFL_FILE_KEY)>0 %then %do;
@@ -94,11 +89,11 @@ run;
   
   %local maxtit tmp maxfoot;
   %let maxtit =6;
-  %let maxfoot=8;
+  %let maxfoot=14;
   %let tmp = %sysfunc(countw(&TFL_FILE_TITLES,%str( )));
   %if &tmp<6 %then %let maxtit=&tmp;
   %let tmp = %sysfunc(countw(&TFL_FILE_FOOTNOTES,%str( )));
-  %if &tmp<8 %then %let maxfoot=&tmp;
+  %if &tmp<14 %then %let maxfoot=&tmp;
   
   proc sql noprint;
     %if &istitle=N %then %do;
@@ -108,7 +103,7 @@ run;
     %end;
     %if &isfoot=N %then %do;
       %do i=1 %to &maxfoot;
-        select %scan(&TFL_FILE_FOOTNOTES, &i) into:nfootnot&i separated by ' ' from __testt;
+        select %scan(&TFL_FILE_FOOTNOTES, &i) into : nfootnot&i separated by ' ' from __testt;
       %end;
     %end;
   quit;      
@@ -275,13 +270,11 @@ run;
 %if %length(&__fname)=0 %then %let __fname=&rrguri;
 
 data __repinfo;
-  length footnot1 footnot2 footnot3 footnot4
-   footnot5 footnot6 footnot7 footnot8
+  length footnot1 -footnot14
   title1 title2 title3 title4 title5 title6 Colhead1
   shead_l shead_m shead_r sfoot_l sfoot_r sfoot_m  
    sprops colwidths ncw  filename metadatads $ 2000 tmp $ 20;
 
-java2sas=upcase(strip(symget("java2sas")));   
 Dataset=trim(left(symget("Dataset")));
 inlibs=trim(left(symget("inlibs")));
 popWhere=cats("(",trim(left(symget("popWhere"))),")");
@@ -294,25 +287,17 @@ Statsacross=trim(left(symget("Statsacross")));
 Statsincolumn=trim(left(symget("Statsincolumn")));
 aetable=trim(left(symget("aetable")));
 
-Title1=trim(left(symget("Title1")));
-title2=trim(left(symget("title2")));
-title3=trim(left(symget("title3")));
-title4=trim(left(symget("title4")));
-title5=trim(left(symget("title5")));
-title6=trim(left(symget("title6")));
-Footnot1=trim(symget("Footnot1"));
-Footnot2=trim(symget("Footnot2"));
-Footnot3=trim(symget("Footnot3"));
-Footnot4=trim(symget("Footnot4"));
-Footnot5=trim(symget("Footnot5"));
-Footnot6=trim(symget("Footnot6"));
-Footnot7=trim(symget("Footnot7"));
-footnot8=trim(symget("Footnot8"));
+%do i=1 %to 6;
+    Title&i=trim(left(symget("Title&i")));
+%end;
+%do i=1%to 14;
+    Footnot&i =trim(symget("Footnot&i"));
+%end;
+
 indentsize=trim(left(symget("indentsize")));
 nodatamsg=trim(left(symget("nodatamsg")));
 extralines=trim(left(symget("extralines")));
 warnonnomatch=trim(left(symget("warnonnomatch")));
-java2sas=upcase(trim(left(symget("java2sas"))));
 savercd=trim(left(symget("savercd")));
 gentxt=trim(left(symget("gentxt")));
 
@@ -403,21 +388,18 @@ run;
   
 
 data __repinfo;
-	set __repinfo;
-title1 = tranwrd(cats(title1), "'", "#squot");
-title2 = tranwrd(cats(title2), "'", "#squot");
-title3 = tranwrd(cats(title3), "'", "#squot");
-title4 = tranwrd(cats(title4), "'", "#squot");
-title5 = tranwrd(cats(title5), "'", "#squot");
-title6 = tranwrd(cats(title6), "'", "#squot");
-footnot1 = tranwrd(cats(footnot1), "'", "#squot");
-footnot2 = tranwrd(cats(footnot2), "'", "#squot");
-footnot3 = tranwrd(cats(footnot3), "'", "#squot");
-footnot4 = tranwrd(cats(footnot4), "'", "#squot");
-footnot5 = tranwrd(cats(footnot5), "'", "#squot");
-footnot6 = tranwrd(cats(footnot6), "'", "#squot");
-footnot7 = tranwrd(cats(footnot7), "'", "#squot");
-footnot8 = tranwrd(cats(footnot8), "'", "#squot");
+set __repinfo;
+%do i=1 %to 6;
+    title&i = tranwrd(cats(title&i), "'", "#squot");
+    title&i = tranwrd(cats(title&i), "(", "#lpar");
+     title&i = tranwrd(cats(title&i), ")", "#rpar");
+%end;
+%do i=1 %to 6;
+  footnot&i = tranwrd(cats(footnot&i), "'", "#squot");
+  footnot&i = tranwrd(cats(footnot&i), "(", "#lpar");
+  footnot&i = tranwrd(cats(footnot&i), ")", "#rpar");
+%end;
+
 colhead1 = tranwrd(cats(colhead1), "'", "#squot");
 sfoot_r = tranwrd(cats(sfoot_r), "'", "#squot");
 sfoot_m = tranwrd(cats(sfoot_m), "'", "#squot");
@@ -427,20 +409,7 @@ shead_m = tranwrd(cats(shead_m), "'", "#squot");
 shead_r = tranwrd(cats(shead_r), "'", "#squot");
 
 
-title1 = tranwrd(cats(title1), "(", "#lpar");
-title2 = tranwrd(cats(title2), "(", "#lpar");
-title3 = tranwrd(cats(title3), "(", "#lpar");
-title4 = tranwrd(cats(title4), "(", "#lpar");
-title5 = tranwrd(cats(title5), "(", "#lpar");
-title6 = tranwrd(cats(title6), "(", "#lpar");
-footnot1 = tranwrd(cats(footnot1), "(", "#lpar");
-footnot2 = tranwrd(cats(footnot2), "(", "#lpar");
-footnot3 = tranwrd(cats(footnot3), "(", "#lpar");
-footnot4 = tranwrd(cats(footnot4), "(", "#lpar");
-footnot5 = tranwrd(cats(footnot5), "(", "#lpar");
-footnot6 = tranwrd(cats(footnot6), "(", "#lpar");
-footnot7 = tranwrd(cats(footnot7), "(", "#lpar");
-footnot8 = tranwrd(cats(footnot8), "(", "#lpar");
+
 colhead1 = tranwrd(cats(colhead1), "(", "#lpar");
 sfoot_r= tranwrd(cats(sfoot_r), "(", "#lpar");
 sfoot_m= tranwrd(cats(sfoot_m), "(", "#lpar");
@@ -449,20 +418,7 @@ shead_l = tranwrd(cats(shead_l), "(", "#lpar");
 shead_m = tranwrd(cats(shead_m), "(", "#lpar");
 shead_r = tranwrd(cats(shead_r), "(", "#lpar");
 
-title1 = tranwrd(cats(title1), ")", "#rpar");
-title2 = tranwrd(cats(title2), ")", "#rpar");
-title3 = tranwrd(cats(title3), ")", "#rpar");
-title4 = tranwrd(cats(title4), ")", "#rpar");
-title5 = tranwrd(cats(title5), ")", "#rpar");
-title6 = tranwrd(cats(title6), ")", "#rpar");
-footnot1 = tranwrd(cats(footnot1), ")", "#rpar");
-footnot2 = tranwrd(cats(footnot2), ")", "#rpar");
-footnot3 = tranwrd(cats(footnot3), ")", "#rpar");
-footnot4 = tranwrd(cats(footnot4), ")", "#rpar");
-footnot5 = tranwrd(cats(footnot5), ")", "#rpar");
-footnot6 = tranwrd(cats(footnot6), ")", "#rpar");
-footnot7 = tranwrd(cats(footnot7), ")", "#rpar");
-footnot8 = tranwrd(cats(footnot8), ")", "#rpar");
+
 colhead1 = tranwrd(cats(colhead1), ")", "#rpar");
 sfoot_r = tranwrd(cats(sfoot_r), ")", "#rpar");
 sfoot_m = tranwrd(cats(sfoot_m), ")", "#rpar");

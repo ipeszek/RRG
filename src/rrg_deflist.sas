@@ -14,6 +14,11 @@
  adds this.dataset to __rrginlibs ds
  
  
+ ds updated __rrginlibs
+ 
+ NOTE: updating of rrginlibs needs to happen only if metadata is requested
+ 
+ 
  */
 
 %macro rrg_deflist(
@@ -32,6 +37,12 @@ Footnot5=,
 Footnot6=,
 Footnot7=,
 footnot8=,
+Footnot9=,
+Footnot10=,
+Footnot11=,
+Footnot12=,
+Footnot13=,
+Footnot14=,
 colspacing=4,
 nodatamsg=,
 indentsize=2,
@@ -50,7 +61,6 @@ systitle=,
 splitchars=%str(- ),
 esc_char=%str(/),
 rtf_linesplit=hyphen,
-java2sas=,
 debug=0,
 orderby=,
 appendable=,
@@ -63,7 +73,8 @@ bookmark_pdf=)/store;
 
 %local Dataset popWhere tabwhere Colhead1 subjid Title1 title2 title3
 title4 title5 title6 Footnot1 Footnot2 Footnot3 Footnot4
-Footnot5 Footnot6 Footnot7 footnot8 Statsincolumns reptype 
+Footnot5 Footnot6 Footnot7 footnot8 
+Footnot9 Footnot10 Footnot11 footnot12  Footnot13 footnot14 Statsincolumns reptype 
 eventcnt dest nodatamsg fontsize orient colwidths systitle_l 
 systitle_r systitle_m sfoot_l sfoot_m sfoot_r systitle
 extralines warnonnomatch print debug aetable stretch indentsize
@@ -71,7 +82,7 @@ font margins papersize  statsincolumn statsacross colspacing
 append appendable addlines csfoot_fs  tablepart
 cpapersize corient coutformat cfontsize cfont cmargins 
 cshead_l cshead_r cshead_m csfoot_l csfoot_m csfoot_r 
-splitchars esc_char java2sas gen_size_info rtf_linesplit
+splitchars esc_char  gen_size_info rtf_linesplit
 orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf
 ;
 
@@ -92,7 +103,9 @@ orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf
 %local ntit1 ntit2 ntit3 ntit4 ntit5 npoptit nnodatamsg ndest ;
 %local nTitle1 ntitle2 ntitle3 ntitle4 ntitle5 ntitle6 
          nFootnot1 nFootnot2 nFootnot3 nFootnot4
-         nFootnot5 nFootnot6 nFootnot7 nfootnot8 ;
+         nFootnot5 nFootnot6 nFootnot7 nfootnot8 
+         nFootnot9 nFootnot10
+         nFootnot11 nFootnot12 nFootnot13 nfootnot14;
   
 %local i j;
 %local inlibs inlibs0;
@@ -105,15 +118,14 @@ data __rrginlibs0;
   %do i=1 %to %sysfunc(countw(&inlibs, %str( )));
     %let inlibs0=%scan(&inlibs,&i, %str( ));
     if index(upcase("&dataset"), upcase("&inlibs0"))>0 then do;
-       /*dataset = scan(upcase("&dataset"),2, '. ')||'.SAS7BDAT';*/
        output;
     end;
   %end;  
 run;
 
-data __rrginlibs;
-  set __rrginlibs __rrginlibs0;
+proc append base=__rrginlibs data=__rrginlibs0;
 run;
+
 
 
 

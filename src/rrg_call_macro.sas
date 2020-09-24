@@ -26,17 +26,19 @@
 %end;
 
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod lrecl=8192;
+data rrgpgmtmp;
+length record $ 200;
+keep record;
 length string  $ 32000;
 string = cats('%',symget("string"),';');
-put;
-put string;
-put;
+record=''; output;
+record=strip(string); output;
+record=''; output;
 call symput('st', strip(string));
 run;
 
-
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 &st;
 

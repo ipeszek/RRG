@@ -111,60 +111,65 @@ quit;
 %if %length(&misstext)=0 %then %let misstext=Missing;
 
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
+data rrgpgmtmp;
+length record $ 200;
+keep record;
 __tabwhere = cats(symget("tabwhere"));
 __where = cats(symget("where"));
-put;
-put @1 "*-------------------------------------------------------------;";
-put @1 "*  CALCULATE STATISTICS FOR &VAR      ;";
-put @1 "*-------------------------------------------------------------;";
-put;
-put;
-put @1 "data &outds;";
-put @1 " if 0;";
-put @1 "run;";
-put;
-put @1 "*-------------------------------------------------------------;";
-put @1 "* CREATE A TEMPORARY DATASET AND SORT NODUPKEY BY NECESSARY ;";
-put @1 "* VARIABLES;";
-put @1 "*-------------------------------------------------------------;";
-put;
-put @1 "proc sql noprint;";
-put @1 "  create table __datasetc as select * ";
-put @1 "     from __dataset (where=(" __tabwhere " and " __where "));";
-put @1 "quit;";
-put;
-put @1 '%local dsid rc nobs ;';
-put @1 '%let dsid =%sysfunc(open(__datasetc));;';
-put @1 '%let nobs = %sysfunc(attrn(&dsid, NOBS));;';
-put @1 '%let rc=%sysfunc(close(&dsid));;';
-put;
-put @1 '%if &nobs<=0  %then %do;';
-put @1 '%goto exit' "c&varid;";
-put @1 '%end;';
+record= " "; output;
+record= "*-------------------------------------------------------------;"; output;
+record= "*  CALCULATE STATISTICS FOR &VAR      ;";                         output;
+record= "*-------------------------------------------------------------;"; output;
+record= " "; output;
+record= " "; output;
+record= "data &outds;";                                                    output;
+record= " if 0;";                                                          output;
+record= "run;";                                                            output;
+record= " "; output;
+record= "*-------------------------------------------------------------;"; output;
+record= "* CREATE A TEMPORARY DATASET AND SORT NODUPKEY BY NECESSARY ;";   output;
+record= "* VARIABLES;";                                                    output;
+record= "*-------------------------------------------------------------;"; output;
+record= " "; output;
+record= "proc sql noprint;";                                               output;
+record= "  create table __datasetc as select * ";                          output;
+record= "     from __dataset (where=("||strip(__tabwhere)||" and "||strip(__where)|| "));";   output;     
+record= "quit;";                                                           output;
+record= " "; output;
+record= '%local dsid rc nobs ;';                                           output;
+record= '%let dsid =%sysfunc(open(__datasetc));';                         output;
+record= '%let nobs = %sysfunc(attrn(&dsid, NOBS));';                      output;
+record= '%let rc=%sysfunc(close(&dsid));';                                output;
+record= " "; output;
+record= '%if &nobs<=0  %then %do;';                                        output;
+record= '   %goto exit'||strip("c&varid)"||";";                           output;
+record= '%end;';                                                           output;
 
-put;
-put;
+record= " "; output;
+record= " "; output;
 
 %if %index(&aetable, EVENTS)<=0 %then %do;
-  put @1 "proc sort data=__datasetc nodupkey ;";
-  put @1 "  by  &by &groupvars &var &unit &trtvars ;";
-  put @1 "run;";
-  put;
+    record= "proc sort data=__datasetc nodupkey ;";                         output;
+    record= "  by  &by &groupvars &var &unit &trtvars ;";                   output;
+    record= "run;";                                                         output;
+    record= " "; output;
 %end;
 %else %do;
-  put @1 "proc sort data=__datasetc nodupkey ;";
-  put @1 "by  &by &groupvars &var &unit &trtvars __eventid;";
-  put @1 "run;";
-  put;
+    record= "proc sort data=__datasetc nodupkey ;";                         output;
+    record= "by  &by &groupvars &var &unit &trtvars __eventid;";            output;
+    record= "run;";                                                         output;
+    record= " "; output;
 %end;
 
-put;
-put @1 "data __catcnt4;";
-put @1 "if 0;";
-put @1 "run;";
+record= " "; output;                                                        output;
+record= "data __catcnt4;";                                                  output;
+record= "if 0;";                                                            output;
+record= "run;";    
 run;
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
 
 
 
@@ -286,26 +291,29 @@ run;
 
 
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-put @1 '%if %sysfunc(exist(__catcnt4)) = 0 %then %do;';
-put @1 '  %put -----------------------------------------------------------;';
-put @1 '  %put NO RECORDS IN RESULT DATASET : SKIP REST OF MANIPULATION;  ';
-put @1 '  %put -----------------------------------------------------------;';
-put @1 '  %goto ' "exitc&varid;";
-put @1 '%end;';
-put;
+data rrgpgmtmp;
+length record $ 200;
+keep record;
+record=" "; output;
+record= '%if %sysfunc(exist(__catcnt4)) = 0 %then %do;';                           output;
+record= '  %put -----------------------------------------------------------;';     output;
+record= '  %put NO RECORDS IN RESULT DATASET : SKIP REST OF MANIPULATION;  ';      output;
+record= '  %put -----------------------------------------------------------;';     output;
+record= '  %goto '||"exitc&varid;";                                                 output;
+record= '%end;';                                                                   output;
+record=" "; output;
+run;
 
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 *-----------------------------------------------------------------------;
 * APPLY TEMPLATE: KEEP ONLY MODALITIES FROM TEMPLATE;
 *-----------------------------------------------------------------------;
 
 
-proc sql noprint;
-  select trim(left(decode)) into:decode from __catv;
-quit;
+
 
 
 
@@ -329,6 +337,10 @@ warn_on_nomatch = &warn_on_nomatch,
    
 );
 
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
 %*-----------------------------------------------------------------;
 %* APPLY FREQUENCY-BASED SORTING;
 %*-----------------------------------------------------------------;
@@ -348,31 +360,32 @@ warn_on_nomatch = &warn_on_nomatch,
 %local ngrp;
 %let ngrp=0;
 %if %length(&groupvars) %then %let ngrp = %sysfunc(countw(&groupvars, %str( )));
+
 %do i=1 %to &ngrp;
-  %local j ngrpvars currgrp;
-  %let currgrp = %scan(&groupvars, &i, %str( ));
-  %let ngrpvars=;
-  %do j=1 %to %eval(&i-1);
-    %let ngrpvars = &ngrpvars %scan(&groupvars, &j, %str( ));
-  %end;
-  
-  data __catv_&i;
-    set __varinfo;
-    if  upcase(name) = upcase("&currgrp") and type='GROUP';
-  run;
+    %local j ngrpvars currgrp;
+    %let currgrp = %scan(&groupvars, &i, %str( ));
+    %let ngrpvars=;
+    %do j=1 %to %eval(&i-1);
+        %let ngrpvars = &ngrpvars %scan(&groupvars, &j, %str( ));
+    %end;
     
-  %__freqsort(
-     vinfods = __catv_&i,
-        dsin = __catcnt4,
-     trtvars = &trtvars,
-       trtds = __trt,
-   trtinfods = __trtinfo,
-          by = &by,
-   groupvars = &ngrpvars,
-         var = &currgrp,
-    ordervar = __order_&currgrp,
-     analvar = &var
-  );
+    data __catv_&i;
+      set __varinfo;
+      if  upcase(name) = upcase("&currgrp") and type='GROUP';
+    run;
+    
+    %__freqsort(
+       vinfods = __catv_&i,
+          dsin = __catcnt4,
+       trtvars = &trtvars,
+         trtds = __trt,
+     trtinfods = __trtinfo,
+            by = &by,
+     groupvars = &ngrpvars,
+           var = &currgrp,
+      ordervar = __order_&currgrp,
+       analvar = &var
+    );
 
 
 %end;
@@ -401,9 +414,9 @@ warn_on_nomatch = &warn_on_nomatch,
 %local statf;
 %let statf=%str($__rrgbl.);
 %if %length(&simplestats)>0 %then %do;
-  %if %sysfunc(countw(&simplestats, %str( )))>1 %then %do;
-    %let statf = %str($__rrgsf.);
-  %end;
+    %if %sysfunc(countw(&simplestats, %str( )))>1 %then %do;
+        %let statf = %str($__rrgsf.);
+    %end;
 %end;
 
 
@@ -422,419 +435,439 @@ run;
 %let rc=%sysfunc(close(&dsid));;
 
 %if &nobs>0  %then %do;
-  proc sort data=__modelstat;
-    by __modelname;
-  run;
-  
-  data __modelstat;
-    set __modelstat end=eof;
-    by __modelname;
-    retain __modelnum ;
-    if _n_=1 then __modelnum=0;
-    if first.__modelname then __modelnum+1;
-    if eof then call symput("nmodels", cats(__modelnum));
-  run;
-
-  data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    set __modelstat end=eof;
-    if _n_=1 then do;      
-      %if %length(&ovstat) %then %do;
-      put @1 "  data __overallstats0;";
-      put @1 "  if 0;";
-      put @1 "  run;";
-      %end;
-      put;
-      put @1 "  data __modelstatr;";
-      put @1 "  if 0;";
-      put @1 "  run;";
-      put;
-      put @1 "*-----------------------------------------------------;";
-      put @1 "* CREATE A LIST OF REQUESTED MODEL-BASED STATISTICS   ;";
-      put @1 "*-----------------------------------------------------;";
-      put;
-      put @1 "  data __modelstat;";
-      put @1 "    length __fname __name   $ 2000;";
-      put;
-    end;
+    proc sort data=__modelstat;
+      by __modelname;
+    run;
     
-    put @1 "    __overall = " __overall ";";      
-    put @1 "    __fname = '" __fname "';";
-    put @1 "    __name = '" __name "';";
-    put @1 "    __order = " __order ";";
-    put @1 "  output;";
-    put;
-    if eof then do;
-      put;
-      put @1 "  run;";
-      put;
-      put;
-    end;
-    put;
-  run;
-
-
-
-    data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    put;
-    put @1 "*-------------------------------------------------------------;";
-    put @1 "* PREPARE DATASET FOR CUSTOM MODEL, REMOVING POOLED TREATMENTS;";
-    put @1 "*-------------------------------------------------------------;";
-    put;
-    put @1 "data __datasetp;";
-    put @1 "set __dataset(where=(&tabwhere and &where &pooledstr));";
-    put @1 "run;";
-    put;
-    put @1 "data __bincntds;";
-    put @1 "set __catcnt4;";
-    put @1 "run;";
-    put;
-  run;
-    
-
-
-  %do i = 1 %to &nmodels;
-  
-    data __modelstat0;
-      set __modelstat;
-      if __modelnum=&i;
-      length __fname $ 2000;
-      call symput("currentmodel", cats(__modelname));
-    run; 
-     
-    %local nmoddef; 
-    %let nmoddef=0;
-    
-    data __modelp;
-      set __varinfo
-      (where=  (model = upcase("&currentmodel")));
+    data __modelstat;
+      set __modelstat end=eof;
+      by __modelname;
+      retain __modelnum ;
+      if _n_=1 then __modelnum=0;
+      if first.__modelname then __modelnum+1;
+      if eof then call symput("nmodels", cats(__modelnum));
     run;
 
-    proc sql noprint;
-      select count(*) into:nmoddef from __modelp;
-    quit;
-    
-    %if &nmoddef>0 %then %do;
-    proc sort data=__modelp nodupkey;
-      by model;
-    run;  
-    %end;
-    %else %do;
-    data __modelp;
-      length name $ 2000;
-      name = "&currentmodel";
-      parms='';
+    data rrgpgmtmp;
+   length record $ 200;
+   keep record;
+   set __modelstat end=eof;
+   if _n_=1 then do;      
+     %if %length(&ovstat) %then %do;
+         record= "  data __overallstats0;";                                output;
+         record= "  if 0;";                                                output;
+         record= "  run;";                                                 output;
+     %end;                                                                 
+     record=" ";   output;                                                               
+     record= "  data __modelstatr;";                                       output;
+     record= "  if 0;";                                                    output;
+     record= "  run;";                                                     output;
+     record=" ";  output;                                                                
+     record= "*-----------------------------------------------------;";    output;
+     record= "* CREATE A LIST OF REQUESTED MODEL-BASED STATISTICS   ;";    output;
+     record= "*-----------------------------------------------------;";    output;
+     record=" ";                                                                  output;
+     record= "  data __modelstat;";                                        output;
+     record= "    length __fname __name   $ 2000;";                        output;
+     record=" ";     output;                                                               
+   end;                                                                    
+                                                                           
+   record= "    __overall = " || put(__overall, best.)|| ";";                   output;
+   record= "    __fname = '"||strip(__fname)|| "';";                       output;
+   record= "    __name = '" ||strip(__name)|| "';";                        output;
+   record= "    __order = "||put(__order, best.)|| ";";                         output;
+   record= "  output;";                                                    output;
+   record=" "; output;                                                                    
+   if eof then do;                                                         
+   record=" "; output;                                                                  
+   record= "  run;";                                                     output;
+   record=" "; output;
+   record=" "; output;
+   
+     record=" "; output;
+
+     record= "*-------------------------------------------------------------;";    output;
+     record= "* PREPARE DATASET FOR CUSTOM MODEL, REMOVING POOLED TREATMENTS;";    output;
+     record= "*-------------------------------------------------------------;";    output;
+        record=" "; output;                                                                          
+        record= "data __datasetp;";                                                   output;
+        record= "set __dataset(where=(&tabwhere and &where &pooledstr));";            output;
+        record= "run;";                                                               output;
+        record=" "; output;                                                                          
+        record= "data __bincntds;";                                                   output;
+        record= "set __catcnt4;";                                                     output;
+        record= "run;";                                                               output;
+        record=" "; output;
+    end;
     run;
-    %end;
+    
+    proc append data=rrgpgmtmp base=rrgpgm;
+    run;
+
       
-    %local modelds;
+
+    %do i = 1 %to &nmodels;
     
-    data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    length __macroname2  $ 2000;
-    set __modelp;
-    __macroname2 = cats('%', name,'(');
-    put;
-    put @1 __macroname2;
-    put @1 "       var = &var,";
-    put @1 "   trtvar  = &trtvars,";
-    %if %upcase(&aetable) = N %then %do;
-    put @1 " groupvars = &by &groupby,";
-    %end;
-    %else %do;    
-    put @1 "    pageby = &by,";
-    put @1 " groupvars = &groupby,";
-    %end;
-    put @1 "   dataset = __datasetp,";
-    if parms ne '' then do;
-      put @1 parms ",";
-    end;
-    put @1 "   subjid=&subjid);";
-    put;
-    %local modelds;
-    call symput ('modelds', cats(name));
-    run;
-    
-    data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    
-    %* collect overall statistics;
-    %if %length(&ovstat) %Then %do;
-    
-    put @1 "*---------------------------------------------------------;";
-    put @1 "* ADD OVERALL STATISTICS TO DATASET THAT COLLECTS THEM;";
-    put @1 "*---------------------------------------------------------;";
-    put;
-    put @1 'data __overallstats0;';
-    put @1 "length __fname $ 2000;";
-    put @1 "set __overallstats0 &modelds(in=__a where=(__overall=1));";
-    put @1 "__blockid = &varid;";
-    put @1 "if __a then __fname = upcase(cats('" "&currentmodel" "','.',__stat_name));";
-    put @1 'run;';
-    put;
-    %end;
-    put; 
-    put @1 "*---------------------------------------------------------;";
-    put @1 "* MERGE LIST OF REQUESTED MODEL-BASED STATISTICS      ;";
-    put @1 "* WITH DATASET CREATED BY PLUGIN;";
-    put @1 "* KEEP ONLY REQUESTED STATISTICS FROM CURRENT MODEL;";
-    put @1 "*---------------------------------------------------------;";
-    put;
-    put @1 "  data __mdl_&modelds;";
-    put @1 "    length __fname $ 2000;";
-    put @1 "    set &modelds;";
-    put @1 "    if __overall ne 1;";
-    put @1 "    __fname = upcase(cats('" "&currentmodel" "', '.', __stat_name));";
-    put @1 "  run;";
-    put;
-    put @1 "*---------------------------------------------------------;";
-    put @1 "* CHECK IF PLUGIN PRODUCED ANY WITHIN-TREATMENT STATISTICS;";
-    put @1 "*---------------------------------------------------------;";
-    put;
-    put @1 '%local dsid rc nobs;';
-    put @1 '%let dsid =';
-    put @1 '  %sysfunc(open(' "__mdl_&modelds ));";
-    put @1 '%let nobs = %sysfunc(attrn(&dsid, NOBS));;';
-    put @1 '%let rc=%sysfunc(close(&dsid));;';
-    put;
-    put @1 '%if &nobs>0 %then %do;';
-    put;
-    put @1 "  proc sort data=__mdl_&modelds;";
-    put @1 "    by __fname __overall;";
-    put @1 "  run;";
-    put @1 "  proc sort data=__modelstat;";
-    put @1 "    by __fname __overall;";
-    put @1 "  run;";
-    put;
-    put @1 "  data __mdl_&modelds;";
-    put @1 "    length __col_0 __col __tmpcol_0 __tmpcol $ 2000 __tmpalign __tmpal $ 8;";
-    put @1 "    merge __mdl_&modelds (in=__a) __modelstat (in=__b);";
-    put @1 "    by __fname __overall;";
-    put @1 "    __sid=__stat_order;";
-    put @1 "    if __a and __b;";
-    put @1 "    __tby=1;";
-    put @1 "    __tmpal = __stat_align;";
-    put @1 "    __tmpcol = cats(__stat_value);";
-    put @1 "    __tmpcol_0 = cats(__stat_label);";
-    put @1 "    __tmpal = tranwrd(__tmpal, '//', '-');";
-    put @1 "    __nline = countw(__tmpal,'-');";
-    put @1 "    if index(__tmpcol_0, '//')=1 then __tmpcol_0='~-2n'||substr(__tmpcol_0, 3);";        
-    put @1 "    do __i =1 to __nline;";
-    put @1 "     if index(__tmpcol_0, '//')>0 then do;";
-    put @1 "       __col_0 = substr(__tmpcol_0, 1, index(__tmpcol_0, '//')-1); ";
-    put @1 "       __tmpcol_0 = substr(__tmpcol_0, index(__tmpcol_0, '//')+2); ";
-    put @1 "     end;";
-    put @1 "     else do;";
-    put @1 "       __col_0 = trim(left(__tmpcol_0)); ";
-    put @1 "     end;";
-    put @1 "     if index(__tmpcol, '//')>0 then do;";
-    put @1 "       __col = substr(__tmpcol, 1, index(__tmpcol, '//')-1); ";
-    put @1 "       __tmpcol = substr(__tmpcol, index(__tmpcol, '//')+2); ";
-    put @1 "     end;";
-    put @1 "     else do;";
-    put @1 "       __col = trim(left(__tmpcol)); ";
-    put @1 "     end;";
-    put @1 "     __sid = __sid + (__i-1)/__nline;";
-    put @1 "     __tmpalign = scan(__tmpal,__i, '-');";    
-    put @1 "     output;";
-    put @1 "    end;";
-    put @1 "    drop __stat_align __stat_order __stat_label __overall __nline ";
-    put @1 "         __tmpal __tmpcol __tmpcol_0;";
-    put @1 "   run;";
-    PUT;
-    put @1 "  proc sort data=__mdl_&modelds;";
-    put @1 "  by __order __sid __fname &trtvars &by &groupby;";
-    put @1 "  run;";
-    put;
-    put @1 "  data __mdl_&modelds (drop = __order ";
-    %if %upcase(&aetable) ne N %then %do;
-    put @1 "              rename=(__tmporder=__morder));";
-    %end;
-    %else %do;
-    put @1 "              rename=(__tmporder=__order));";
-    %end;
-    put @1 "  set __mdl_&modelds;"; 
-    put @1 "  by __order __sid __fname &trtvars &by &groupby;";  
-    put @1 "    retain __tmporder;";
-    put @1 "    if first.__order then __tmporder=__order+1000000;";
-    put @1 "    if first.__sid then __tmporder+0.0001;";
-    %if %upcase(&aetable) = N %then %do;
-    put @1 "    __grpid=999;";
-    %end;
-    /*
-    %else %do;
-    put @1 " if __grpid ne 999 then __grpid = __grpid+1;";
-    %end;
-    */
-    put @1 "  run;";
-    put @1 "*---------------------------------------------------------;";
-    put @1 "* ADD PLUGIN-GENERATED STATISTICS TO OTHER STATISTICS;";
-    put @1 "*---------------------------------------------------------;";
-    put;
-    put @1 "  data __modelstatr;";
-    put @1 "    set __modelstatr __mdl_&modelds;";
-    put @1 "  run;  ";
-    put;
-    put @1 '%end;';
-    put;
-   run;
-  %end;
- 
-  data _null_;
-  file "&rrgpgmpath./&rrguri..sas" mod;
-  put;
-  put @1 '%local dsid rc nobs;';
-  put @1 '%let dsid =';
-  put @1 '  %sysfunc(open(' "__modelstatr));";
-  put @1 '%let nobs = %sysfunc(attrn(&dsid, NOBS));;';
-  put @1 '%let rc=%sysfunc(close(&dsid));;';
-  put;
-  put;
-  put @1 '%if &nobs>0 %then %do;';
-  put;
-  
-  run;
- 
-    
-  %__joinds(data1=__modelstatr,
-          data2=__poph(keep=&by &trtvars __trtid),
-      by = &by &trtvars,
-        mergetype=INNER,
-          dataout=__modelstatr);
-          
-  %local ngb;
-  proc sql noprint;
-    select value into:ngb separated by ' '
-    from __rrgpgminfo(where=(key = "newgroupby"));
-  quit;
-  %if %length(&ngb)=0 %then %let ngb= &groupvars;
+        data __modelstat0;
+          set __modelstat;
+          if __modelnum=&i;
+          length __fname $ 2000;
+          call symput("currentmodel", cats(__modelname));
+        run; 
          
-  data _null_;
-  file "&rrgpgmpath./&rrguri..sas" mod;
-  put;
-  put @1 "*-----------------------------------------------------------;";
-  put @1 "*  TRANSPOSE DATASET WITH MODEL-BASED STATISTICS;";
-  put @1 "*-----------------------------------------------------------;";
-  put;
-  put;
-  put @1 "data __modelstatr;";
-  put @1 "length __fname $ 2000;";
-  put @1 "set __modelstatr;";
-  put @1 " if 0 then __fname='';";
-  put @1 "run;";
-  put; 
+        %local nmoddef; 
+        %let nmoddef=0;
+        
+        data __modelp;
+          set __varinfo
+          (where=  (model = upcase("&currentmodel")));
+        run;
+
+        proc sql noprint;
+          select count(*) into:nmoddef from __modelp;
+        quit;
+        
+        %if &nmoddef>0 %then %do;
+            proc sort data=__modelp nodupkey;
+              by model;
+            run;  
+        %end;
+        %else %do;
+            data __modelp;
+              length name $ 2000;
+              name = "&currentmodel";
+              parms='';
+            run;
+        %end;
+          
+        %local modelds;
+      
+        data rrgpgmtmp;
+        length record $ 200;
+        keep record;
+        length __macroname2  $ 2000;
+        set __modelp;
+        __macroname2 = cats('%', name,'(');
+        record=" "; output;
+        record= __macroname2;                       output;
+        record= "       var = &var,";               output;
+        record= "   trtvar  = &trtvars,";           output;
+        %if %upcase(&aetable) = N %then %do;        
+            record= " groupvars = &by &groupby,";   output;
+        %end;                                       
+        %else %do;                                  
+            record= "    pageby = &by,";            output;
+            record= " groupvars = &groupby,";       output;
+        %end;                                       
+        record= "   dataset = __datasetp,";         output;
+        if parms ne '' then do;                     
+           record= parms ",";                       output;
+        end;                                        
+        record= "   subjid=&subjid);";              output;
+        record=" "; output;                                        output;
+        %local modelds;                             
+        call symput ('modelds', cats(name));        
+        run;                                        
+                
+        proc append data=rrgpgmtmp base=rrgpgm;
+        run;
+                                     
+        data rrgpgmtmp;                                
+        length record $ 200;    
+        keep record;                                            
+        %* collect overall statistics;              
+        %if %length(&ovstat) %then %do;
+        
+            record= "*---------------------------------------------------------;";                       output;
+            record= "* ADD OVERALL STATISTICS TO DATASET THAT COLLECTS THEM;";                           output;
+            record= "*---------------------------------------------------------;";                       output;
+            record=" "; output;                                                                                         
+            record= 'data __overallstats0;';                                                             output;
+            record= "length __fname $ 2000;";                                                            output;
+            record= "set __overallstats0 &modelds(in=__a where=(__overall=1));";                         output;
+            record= "__blockid = &varid;";                                                               output;
+            record= "if __a then __fname = upcase(cats('"||strip("&currentmodel")||"','.',__stat_name));";        output;
+            record= 'run;';                                                                              output;
+            record=" "; output;                                                                                         
+        %end;                                                                                            
+        record=" "; output;                                                                                             
+        record= "*---------------------------------------------------------;";                           output;
+        record= "* MERGE LIST OF REQUESTED MODEL-BASED STATISTICS      ;";                               output;
+        record= "* WITH DATASET CREATED BY PLUGIN;";                                                     output;
+        record= "* KEEP ONLY REQUESTED STATISTICS FROM CURRENT MODEL;";                                  output;
+        record= "*---------------------------------------------------------;";                           output;
+        record=" "; output;                                                                                             
+        record= "  data __mdl_&modelds;";                                                                output;
+        record= "    length __fname $ 2000;";                                                            output;
+        record= "    set &modelds;";                                                                     output;
+        record= "    if __overall ne 1;";                                                                output;
+        record= "    __fname = upcase(cats('"||strip("&currentmodel")|| "', '.', __stat_name));";        output;
+        record= "  run;";                                                                                output;
+        record=" "; output;                                                                                          
+        record= "*---------------------------------------------------------;";                           output;
+        record= "* CHECK IF PLUGIN PRODUCED ANY WITHIN-TREATMENT STATISTICS;";                           output;
+        record= "*---------------------------------------------------------;";                           output;
+        record=" "; output;                                                                                             
+        record= '%local dsid rc nobs;';                                                                  output;
+        record= '%let dsid =';                                                                           output;
+        record= '  %sysfunc(open('||"__mdl_&modelds ));";                                                output;
+        record= '%let nobs = %sysfunc(attrn(&dsid, NOBS));;';                                            output;
+        record= '%let rc=%sysfunc(close(&dsid));;';                                                      output;
+        record=" "; output;                                                                                             
+        record= '%if &nobs>0 %then %do;';                                                                output;
+        record=" "; output;                                                                                             
+        record= "  proc sort data=__mdl_&modelds;";                                                      output;
+        record= "    by __fname __overall;";                                                             output;
+        record= "  run;";                                                                                output;
+        record= "  proc sort data=__modelstat;";                                                         output;
+        record= "    by __fname __overall;";                                                             output;
+        record= "  run;";                                                                                output;
+        record=" "; output;                                                                                             
+        record= "  data __mdl_&modelds;";                                                                output;
+        record= "    length __col_0 __col __tmpcol_0 __tmpcol $ 2000 __tmpalign __tmpal $ 8;";           output;
+        record= "    merge __mdl_&modelds (in=__a) __modelstat (in=__b);";                               output;
+        record= "    by __fname __overall;";                                                             output;
+        record= "    __sid=__stat_order;";                                                               output;
+        record= "    if __a and __b;";                                                                   output;
+        record= "    __tby=1;";                                                                          output;
+        record= "    __tmpal = __stat_align;";                                                           output;
+        record= "    __tmpcol = cats(__stat_value);";                                                    output;
+        record= "    __tmpcol_0 = cats(__stat_label);";                                                  output;
+        record= "    __tmpal = tranwrd(__tmpal, '//', '-');";                                            output;
+        record= "    __nline = countw(__tmpal,'-');";                                                    output;
+        record= "    if index(__tmpcol_0, '//')=1 then __tmpcol_0='~-2n'||substr(__tmpcol_0, 3);";       output; 
+        record= "    do __i =1 to __nline;";                                                             output;
+        record= "     if index(__tmpcol_0, '//')>0 then do;";                                            output;
+        record= "       __col_0 = substr(__tmpcol_0, 1, index(__tmpcol_0, '//')-1); ";                   output;
+        record= "       __tmpcol_0 = substr(__tmpcol_0, index(__tmpcol_0, '//')+2); ";                   output;
+        record= "     end;";                                                                             output;
+        record= "     else do;";                                                                         output;
+        record= "       __col_0 = trim(left(__tmpcol_0)); ";                                             output;
+        record= "     end;";                                                                             output;
+        record= "     if index(__tmpcol, '//')>0 then do;";                                              output;
+        record= "       __col = substr(__tmpcol, 1, index(__tmpcol, '//')-1); ";                         output;
+        record= "       __tmpcol = substr(__tmpcol, index(__tmpcol, '//')+2); ";                         output;
+        record= "     end;";                                                                             output;
+        record= "     else do;";                                                                         output;
+        record= "       __col = trim(left(__tmpcol)); ";                                                 output;
+        record= "     end;";                                                                             output;
+        record= "     __sid = __sid + (__i-1)/__nline;";                                                 output;
+        record= "     __tmpalign = scan(__tmpal,__i, '-');";                                             output;
+        record= "     output;";                                                                          output;
+        record= "    end;";                                                                              output;
+        record= "    drop __stat_align __stat_order __stat_label __overall __nline ";                    output;
+        record= "         __tmpal __tmpcol __tmpcol_0;";                                                 output;
+        record= "   run;";                                                                               output;
+        record=" "; output;                                                                                             
+        record= "  proc sort data=__mdl_&modelds;";                                                      output;
+        record= "  by __order __sid __fname &trtvars &by &groupby;";                                     output;
+        record= "  run;";                                                                                output;
+        record=" "; output;                                                                                             
+        record= "  data __mdl_&modelds (drop = __order ";                                                output;
+        %if %upcase(&aetable) ne N %then %do;                                                            
+            record= "              rename=(__tmporder=__morder));";                                      output;
+        %end;                                                                                            
+        %else %do;                                                                                      
+            record= "              rename=(__tmporder=__order));";                                       output;
+        %end;                                                                                            
+        record= "  set __mdl_&modelds;";                                                                 output;
+        record= "  by __order __sid __fname &trtvars &by &groupby;";                                     output;
+        record= "    retain __tmporder;";                                                                output;
+        record= "    if first.__order then __tmporder=__order+1000000;";                                 output;
+        record= "    if first.__sid then __tmporder+0.0001;";                                            output;
+        %if %upcase(&aetable) = N %then %do;                                                             
+            record= "    __grpid=999;";                                                                  output;
+        %end;                                                                                            
+        record= "  run;";                                                                                output;
+        record= "*---------------------------------------------------------;";                           output;
+        record= "* ADD PLUGIN-GENERATED STATISTICS TO OTHER STATISTICS;";                                output;
+        record= "*---------------------------------------------------------;";                           output;
+        record=" "; output;                                                                                             
+        record= "  data __modelstatr;";                                                                  output;
+        record= "    set __modelstatr __mdl_&modelds;";                                                  output;
+        record= "  run;  ";                                                                              output;
+        record=" "; output;                                                                                             
+        record= '%end;';                                                                                 output;
+        record=" "; output;
+       run;
+       
+       proc append data=rrgpgmtmp base=rrgpgm;
+       run;
+
+   
+    %end;
+ 
+    data rrgpgmtmp;
+      length record $ 200;
+      keep record;
+    record=" "; output;
+    record= '%local dsid rc nobs;'; output;
+    record= '%let dsid ='; output;
+    record= '  %sysfunc(open('|| "__modelstatr));"; output;
+    record= '%let nobs = %sysfunc(attrn(&dsid, NOBS));;'; output;
+    record= '%let rc=%sysfunc(close(&dsid));;'; output;
+    record=" "; output;
+    record=" "; output;
+    record= '%if &nobs>0 %then %do;'; output;
+    record=" "; output;
+    
+
+   
+    
+    %__joinds(data1=__modelstatr,
+            data2=__poph(keep=&by &trtvars __trtid),
+        by = &by &trtvars,
+          mergetype=INNER,
+            dataout=__modelstatr);
+      
+      run;
   
-  put @1 "proc sort data=__modelstatr ;";
-  %if %upcase(&aetable) ne N %then %do;
-  put @1 "by &by __tby &groupvars __grpid &var __morder  __col_0 __tmpalign __fname;";
-  %end;
-  %else %do;
-  put @1 "by &by __tby &groupvars __order  __col_0 __tmpalign __grpid __fname;";
-  %end;
+    proc append data=rrgpgmtmp base=rrgpgm;
+    run;
   
-  put @1 "run;";
-  put;
+      
+    %local ngb;
+    proc sql noprint;
+      select value into:ngb separated by ' '
+      from __rrgpgminfo(where=(key = "newgroupby"));
+    quit;
+    %if %length(&ngb)=0 %then %let ngb= &groupvars;
+           
+    data rrgpgmtmp;
+    length record $ 200;
+    keep record;
+    record=" "; output;
+    record= "*-----------------------------------------------------------;"; output;
+    record= "*  TRANSPOSE DATASET WITH MODEL-BASED STATISTICS;"; output;
+    record= "*-----------------------------------------------------------;"; output;
+    record=" "; output;
+    record=" "; output;
+    record= "data __modelstatr;"; output;
+    record= "length __fname $ 2000;"; output;
+    record= "set __modelstatr;"; output;
+    record= " if 0 then __fname='';"; output;
+    record= "run;"; output;
+    record=" "; output; 
+
+    record= "proc sort data=__modelstatr ;"; output;
+    %if %upcase(&aetable) ne N %then %do;
+        record= "by &by __tby &groupvars __grpid &var __morder  __col_0 __tmpalign __fname;"; output;
+    %end;
+    %else %do;
+        record= "by &by __tby &groupvars __order  __col_0 __tmpalign __grpid __fname;"; output;
+    %end;
+
+    record= "run;"; output;
+    record=" "; output;
+
+
+
+    record= "proc transpose data=__modelstatr out=__modelstatr(drop=_name_) prefix=__col_;"; output;
+    %if %upcase(&aetable) ne N %then %do;
+        record= "by &by __tby &groupvars __grpid &var __morder  __col_0 __tmpalign __fname;"; output;
+    %end;
+    %else %do;
+        record= "by &by __tby &groupvars __order  __col_0 __tmpalign __grpid __fname;"; output;
+    %end;
+    record= "id __trtid;"; output;
+    record= "var __stat_value;"; output;
+    record= "run;"; output;
+    record=" "; output;
+    record=" "; output;
+    record= "*-----------------------------------------------------------;"; output;
+    record= "*  KEEP ONLY REQUESTED MODALITIES FOR MODEL-BASED STATISTICS;"; output;
+    record= "*-----------------------------------------------------------;"; output;
+    record=" "; output;
+    %if %upcase(&aetable) ne N %then %do;
+
+        record= "data __catcnt4m;"; output;
+        record= "set __catcnt4;"; output;
+
+        record= "if __col_1 ne '';"; output;
+        record= "keep &by __tby &ngb &var __order __grpid;"; output;
+        record= "run;"; output;
+        record=" "; output;
+        record= "proc sql noprint;"; output;
+        record= "create table __tmp as select * from "; output;
+        record= "__modelstatr natural right join __catcnt4m;"; output;
+        record= "create table __modelstatr as select * from __tmp;"; output;
+        record= "quit;"; output;
+
+    %end;
+    record=" "; output;
+    record=" "; output;
+    record= "data __catcnt4;"; output;
+    record= "set __catcnt4 __modelstatr(in=__a);"; output;
+    record= "if __a then do; "; output;
+    record= "  __vtype='CATS';"; output;
+    record= "end;"; output;
+    record= "run;"; output;
+    %if %upcase(&aetable) ne N %then %do;
+        %* sort by grouping variable and modalities of &var;
+        %* inherit  __grptype, assign order from there;
+        %* sort later is done by &varby __grptype __tby &groupby __grpid __blockid ;
+        %* __order __tmprowid;
+          record=" "; output;
+        record= "proc sort data=__catcnt4 ;"; output;
+        record= "by &by &groupvars __tby  __order  __vtype  __morder;"; output;
+        record= "run;"; output;
+        record=" "; output;
+        record= "data __catcnt4(drop=__order rename=(__norder=__order));"; output;
+        record= "set __catcnt4;"; output;
+        record= "by &by &groupvars __tby  __order  __vtype ;"; output;
+        record= "  retain __norder;"; output;
+        record= "  if first.__tby then __norder=0;"; output;
+        record= "  __norder+1;"; output;
+        record= "run;"; output;
+        record=" "; output;
+
+    %end;
+
+    record= '%end;'; output;
+    run;
   
+    proc append data=rrgpgmtmp base=rrgpgm;
+    run;
 
   
-  put @1 "proc transpose data=__modelstatr out=__modelstatr(drop=_name_) prefix=__col_;";
-  %if %upcase(&aetable) ne N %then %do;
-  put @1 "by &by __tby &groupvars __grpid &var __morder  __col_0 __tmpalign __fname;";
-  %end;
-  %else %do;
-  put @1 "by &by __tby &groupvars __order  __col_0 __tmpalign __grpid __fname;";
-  %end;
-  put @1 "id __trtid;";
-  put @1 "var __stat_value;";
-  put @1 "run;";
-  put;
-  put;
-  put @1 "*-----------------------------------------------------------;";
-  put @1 "*  KEEP ONLY REQUESTED MODALITIES FOR MODEL-BASED STATISTICS;";
-  put @1 "*-----------------------------------------------------------;";
-  put;
-  %if %upcase(&aetable) ne N %then %do;
   
-  put @1 "data __catcnt4m;";
-  put @1 "set __catcnt4;";
-  
-  put @1 "if __col_1 ne '';";
-  
-  put @1 "keep &by __tby &ngb &var __order __grpid;";
-  put @1 "run;";
-  put;
-  put @1 "proc sql noprint;";
-  put @1 "create table __tmp as select * from ";
-  put @1 "__modelstatr natural right join __catcnt4m;";
-  put @1 "create table __modelstatr as select * from __tmp;";
-  put @1 "quit;";
-  
-  %end;
-  put;
-  put;
-  put @1 "data __catcnt4;";
-  put @1 "set __catcnt4 __modelstatr(in=__a);";
-  put @1 "if __a then do; ";
-  put @1 "  __vtype='CATS';";
-  put @1 "end;";
-  put @1 "run;";
-%if %upcase(&aetable) ne N %then %do;
-%* sort by grouping variable and modalities of &var;
-%* inherit  __grptype, assign order from there;
-%* sort later is done by &varby __grptype __tby &groupby __grpid __blockid ;
-%* __order __tmprowid;
-  put;
-  put @1 "proc sort data=__catcnt4 ;";
-  put @1 "by &by &groupvars __tby  __order  __vtype  __morder;";
-  put @1 "run;";
-  put;
-  put @1 "data __catcnt4(drop=__order rename=(__norder=__order));";
-  put @1 "set __catcnt4;";
-  put @1 "by &by &groupvars __tby  __order  __vtype ;";
-  put @1 "  retain __norder;";
-  put @1 "  if first.__tby then __norder=0;";
-  put @1 "  __norder+1;";
-  put @1 "run;";
-  
-  put;
+    %if %length(&ovstat)  %then %do;
+        data rrgpgmtmp;
+        length record $ 200;
+        keep record;
+        record=" "; output; 
+        record=" "; output;
+        record= "*---------------------------------------------------------;"; output;
+        record= "* COLLECT REQUESTED OVERALL STATISTICS ;"; output;
+        record= "* ADD TO DATASETS __OVERALLSTAT;"; output;
+        record= "*---------------------------------------------------------;"; output;
+        record=" "; output;
+        record= "proc sort data=__modelstat;"; output;
+        record= "  by __fname __overall;"; output;
+        record= "run;"; output;
+        record=" "; output;
+        record= "proc sort data=__overallstats0;"; output;
+        record= "  by __fname __overall;"; output;
+        record= "run;"; output;
+        record=" "; output;
+        record= "data __overallstats0;"; output;
+        record= "  merge __overallstats0(in=__a) __modelstat (in=__b);"; output;
+        record= "  by __fname __overall;"; output;
+        record= "  if __a and __b;"; output;
+        record= "run;"; output;
+        record=" "; output;
+        record= "data __overallstats;"; output;
+        record= "  set __overallstats __overallstats0;"; output;
+        record= "run;"; output;
+        record=" "; output;
 
-%end;
+        run;
+        
+        proc append data=rrgpgmtmp base=rrgpgm;
+        run;
 
-put @1 '%end;';
-run;
-  
-  
-  %if %length(&ovstat)  %then %do;
-  data _null_;
-  file "&rrgpgmpath./&rrguri..sas" mod;
-  put; 
-  put;
-  put @1 "*---------------------------------------------------------;";
-  put @1 "* COLLECT REQUESTED OVERALL STATISTICS ;";
-  put @1 "* ADD TO DATASETS __OVERALLSTAT;";
-  put @1 "*---------------------------------------------------------;";
-  put;
-  put @1 "proc sort data=__modelstat;";
-  put @1 "  by __fname __overall;";
-  put @1 "run;";
-  put;
-  put @1 "proc sort data=__overallstats0;";
-  put @1 "  by __fname __overall;";
-  put @1 "run;";
-  put;
-  put @1 "data __overallstats0;";
-  put @1 "  merge __overallstats0(in=__a) __modelstat (in=__b);";
-  put @1 "  by __fname __overall;";
-  put @1 "  if __a and __b;";
-  put @1 "run;";
-  put;
-  put @1 "data __overallstats;";
-  put @1 "  set __overallstats __overallstats0;";
-  put @1 "run;";
-  put;
-  %end;
-run;
+   %end;
+
 %end;
 
 
@@ -850,180 +883,186 @@ quit;
 %local tmp;
 %let tmp = %scan(__tby &groupvars, -1, %str( ));
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
+data rrgpgmtmp;
+length record $ 200;
+keep record;
 set __catv;
 label=quote(cats(label));
-put;
-put @1 "*--------------------------------------------------------;";
-put;
-put @1 "*--------------------------------------------------------;";
-put @1 "* DEFINE ALIGNMENTS, SKIPLINES AND INDENTATION;";
-put @1 "*--------------------------------------------------------;";
-put;
-put;
-put @1 "data __catcnt4;";
-put @1 "length __fname $ 2000;";
-put @1 " set __catcnt4;";
-put @1 " if 0 then do; __fname=''; __stat=''; end;";
-put @1 " run;";
-put;
-put @1 "proc sort data=__catcnt4;";
+record=" "; output;
+record= "*--------------------------------------------------------;"; output;
+record=" "; output;
+record= "*--------------------------------------------------------;"; output;
+record= "* DEFINE ALIGNMENTS, SKIPLINES AND INDENTATION;"; output;
+record= "*--------------------------------------------------------;"; output;
+record=" "; output;
+record=" "; output;
+record= "data __catcnt4;"; output;
+record= "length __fname $ 2000;"; output;
+record= " set __catcnt4;"; output;
+record= " if 0 then do; __fname=''; __stat=''; end;"; output;
+record= " run;"; output;
+record=" "; output;
+record= "proc sort data=__catcnt4;"; output;
 %if %length(&simplestats) %then %do;
-put @1 "  by &by __tby &groupvars __grpid   __order &var __fname;";
+    record= "  by &by __tby &groupvars __grpid   __order &var __fname;"; output;
 %end;
 %else %do;
-put @1 "  by &by __tby &groupvars __grpid   __order __fname;";
+    record= "  by &by __tby &groupvars __grpid   __order __fname;"; output;
 %end;
-put @1 "run;";
-put;
+record= "run;"; output;
+record=" "; output;
 
-put @1 "data __catcnt4 ;";
-put @1 "  length __varlabel __col_0 __align __tmpl1 $ 2000 ";
-put @1 "         __suffix __vtype $ 20 __tmpalign $ 8;";
-put @1 "  set __catcnt4 end=eof;";
+record= "data __catcnt4 ;"; output;
+record= "  length __varlabel __col_0 __align __tmpl1 $ 2000 "; output;
+record= "         __suffix __vtype $ 20 __tmpalign $ 8;"; output;
+record= "  set __catcnt4 end=eof;"; output;
 %if %length(&simplestats) %then %do;
-put @1 "  by &by __tby &groupvars __grpid  __order &var __fname;";
+    record= "  by &by __tby &groupvars __grpid  __order &var __fname;"; output;
 %end;
 %else %do;
-put @1 "  by &by __tby &groupvars __grpid  __order __fname;";
+    record= "  by &by __tby &groupvars __grpid  __order __fname;"; output;
 %end;
-put @1 "if 0 then __tmpalign=''; ";
-put @1 '  array cols{*} __col_1-__col_&maxtrt;';
-put;  
-put;  
-put @1 "  __tmpl1 =  " label ";";
-put @1 "  if __tmpl1 ne '' then __varlabel = __tmpl1;   ";
-put;  
-put @1 "__keepnvar='" "&keepn" "';";
-put;
+record= "if 0 then __tmpalign=''; "; output;
+record= '  array cols{*} __col_1-__col_&maxtrt;'; output;
+record=" "; output;  
+record=" "; output;  
+record= "  __tmpl1 =  "||strip(label)|| ";"; output;
+record= "  if __tmpl1 ne '' then __varlabel = __tmpl1;   "; output;
+record=" "; output;  
+record= "__keepnvar='"||strip("&keepn")|| "';"; output;
+record=" "; output;
 %if %upcase(&Statsacross)=Y and &ngrpv>0 %then %do;
-put @1 "  __indentlev=max(&indent+&ngrpv-1,0);";
+    record= "  __indentlev=max(&indent+&ngrpv-1,0);"; output;
 %end;
 %else %do;
-put @1 "  __indentlev=&indent+&ngrpv;";
+    record= "  __indentlev=&indent+&ngrpv;"; output;
 %end;
-put @1 "  if __vtype='CATS' then do;";
-put @1 "    __indentlev+1;";
-put @1 "    __align = 'L';";
-put @1 '    do __i=1 to &maxtrt;';
-put @1 "      __align = trim(left(__align))||' '||__tmpalign;";
-put @1 "    end;";
-put @1 "  end;";
-put @1 "  else do;";
-put @1 "    __align = 'L';";
-put @1 '    do __i=1 to &maxtrt;';
-put @1 "    if __stat in ('NPCT', 'NNPCT') then ";
-put @1 "       __align = trim(left(__align))||' RD';";
-put @1 "    else __align = trim(left(__align))||' D';";
+record= "  if __vtype='CATS' then do;"; output;
+record= "    __indentlev+1;"; output;
+record= "    __align = 'L';"; output;
+record= '    do __i=1 to &maxtrt;'; output;
+record= "      __align = trim(left(__align))||' '||__tmpalign;"; output;
+record= "    end;"; output;
+record= "  end;"; output;
+record= "  else do;"; output;
+record= "    __align = 'L';"; output;
+record= '    do __i=1 to &maxtrt;'; output;
+record= "    if __stat in ('NPCT', 'NNPCT') then "; output;
+record= "       __align = trim(left(__align))||' RD';"; output;
+record= "    else __align = trim(left(__align))||' D';"; output;
 
-put @1 "    end;";
-put @1 "  end;";
-put @1 "  __suffix='';";
-put @1 "  __tmprowid=_n_;";
-put @1 "  __blockid=&varid;";
+record= "    end;"; output;
+record= "  end;"; output;
+record= "  __suffix='';"; output;
+record= "  __tmprowid=_n_;"; output;
+record= "  __blockid=&varid;"; output;
 %if %upcase(&aetable) = N or %upcase(&countwhat)=MAX %then %do;
-put @1 "  __keepn=1;";
+    record= "  __keepn=1;"; output;
 %end;
 %else %do;
-%if %length(&lastms)=0 %then %do;
-put @1 "  __keepn=0;";
+    %if %length(&lastms)=0 %then %do;
+        record= "  __keepn=0;"; output;
+    %end;
+    %else %do;
+        record= "  __keepn=1;"; output;
+        record= "  if last.__fname and trim(upcase(__fname))=trim(upcase('"||trim("&lastms")|| "')) then __keepn=0;"; output;
+    %end;
 %end;
-%else %do;
-put @1 "  __keepn=1;";
-put @1 "  if last.__fname and trim(upcase(__fname))=trim(upcase('" "&lastms" "')) then __keepn=0;";
-%end;
-%end;
-put;  
-put @1 "  if last.&tmp then do;";
+record=" "; output;  
+record= "  if last.&tmp then do;"; output;
 %if &skipline=Y %then %do;
-put @1 "     __suffix='~-2n';";
+    record= "     __suffix='~-2n';"; output;
 %end;
 %if %upcase(&aetable) = N or %upcase(&countwhat)=MAX %then %do;
-put @1 "    if __keepnvar ne 'Y' then  __keepn=0;";
+    record= "    if __keepnvar ne 'Y' then  __keepn=0;"; output;
 %end;
-put @1 "  end;";
-put; 
+record= "  end;"; output;
+record=" "; output; 
 
-put; 
+record=" "; output; 
  
-put @1 "  __labelline=&labelline;";
-put;  
+record= "  __labelline=&labelline;"; output;
+record=" "; output;  
 %if &labelline=1 %then %do;
-put @1 "  if first.&tmp  then do;";
-put @1 "     * PUT 1ST STATISTICS ON THE SAME LINE AS LABEL;";
-put @1 "     __col_0 = trim(left(dequote(__varlabel)))||' '";
-put @1 "     ||trim(left(__col_0));";
-put @1 "  end;";
+    record= "  if first.&tmp  then do;"; output;
+    record= "     * PUT 1ST STATISTICS ON THE SAME LINE AS LABEL;"; output;
+    record= "     __col_0 = trim(left(dequote(__varlabel)))||' '"; output;
+    record= "     ||trim(left(__col_0));"; output;
+    record= "  end;"; output;
 %end;
-put;
-put @1 "  if __vtype='' then __vtype='CAT';";
-put; 
-put @1 "  drop  __i __tmpl1;";
-put @1 "run;";
+record=" "; output;
+record= "  if __vtype='' then __vtype='CAT';"; output;
+record=" "; output; 
+record= "  drop  __i __tmpl1;"; output;
+record= "run;"; output;
 
-put;
+record=" "; output;
 
 %if %upcase(&countwhat)=MAX %then %do;
   
-put @1 "  %*----------------------------------------------------------;";
-put @1 "  %* ADD RECORDS FOR GROUPING VARIABLES;";
-put @1 "  %*----------------------------------------------------------;";
+    record= "  %*----------------------------------------------------------;"; output;
+    record= "  %* ADD RECORDS FOR GROUPING VARIABLES;"; output;
+    record= "  %*----------------------------------------------------------;"; output;
 
-put @1 "  proc sort data=__catcnt4;";
-%if %length(&simplestats) %then %do;
-put @1 "    by &by __tby &groupvars  __grpid __order &var;";
-%end;
-%else %do;
-put @1 "    by &by __tby &groupvars  __grpid __order;";
-%end;
-put @1 "  run;";
+    record= "  proc sort data=__catcnt4;"; output;
+    %if %length(&simplestats) %then %do;
+        record= "    by &by __tby &groupvars  __grpid __order &var;"; output;
+    %end;
+    %else %do;
+        record= "    by &by __tby &groupvars  __grpid __order;"; output;
+    %end;
+    record= "  run;"; output;
 
-put @1 "  data __catcnt4;";
-put @1 "  set __catcnt4;";
-%if %length(&simplestats) %then %do;
-put @1 "  by &by __tby &groupvars __grpid __order &var;";
-%end;
-%else %do;
-put @1 "    by &by __tby &groupvars  __grpid __order;";
-%end;
-put @1 "  if 0 then __colev_='';";  
-put @1 "  array cols{*} $ 2000 __col_:;";
-put @1 "  array cole{*} $ 2000 __colev:;";
+    record= "  data __catcnt4;"; output;
+    record= "  set __catcnt4;"; output;
+    %if %length(&simplestats) %then %do;
+        record= "  by &by __tby &groupvars __grpid __order &var;"; output;
+    %end;
+    %else %do;
+        record= "    by &by __tby &groupvars  __grpid __order;"; output;
+    %end;
+    record= "  if 0 then __colev_='';";   output;
+    record= "  array cols{*} $ 2000 __col_:;"; output;
+    record= "  array cole{*} $ 2000 __colev:;"; output;
 
-put @1 "  output;";
-put @1 "  do __i=1 to dim(cols);";
-put @1 "    cols[__i]='';";
-put @1 "  end;";
-put @1 "  do __i=1 to dim(cole);";
-put @1 "    cole[__i]='';";
-put @1 "  end;";
-put @1 "  __tmprowid=-1;";
-put @1 "  __grpid=__grpid-0.1;";
-put @1 "  if first.__grpid then output;";
+    record= "  output;"; output;
+    record= "  do __i=1 to dim(cols);"; output;
+    record= "    cols[__i]='';"; output;
+    record= "  end;"; output;
+    record= "  do __i=1 to dim(cole);"; output;
+    record= "    cole[__i]='';"; output;
+    record= "  end;"; output;
+    record= "  __tmprowid=-1;"; output;
+    record= "  __grpid=__grpid-0.1;"; output;
+    record= "  if first.__grpid then output;"; output;
 
-put @1 "  run;";
-put;
+    record= "  run;"; output;
+    record=" "; output;
 %end;
   
 
-put @1 "data &outds;";
-put @1 "  set __catcnt4;";
-put @1 "length __skipline $ 1;";
-  %if %upcase(&aetable) ne N %then %do;
-put @1 "     if ceil(__grpid)=1 then delete;";
-  %end;
-put @1 "  __col__1='';";
-put @1 "  __skipline=cats('" "&skipline" "');";
-put @1 "  drop __col__:;";
-  %* IN CASE FAKE TRATMENTS WERE ADDED, DROP COLUMN FOR FAKE TRT;
+record= "data &outds;"; output;
+record= "  set __catcnt4;"; output;
+record= "length __skipline $ 1;"; output;
+%if %upcase(&aetable) ne N %then %do;
+    record= "     if ceil(__grpid)=1 then delete;"; output;
+%end;
+record= "  __col__1='';"; output;
+record= "  __skipline=cats('"||"&skipline"|| "');"; output;
+record= "  drop __col__:;"; output;
+
+%* IN CASE FAKE TRATMENTS WERE ADDED, DROP COLUMN FOR FAKE TRT;
      
-put @1 "run;";
-put;
-put;
-put @1 '%exit' "c&varid:";
-put;
+record= "run;"; output;
+record=" ";
+record=" ";
+record= '%exit'||"c&varid:"; output;
+record=" ";
 run;
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
 
 
 %exit:

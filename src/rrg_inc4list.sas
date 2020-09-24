@@ -15,22 +15,20 @@
 %let st=%str();
 
 
-%if %index(&string, %str(\)) or %index(&string,%str(/)) %then %do;
-  
-%end;
-%else %do;
+
+%if not (%index(&string, %str(\)) or %index(&string,%str(/))) %then %do;
   
     data _null_;
-  set sashelp.vextfl;
+    set sashelp.vextfl;
   
-   if index(upcase(xpath), ".SAS") then do;
-      xpath = tranwrd(xpath,'\','/');
-      xpath = reverse(strip(xpath));
-      lastslash=index(xpath,"/");
-      xpath = reverse(substr(xpath, lastslash));
-      call symput('pgmpath', strip(xpath));
+    if index(upcase(xpath), ".SAS") then do;
+        xpath = tranwrd(xpath,'\','/');
+        xpath = reverse(strip(xpath));
+        lastslash=index(xpath,"/");
+        xpath = reverse(substr(xpath, lastslash));
+        call symput('pgmpath', strip(xpath));
     end;
-  run;  
+    run;  
   
   
   %let string = &pgmpath.&string;
@@ -39,27 +37,29 @@
 
 
 %if %sysfunc(exist(__drrght))=0 %then %do;
-data __rrght0;
-length record $ 2000;
-record =  '%inc '||"'"||cats(symget("string"))||"' ;";;
-run;
+    data __rrght0;
+    length record $ 2000;
+    record =  '%inc '||"'"||cats(symget("string"))||"' ;";;
+    run;
 
-data __rrght;
-  set  __rrght __rrght0;
-run;
+    data __rrght;
+      set  __rrght __rrght0;
+    run;
 
 %end;
 
 
 
-data _null_;
-file "&rrgpgmpath./&rrguri.0.sas" mod lrecl=8192;
-length string  $ 32000;
-string = '%inc '||"'"||cats(symget("string"))||"' ;";;
-put;
-put string;
+data rrgpgmtmp0;
+length record  $ 200;
+keep record;
+record = '%inc '||"'"||cats(symget("string"))||"' ;";;
 call symput("st", string);
-put;
+output;
+record=''; output;
+run;
+
+proc append data=rrgpgmtmp base=rrgpgm0;
 run;
 
 

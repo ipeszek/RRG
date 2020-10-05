@@ -146,7 +146,7 @@ run;
 *********************************************************************;   
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 set &vinfods end=eof;
 
@@ -362,14 +362,14 @@ if _n_=1 then do;
     record="run;"; output;
     record=" "; output;
     record='%local dsid rc numobs;'; output;
-    record='%let dsid = %sysfunc(open(' "&outds.2));"; output;
+    record='%let dsid = %sysfunc(open('|| "&outds.2));"; output;
     record='%let numobs = %sysfunc(attrn(&dsid, NOBS));'; output;
     record='%let rc = %sysfunc(close(&dsid));'; output;
     record='%if &numobs=0 %then %do;'; output;
     record='  %put -----------------------------------------------------------;'; output;
     record='  %put NO RECORDS IN RESULT DATASET : SKIP REST OF MANIPULATION;  '; output;
     record='  %put -----------------------------------------------------------;'; output;
-    record='  %goto ' "excs&varid;"; output;
+    record='  %goto '||"excs&varid;"; output;
     record='%end;'; output;
     record=" "; output;
     record="*-------------------------------------------------;"; output;
@@ -398,8 +398,8 @@ length __stat0 $ 20;
     record=" if 0 then __missing=.;"; output;
     record="  if __a then __totmiss=1;"; output;
     record="  if __total=1 then do;"; output;
-    totaltext=quote(cats(totaltext)); output;
-    record="     __col_0 = " totaltext ";"; output;
+    totaltext=quote(cats(totaltext)); 
+    record="     __col_0 = "||strip(totaltext)|| ";"; output;
     record="     __order = &totorder;"; output;
     record="  end;"; output;
     record="  if __missing=1 then do;"; output;
@@ -451,8 +451,8 @@ record=" "; output;
     %let s0 = %scan(&simplestats,&i,%str( ));
     %let sord0 = %scan(&simpleorder,&i,%str( ));
     __stat0 = quote("&s0");
-    record="if __total ne 1 then __col_0 = put(" __stat0  ", &statf.);"; output;
-    record="__stat=" __stat0 ";"; output;
+    record="if __total ne 1 then __col_0 = put("||strip( __stat0 )|| ", &statf.);"; output;
+    record="__stat=" ||strip(__stat0)|| ";"; output;
 
     
 
@@ -512,8 +512,10 @@ record='run;'; output;
 if eof then do;
 
     record=" "; output;
-    record='%excs' "&varid.:"; output;
+    record='%excs'||strip("&varid.:"); output;
     record=" "; output;
+    
+end;
 run;
 
 proc append data=rrgpgmtmp base=rrgpgm;

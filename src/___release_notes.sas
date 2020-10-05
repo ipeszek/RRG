@@ -12,6 +12,10 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
   
+01Oct2020 rewrote to improve performance (generated program stored in dataset and written to file at the end, and many other performance improvements)
+          removed metadata finctionality
+          updated no-data functionality to create report with titles, headers and footnotes  
+  
 31Aug2020 Removed java2sas modules
 
 18Aug2020: changed location of generated program to work directory (later it is copied to specified &rrgoutpath);

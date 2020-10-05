@@ -10,11 +10,21 @@
 
 ** 04Dec2014 added additional substitution: _apgmname_ to get actual program name;
 
+
+/*
+
+ds used: __rrgconfig(where=(type='[B0]')), __rrgxml, 
+ds created: __nspropskey, __nsprops, __sprops, __repinfo
+ds updated:
+
+
+*/
+
 %*------------------------------------------------------------------------------------;
 %*** READ SUBJID, INDENTSIZE, NODATAMSG DEST AND WARNONNOMATCH FROM CONFIGURATION FILE;
 %*** IF NOT GIVEN IN MACRO CALL THEN USE VALUES FROM CONFIGURATION FILE;
 
-%local  nsavercd ngentxt nmetadatads;
+%local  nsavercd ngentxt ;
 
 data _null_;
   set __rrgconfig(where=(type ='[D4]'));
@@ -49,7 +59,6 @@ run;
 %*------------------------------------------------------------------------------------;
 %*** READ TITLES/FOOTNOTES FROM XML FILE;
 %*** IF NOT GIVEN IN MACRO CALL THEN USE VALUES FROM CONFIGURATION FILE;
-%* TODO: FIX THIS TO BE MORE GENERIC;
 
 %local i istitle isfoot;
 %let istitle=N;
@@ -243,29 +252,24 @@ proc sql noprint;
   select entry into: sprops separated by ',' from __sprops;
 quit;      
 
+/*
   
 data _null_;
   set __rrgconfig(where=(type='[E2]'));
   call symput('inlibs',cats(w1));
 run;
+*/
 
 %local __fname;
 
-%if %length(&TFL_FILE_NAME)>0 and %length(&TFL_FILE_KEY)>0 and 
- %length(&TFL_FILE_OUTNAME) %then %do;
-data __rrgxml;
-  set __rrgxml;
-  call symput('__fname', cats(__outname));
-run;  
+%if (%length(&TFL_FILE_NAME)>0 and %length(&TFL_FILE_KEY)>0 and %length(&TFL_FILE_OUTNAME)) or  %sysfunc(exist(__rrgxml))  %then %do;
+    data __rrgxml;
+      set __rrgxml;
+      call symput('__fname', cats(__outname));
+    run;  
 %end;
 
-%if %sysfunc(exist(__rrgxml)) %then %do;
-data __rrgxml;
-  set __rrgxml;
-  call symput('__fname', cats(__outname));
-run;  
-%end;
-  
+ 
 
 %if %length(&__fname)=0 %then %let __fname=&rrguri;
 
@@ -273,13 +277,17 @@ data __repinfo;
   length footnot1 -footnot14
   title1 title2 title3 title4 title5 title6 Colhead1
   shead_l shead_m shead_r sfoot_l sfoot_r sfoot_m  
-   sprops colwidths ncw  filename metadatads $ 2000 tmp $ 20;
+   sprops colwidths ncw  filename  $ 2000 tmp $ 20;
 
 Dataset=trim(left(symget("Dataset")));
 inlibs=trim(left(symget("inlibs")));
+
 popWhere=cats("(",trim(left(symget("popWhere"))),")");
+popwhere=tranwrd(popwhere,'"',"'");
 if compress(popWhere, '()')='' then popWhere='';
+
 tabwhere=cats("(",trim(left(symget("tabwhere"))),")");
+tabwhere=tranwrd(tabwhere,'"',"'");
 if compress(tabwhere, '()')='' then tabwhere='';
 Colhead1=trim(left(symget("Colhead1")));
 subjid=trim(left(symget("subjid")));
@@ -382,13 +390,9 @@ sprops = cats( sprops, ',xx=xx');
 filename="&__fname";
 
 pgmname="&rrguri";
-metadatads = strip(symget("nmetadatads"));
 
-run;
-  
+********************************************************************;
 
-data __repinfo;
-set __repinfo;
 %do i=1 %to 6;
     title&i = tranwrd(cats(title&i), "'", "#squot");
     title&i = tranwrd(cats(title&i), "(", "#lpar");

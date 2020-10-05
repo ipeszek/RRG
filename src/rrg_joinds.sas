@@ -38,6 +38,8 @@ Notes:
     after merge
   mergetype = INNER keeps only matching records from both datasets
   mergetype = OUTER keeps all observations (full join)
+  
+  ds created: __rrgjoinds
 
 *****************************************************************************/;
 
@@ -162,7 +164,7 @@ Notes:
     run;
 
 
-    data __rrghd0;
+    data __rrgjoinds;
     length record $ 2000;
     %if %length(&notin1) and %length(&notin2) %then %do;
         record= "proc sql noprint nowarn;"; output;
@@ -227,7 +229,6 @@ Notes:
         record= " ";output;
     %end;
     %if %length(&notin1)=0 and %length(&notin2)=0  %then %do;
-
         record= "proc sort data=&data1 out=__d1;";output;
         record= "  by &by;";output;
         record= "  run;";output;
@@ -252,9 +253,11 @@ Notes:
     %*---------------------------------------------------------;
     %* if &cond was given, apply it ;
     %*---------------------------------------------------------;
+    
     %if %length(&cond) %then %do;
         record= "      if &cond;";output;
     %end;
+   
     record= "  run;";output;
     record= " ";output;
 
@@ -292,7 +295,7 @@ Notes:
 
     run;
 
-    data __rrghd0;
+    data __rrgjoinds;
     length record $ 2000;
     record= " ";output;
     record= "  data &dataout;"; output;
@@ -315,9 +318,7 @@ Notes:
 %end;
 
 
-data __rrght;
-  set  __rrght __rrghd0;
-run;
+/*
 
 data __usedds0;
   length ds $ 2000;
@@ -330,6 +331,6 @@ run;
 data __usedds;
   set __usedds __usedds0;
 run;
-
+*/
 
 %mend ;

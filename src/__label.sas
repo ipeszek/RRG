@@ -68,7 +68,7 @@ quit;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 length label1 $ 2000;
 set __labeld1;
@@ -80,7 +80,7 @@ record = " "; output;
 record = " "; output;
 record =  "data &outds;"; output;
 record =  "  length __col_0 __align $ 2000 __suffix  __vtype $ 20;"; output;
-record =  "  __col_0 = " ||strip(label1)  ";"; output;
+record =  "  __col_0 = " ||strip(label1) || ";"; output;
 record =  "  __indentlev=&indent+&ngrpv;"; ; output;
 record =  "  __suffix='';"; output;
 %local tmp;

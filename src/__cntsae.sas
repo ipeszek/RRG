@@ -112,7 +112,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=" "; output;
 

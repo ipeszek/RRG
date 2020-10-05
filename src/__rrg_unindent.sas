@@ -14,7 +14,7 @@
   
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record = " "; output;
 record = " "; output;
@@ -26,8 +26,8 @@ record = '%local nmt;'; output;
 record = " "; output;
 record =  "  data &dataset;"; output;
 record =  "    set &dataset;"; output;
-record =  "    length " %do i=0 %to &indentlev; " __newcol&i " %end; " $ 2000;"; output;
-record =  "    retain " %do i=0 %to &indentlev; " __newcol&i " %end; ";"; output;
+record =  "    length "|| %do i=0 %to &indentlev; " __newcol&i "|| %end; " $ 2000;"; output;
+record =  "    retain "|| %do i=0 %to &indentlev; " __newcol&i " ||%end; ";"; output;
 record =  "    if 0 then do; "; output;
 record =  "      __indentlev=0;"; output;
 record =  "    __fordelete=.;"; output;
@@ -46,8 +46,8 @@ record =  "    if __datatype='TBODY' then do;"; output;
     record =  "      end;"; output;
 %end;
 record =  "      if __indentlev <=&indentlev  then __fordelete=1;"; output;
-record =  "    end;"; output; output;
-record =  "    if _n_=1 then do;";
+record =  "    end;"; output; 
+record =  "    if _n_=1 then do;"; output;
 record =  "      array cols {*} __col_:;"; output;
 record =  "      call symput('nmt', cats(dim(cols)-1));"; output;
 record =  "    end; "; output;
@@ -98,7 +98,7 @@ record =  "    if __fordelete=1 then delete; "; output;
 record =  '    if __datatype="HEAD" and __rowid=&lastrow  then do;'; output;
 %local j;
 %do i=0 %to &indentlev;
-    %let j = %eval(&indentlev+1); output;
+    %let j = %eval(&indentlev+1); 
     record =  "    __newcol&i = scan(cats(__ncol_&j), %eval(&i+1), '!');"; output;
 %end;
 record =  "    __ncol_&j = scan(cats(__ncol_&j), %eval(&indentlev+2), '!');"; output;
@@ -112,7 +112,7 @@ record =  "           cats('/i', __indentlev-&indentlev-1)||' '|| __ncol_%eval(&
 %do i=0 %to &indentlev;
   record =  "    __ncol_&i = cats(__newcol&i);"; output;
 %end;
-record =  "    end; "; output; output;
+record =  "    end; "; output; 
 record =  "  run;   "; output;
 record = " "; output;
 record =  "  data &dataset ;"; output;
@@ -121,7 +121,7 @@ record =  "    if 0 then __i = .;"; output;
 record =  "    drop __i ;"; output;
 record =  "   if __datatype='RINFO' then do;"; output;
 record =  "    __rtype='LISTING';"; output;
-record =  "    __gcols = compbl('" %do i=0 %to &indentlev; " &i " %end; "');"; output;
+record =  "    __gcols = compbl('" || %do i=0 %to &indentlev; " &i "|| %end; "');"; output;
 record =  "  end;"; output;
 
 %do i=0 %to &indentlev;
@@ -137,7 +137,7 @@ record =  "  end;"; output;
 %end;
 
 record =  "    __indentlev=0;"; output;
-record =  "    drop __oldind  %do i=0 %to &indentlev;  __ncol_&i  %end;;"; output;
+record =  "    drop __oldind "||  %do i=0 %to &indentlev;  "__ncol_&i "||   %end ; ";"; output;
 record =  " run;"; output;
 record = " "; output;
 record =  '%end;'; output;

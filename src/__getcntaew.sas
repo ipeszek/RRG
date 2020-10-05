@@ -35,12 +35,10 @@
 %else %let desc= ;    
 
 
-data rrgpgmtmp;
-length record $ 200;
-keep record;
 
-length __wh $ 2000;
-__wh = strip(symget("where"));
+
+
+
 record = " ";  output;
 record =  "data &dataout;"; output;
 record =  "if 0;"; output;
@@ -107,9 +105,9 @@ record =  "data __out; if 0; run;"; output;
       record =  "    (select distinct "; output;
       record =  "      &tmp2"; output;
       %if %length(&where) %then %do;
-          record =  "    from  &datain (where="; output;
-          record = strip( __wh); output;
-          record = "  ))"; output;
+          record =  "    from  &datain (where=("; output;
+          record =  strip(symget("where")); output;
+          record = "  )))"; output;
       %end;
       %else %do;
           record =  "    from  &datain)"; output;
@@ -128,9 +126,6 @@ record =  "proc sql noprint;"; output;
 record =  "  drop table __out;"; output;
 record =  "quit;"; output;
 record = " "; output;
-run;
 
-proc append data=rrgpgmtmp base=rrgpgm;
-run;
 %mend;
 ;

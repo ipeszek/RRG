@@ -16,8 +16,7 @@
  
  ds updated __rrginlibs
  
- NOTE: updating of rrginlibs needs to happen only if metadata is requested
- 
+
  
  */
 
@@ -111,22 +110,6 @@ orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf
 %local inlibs inlibs0;
        
 %__defcomm;
-
-data __rrginlibs0;
-  length dataset $ 200;
-  dataset=''; output;
-  %do i=1 %to %sysfunc(countw(&inlibs, %str( )));
-    %let inlibs0=%scan(&inlibs,&i, %str( ));
-    if index(upcase("&dataset"), upcase("&inlibs0"))>0 then do;
-       output;
-    end;
-  %end;  
-run;
-
-proc append base=__rrginlibs data=__rrginlibs0;
-run;
-
-
 
 
 

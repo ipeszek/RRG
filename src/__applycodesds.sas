@@ -63,7 +63,7 @@ remove=
 %if %length(%nrbquote(&missdec))=0 %then %let missdec=Missing;
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 
 
@@ -137,7 +137,6 @@ __missdec=quote(strip(__missdec));
     record= "  by &by __tby &groupvars   __order &var __grpid &decode ;";              output;
     record= "run;";                                                                    output;
     record=" ";                                                                        output;
-                                                                                       
     record= "data &dsin;";                                                             output;
     record= "  merge &dsin &codelistds (in=__a);";                                     output;
     record= "  by &by __tby &groupvars   __order &var __grpid &decode ;";              output;
@@ -145,13 +144,12 @@ __missdec=quote(strip(__missdec));
     record= "    __total=1;";                                                          output;
     record= "    __missing=0;";                                                        output;
     record= "  end;";                                                                  output;
-                                                                                       
     record= "** KEEP ONLY REQUESTED MODLAITIES;";                                      output;
     record= "**  and MISSIGN MODALITY AND TOTAL IF REQUESTED;";                        output;
     record= "if not __a and __total ne 1 and __missing ne 1 then do;";                 output;
     %if &warn_on_nomatch=1 %then %do;                                                  
           record= "   put 'WAR' 'NING: deleting the following modality ;'";            output;
-          record= "'     as not found in codelist : ' &tmpgrp &var.=;";                 output;
+          record= "put '     as not found in codelist : ' &tmpgrp &var.=;";                 output;
     %end;                                                                              
     record= "   delete;";                                                              output;
     record= "end;  ";                                                                  output;
@@ -161,7 +159,7 @@ __missdec=quote(strip(__missdec));
         record= "if __total ne 1  then do;";                                           output;
         record= "   if &var  in ( "||strip(remove)||" ) then delete;";                 output;
         record= "end;  ";                                                              output;
-    %end;                                                                              output;
+    %end;                                                                             
                                                                                        
     record= "run;";                                                                    
     record=" " ;                                                                       output;

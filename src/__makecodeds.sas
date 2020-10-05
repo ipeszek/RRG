@@ -211,7 +211,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 set &outds._exec end=eof;
 length __var $ 2000;

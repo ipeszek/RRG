@@ -4,6 +4,9 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
+ 
+ 
+ EXECUTES THIS.STRING AND CREATES/APPENDS RECORD WITH THIS.STRING TO __RRGINC;
  */
 
 
@@ -13,44 +16,32 @@
 %local st dost;
 %let st=%str();
 
-%if %sysfunc(exist(__drrght))=0 %then %do;
-  data __rrght0;
+%if %sysfunc(exist(__rrginc))=0 %then %do;
+  
+  data __tmp;
   length record $ 2000;
   record = cats('%',symget("string"),';');
+  call execute(cats('%nrstr(',record,')'));
   run;
   
-  data __rrght;
-    set  __rrght __rrght0;
+  proc append data=__tmp base=__rrginc;
   run;
 
 %end;
 
+%else %do;
+  
+  data __rrginc;
+  length record $ 2000;
+  keep record;
+  record = cats('%',symget("string"),';');
+  call execute(cats('%nrstr(',record,')'));
+  run;
+  
+%end;
 
-data rrgpgmtmp;
-length record $ 200;
-keep record;
-length string  $ 32000;
-string = cats('%',symget("string"),';');
-record=''; output;
-record=strip(string); output;
-record=''; output;
-call symput('st', strip(string));
-run;
 
-proc append data=rrgpgmtmp base=rrgpgm;
-run;
 
-&st;
-
-data __tmp;
-  length key $ 20 value $ 32000;
-  key = "rrg_call_macro";
-  value = strip(symget("string"));
-run;
-
-data   __rrgpgminfo;
-  set __rrgpgminfo __tmp;
-run;
 
 %mend;
 

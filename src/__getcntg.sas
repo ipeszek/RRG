@@ -19,6 +19,9 @@
 %local datain unit group  cnt dataout var trtvar ;
 
 %let datain = %unquote(&datain);
+%let datain = %sysfunc( tranwrd( %str(&datain),%str(%"), %str(%') ) );
+length __datain $ 2000;
+__datain = "&datain";
 
 
 record = "data &dataout;";                                                                      output;
@@ -31,6 +34,7 @@ record = "run;";                                                                
     %let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&group)), %str( ), %str(,)));
     %let tmp2 = %sysfunc(tranwrd(%sysfunc(compbl(&group &unit)), 
        %str( ), %str(,))) ;
+ 
     record=" ";                                                                                 output;
     record = "*------------------------------------------------------;";                        output;
     record = "* COUNT NUM of DISTINCT &UNIT IN EACH &TMP1 COMBINATION;";                        output;
@@ -38,7 +42,9 @@ record = "run;";                                                                
     record = "  proc sql noprint;";                                                             output;
     record = "    create table &dataout as";                                                    output;
     record = "    select &tmp1, count(*) as &cnt, 999 as __grpid from ";                        output;
-    record = "    (select distinct &tmp2 from  &datain )";                                      output;
+    record = "    (select distinct &tmp2 from " ;                                               output;
+    record =      __datain;                                                                     output;
+    record = "     )";                                                                          output;
     record = "    group by &tmp1";                                                              output;
     record = "    order by &tmp1;";                                                             output;
     record = "  quit;";                                                                         output;
@@ -52,7 +58,9 @@ record = "run;";                                                                
     record = "  proc sql noprint;";                                                             output;
     record = "    create table &dataout as";                                                    output;
     record = "    select count(*) as &cnt, 999 as __grpid from ";                               output;
-    record = "    (select distinct &tmp3) from  &datain );";                      output;
+    record = "    (select distinct &tmp3 from " ;                                               output;
+    record =  __datain;                                                                         output;
+    record = "   )";                                                                               output;
     record = "  quit;";                                                                         output;
 %end;
 

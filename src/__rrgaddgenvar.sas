@@ -165,15 +165,27 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   splitrow=dequote(trim(left(symget("splitrow"))));
   cond=trim(left(symget("cond")));
   name=trim(left(symget("name")));
+
   where=cats("(",trim(left(symget("where"))),")");
+  where=tranwrd(where, '"',"'");
   if compress(where, '()')='' then where='';
+
   popwhere=cats("(",trim(left(symget("popwhere"))),")");
+  popwhere=tranwrd(popwhere, '"',"'");
   if compress(popwhere, '()')='' then popwhere='';
+
   totalwhere=cats("(",trim(left(symget("totalwhere"))),")");
+  totalwhere=tranwrd(totalwhere, '"',"'");
   if compress(totalwhere, '()')='' then totalwhere='';
+
   denomwhere=cats("(",trim(left(symget("denomwhere"))),")");
+  denomwhere=tranwrd(denomwhere, '"',"'");
+
   if compress(denomwhere, '()')='' then denomwhere='';
+
   templatewhere=cats("(",trim(left(symget("templatewhere"))),")");
+  templatewhere=tranwrd(templatewhere, '"',"'");
+
   if compress(templatewhere, '()')='' then templatewhere='';
     
   

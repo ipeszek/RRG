@@ -116,7 +116,7 @@ data  __usedds;
    stmt = "data __tmp; set "||strip(ds)||'; run; proc contents data=__tmp noprint out=__cont'||strip(put(_N_, best.))||
           '; run;  data __cont'||strip(put(_N_, best.))||'; length dsname $ 200; set __cont'||strip(put(_N_, best.))||
           '; dsname = "'||strip(scan(ds,2,'.('))||'";';
-   call execute(stmt);
+   call execute(cats('%nrstr(',stmt,')'));
    if eof then call symput('numds', strip(put(_N_, best.)));
    run;
    

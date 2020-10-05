@@ -19,6 +19,14 @@
     then store it in __rrgxml ds, adding where __fn=TFL_FILE_PGMNAME and __outname=TFL_FILE_OUTNAME
     __fn is "redefined" &rrguri and &rrguri is replace in its value (thus, config file can replace &uri with something else)
  
+ 
+ 
+ ds used:
+ ds created:  __timer, __rrgpgminfo (with options), __sasoptions (with all options), __rrgconfig, __rrgxml (with titles, footnotes, outname from TOC)
+ ds updated:
+ ds initializad: __usedds
+ 
+ 
  */
 
 %macro __initcomm /store;
@@ -45,7 +53,7 @@ quit;
 data __timer;
 	length task $ 100;
 		task = "Program Starts";
-		time=time();
+		time=time(); time_=put(time, time8.);
 run;	
 
 *----------------------------------------------------------------;
@@ -91,8 +99,8 @@ proc optsave out=__sasoptions;
 * READ-IN CONFIGURATION FILE;
 data __rrgconfig;
 infile "&rrg_configpath" length=len lrecl=2000; 
-   input record $varying200. len; 
-   length RECORD w1 w2 type $ 200;
+   input record $varying2000. len; 
+   length RECORD w1 w2 type $ 2000;
    retain type;
    if record='' then delete;
    else do;
@@ -109,9 +117,11 @@ infile "&rrg_configpath" length=len lrecl=2000;
 run;
 
 
-* DELETE TEMPORARY CONFIGURATION FILE;
 
 %if &DELRRGCONF=1 %then %do;
+  
+  %* DELETE TEMPORARY CONFIGURATION FILE;
+
     data _null_;
       fname="__tempfile";
         rc=filename(fname,"&rrg_configpath");
@@ -121,7 +131,7 @@ run;
     run;
 %end;
 
-* REDEFINE RRGURI;
+%* REDEFINE RRGURI;
 %local  TFL_FILE_KEY TFL_FILE_NAME TFL_FILE_PGMNAME TFL_FILE_OUTNAME;
 
 data _null_;
@@ -129,7 +139,7 @@ data _null_;
   call symput(cats(w1),cats(w2));
 run;
 
-*** READ INFO FROM CONFIGUREATION FILE into __RRGXML dataset;
+*** READ INFO FROM TOC file (if defined) dataset into __RRGXML dataset;
 
 %if %length(&TFL_FILE_NAME)>0 and %length(&TFL_FILE_KEY)>0 %then %do;
 
@@ -153,23 +163,43 @@ run;
 
 %end;
 
-%put RRG INFO: file/program/output root, rrguri = &rrguri;
-%__verifyuri(&rrguri);
+%* initialize helper files;
 
-/*
-* FOR METADATA, METADATA FUNTIONALITY IS TEMPORARILY DISABLED;
-
-data __usedds;
+data rrgfmt;
   if 0;
-  length ds $ 2000;
-  ds='';
-run; 
-
-data __codebvars;
-  if 0;
+  length record $ 2000;
+  record='';
 run;
 
-*/
+data codebefore;
+  if 0;
+  length record $ 2000;
+  record='';
+run;
+
+data rrgcodeafter;
+  if 0;
+  length record $ 2000;
+  record='';
+run;
+
+data rrgheader;
+  if 0;
+  length record $ 2000;
+  record='';
+run;
+
+data rrgfinalize;
+  if 0;
+  length record $ 2000;
+  record='';
+run;
+
+%* VERIFY THAT RRGURI conforms to SAS DATASET NAMING RULES;
+
+%__verifyuri(&rrguri);
+
+
 
 
 %mend;

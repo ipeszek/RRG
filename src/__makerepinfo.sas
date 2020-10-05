@@ -77,7 +77,7 @@
   
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 set __repinfo;
 length __tmpw  $ 2000;
@@ -98,7 +98,7 @@ record= " ";output;
 %if &islist=Y %then %do;
     record= " ";output;
     record=   '%local breakokat;';output;
-    record=   '%let breakokat = '||strip("&breakokat")|| ;";"; output;
+    record=   '%let breakokat = '||strip("&breakokat")|| ";"; output;
     record= " ";output;
 %end;
 
@@ -108,10 +108,6 @@ record=   '%let __bookmarks_pdf=%str(' ||strip(bookmarks_pdf) || ");"; output;
 
 
 record=   '%let __sfoot_fs=' ||strip( sfoot_fs)|| ";"; output;
-/*
-record=   '%let __indentsize=' ||strip((indentsize)|| ";"; output;
-record=   '%let __orient=' ||strip(orient)|| ";"; output;
-*/
 if index (upcase(outformat),'RTF')=0 then do;
     if index (upcase(outformat),'PDF')>0 then do;
        record=   '%let __dest=PDF;'; output;
@@ -170,14 +166,14 @@ do jj=1 to dim(titles);
         do __j =1 to 10;
           __tmpw = strip(__tmpw)||' '||strip(scan(foots[jj], 10*(__i-1)+__j,' '));
         end;
-        record=   '%let __footnot'||put(jj,1.)||' = %str(&__footnot'||put(jj,1.)||'.)%str('||
+        record=   '%let __footnot'||strip(put(jj,best.))||' = %str(&__footnot'||strip(put(jj,best.))||'.)%str('||
           strip( __tmpw)||");";  output;
     end;
         __tmpw='';
         do __j=1 to __yy2;
             __tmpw = strip(__tmpw)||' '||strip(scan(foots[jj], 10*__yy+__j,' '));
         end;
-        record=   '%let __footnot'||put(jj,1.)||' = %str(&__footnot'||put(jj,1.)||'.)%str(' ||
+        record=   '%let __footnot'||strip(put(jj,best.))||' = %str(&__footnot'||strip(put(jj,best.))||'.)%str(' ||
             strip(__tmpw)||");";    output;   
     
 end;
@@ -342,7 +338,7 @@ record=   '%let __font='|| strip(font)|| ";"; output;
 
 record= " "; output;
 record=   "data __report;"; output;
-record=   " length __datatype $ 8 __footnot1-footnot14 title1-title6"; output;
+record=   " length __datatype $ 8 __footnot1-__footnot14 __title1-__title6"; output;
 record=   "        __bookmarks_rtf __bookmarks_pdf"; output;
 record=   "        __sprops __systitle "; output;
 record=   "        __shead_r __shead_m __shead_l __dist2next __breakokat"; output;
@@ -426,7 +422,6 @@ record=   "end;  "; output;
     record=   "   __colwidths = compbl(__colwidths)||repeat(' '||scan(__colwidths,-1,' '), &numcol-countw(__colwidths,' '));"; output;
 %end;
 record=   "end;"; output;
-put 'put __colwidths=;'; output;
 
 record=   "if __stretch='' then __stretch='Y';"; output;
 %if %length(&numcol)=0 %then %do;

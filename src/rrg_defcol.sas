@@ -101,6 +101,30 @@
 %if %sysfunc(exist(__listinfo))=0 %then %do;
   data __listinfo;
     if 0;
+    length label $ 2000
+    width align halign alias  format decode dist2next $ 40
+    group page spanrow id skipline stretch keeptogether breakok $ 1
+    ;
+
+  
+
+    varid=.;
+    format = '';
+    decode = '';
+    label = '';
+    align = '';
+    halign = '';
+    dist2next = '';
+    group = '';
+    page = '';
+    spanrow = '';
+    id = .;
+    alias = '';
+    width = '';
+    skipline ='';
+    stretch = '';
+    breakok= '';
+    keeptogether= '';
   run;
 %end;
 
@@ -121,8 +145,8 @@
 
   data __tmp;
     length /*formula */label $ 2000
-    width align halign alias  format decode  $ 40
-    group page spanrow id skipline stretch keeptogether $ 1
+    width align halign alias  format decode  dist2next $ 40
+    group page spanrow id skipline stretch keeptogether  breakok $ 1
     ;
 
   

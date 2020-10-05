@@ -5,25 +5,26 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
-
-
-/*
+ 
+ /*
 11Sep2020 PROGRAM FLOW
-IDENTICAL TO RRG_CODEAFTER
 
-MANIPULATES THIS.STRING IN __TMPCBA DATASET
+COPY OF RRG_CODEAFTER
+
+MANIPULATES THIS.STRING IN __TMPCBA DATASET, writes it to rrgpgmtmp and appends rrgpgmtmp to rrgpgm
 
 ds used:
- ds created/updated: __TMPCBA (TEMPORARY) rrgpgmtmp, rrgpgm
+ ds created RRGCODEAFTER
  ds initialized as empty: 
 */
+
 %macro rrg_codeafterlist(string)/ parmbuff store ;
 
 %local string;
-%local st dost;
+%local st ;
 %let st=;
 
-data __tmpcba;
+data rrgcodeafter;
 length string ns tmp  $ 32000;
 string = symget("syspbuff");
 retain __word;
@@ -37,8 +38,8 @@ if compress(string,"()") = '' then do;
   output;
 end;
 else do;
-  call symput("st", string);
   string=trim(left(string));
+  call symput("st", string);
   do z =1 to countw(string, ";");
     __word=__word+1;
     tmp = cats(scan(string, z, ";"));
@@ -101,8 +102,8 @@ run;
 
 %*** need second scan;
 
-data __tmpcba;
-set __tmpcba (rename=(ns=tmp));
+data rrgcodeafter;
+set rrgcodeafter (rename=(ns=tmp));
 length ns $ 32000;
 
 if length(tmp)<=100 or index(tmp, '"')>0 or index(tmp,"'")<=0 then do;
@@ -133,8 +134,8 @@ run;
 
 %* third scan - split all sentences not in quotes into <100 chars;
 
-data __tmpcba;
-set __tmpcba(rename=(ns=string));
+data rrgcodeafter;
+set rrgcodeafter(rename=(ns=string));
 length ns tmp1 tmp2 tmp3 $ 32000;
 if length(string)<=100 or index(string, '"')>0 or index(string,"'") >0 then do;
   ns = cats(string);
@@ -166,8 +167,8 @@ run;
 
 
 
-data __tmpcba;
-set  __tmpcba end=eof;
+data rrgcodeafter;
+set  rrgcodeafter end=eof;
 length ns2 tmp tmp2 $ 2000;
 retain ns2;
 if _n_=1 then ns2='';
@@ -216,10 +217,11 @@ if eof then do;
 end;
 run;
 
-data rrgpgmtmp;
-length record $ 200;
+
+data rrgcodeafter;
+length record $ 2000;
 keep record;
-set __tmpcba end=eof;
+set rrgcodeafter end=eof;
 if index(ns,';')>0 then xx=1;
 else xx=0;
 wascolon=lag(xx);
@@ -234,22 +236,20 @@ ns = tranwrd(ns, '/#32', ' ');
 ns = tranwrd(trim(left(ns)), '"'||byte(12)||'"','""');
 ns = tranwrd(trim(left(ns)), "'"||byte(12)||"'","''");
 
-if _n_=1 or wascolon=1  then do; record=strip(ns);output;end;
+if _n_=1 or wascolon=1  then do; record=  strip(ns);output; end;
 else do; record='     ' ||strip(ns); output; end;
 if upcase(ns) in ('RUN;','QUIT;') then do; record=' ';output; end;
 
 if eof then do;
-  record=' ' ;output;
-  record= '*----------------------------------------------------------------;';output;
+  record= ' '; output;
+  record=  '*----------------------------------------------------------------;';output;
   record= '*   END CUSTOM CODE;';output;
   record= '*----------------------------------------------------------------;';output;
 end;
 
 run;
 
-proc append data=rrgpgmtmp base=rrgpgm;
-run;
+&st;
 
 %mend rrg_codeafterlist;
-
 

@@ -18,9 +18,7 @@
 
 %let datain = %unquote(&datain);
 
-data rrgpgmtmp;
-length record $ 200;
-keep record;
+
 record = " ";  output;
 record =  "data &dataout;"; output;
 record =  "if 0;"; output;
@@ -96,9 +94,6 @@ record =  "proc sql noprint;"; output;
 record =  "  drop table __out;"; output;
 record =  "quit;"; output;
 record = " "; output;
-run;
 
-proc append data=rrgpgmtmp base=rrgpgm;
-run;
 %mend;
 

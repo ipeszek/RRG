@@ -65,7 +65,7 @@ quit;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record = " ";
 %if &overall>0 %then %do;

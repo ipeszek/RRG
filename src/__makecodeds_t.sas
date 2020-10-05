@@ -18,7 +18,7 @@ data __catv_t;
   set &vinfods (where=(upcase(type)='TRT'));
   run;
 
-proc sql noprint;
+proc sql ;
   select trim(left(name))      into:var    separated by ' ' from  __catv_t;
   select trim(left(fmt))       into:fmt    separated by ' ' from  __catv_t;
   select trim(left(desc))       into:desc    separated by ' ' from  __catv_t;
@@ -86,6 +86,9 @@ data __CODES4TRT_exec;
     end;
 run;
 
+proc print data=__CODES4TRT_exec;
+  title '__CODES4TRT_exec';
+run;
 
 
 data __CODES4TRT_exec;
@@ -113,16 +116,18 @@ run;
 
 
 %local tmp ;
-%let tmp=%str(length);
-%if &vtype=C %then %do;
-      %let tmp = &tmp %str(&var $ &vlen);
-%end;
-%if %length (&decode) %then %do;
-    %let tmp =&tmp %str (__dec_&trtvar $ &vlend);
+%if &vtype=C or %length (&decode) %then %do;
+    %let tmp=%str(length);
+    %if &vtype=C %then %do;
+        %let tmp = &tmp %str(&var $ &vlen);
+    %end;
+    %if %length (&decode) %then %do;
+        %let tmp =&tmp %str (__dec_&trtvar $ &vlend);
+    %end;
 %end;
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 set __CODES4TRT_exec end=eof;
 length __var $ 2000;
@@ -138,21 +143,22 @@ if _n_=1 then do;
     record =  "* CREATE A DATASET WITH LIST OF CODES FOR &var;"; output;
     record =  "*------------------------------------------------------------------;"; output;
     record = " "; output;
-    record =  "data __CODES4TRT;"; output;
+    record =  "data  __CODES4TRT;"; output;
+    
     record =  "&tmp ;"; output;
     record = " "; output;
 
 end;
 
 
-record= "&var = "||strip(__var)|| ";";
+record= "&var = "||strip(__var)|| ";"; output;
 %if %length (&decode) %then %do;
      record= "__dec_&trtvar = "|| '"'||strip(&decode)|| '";'; output;
 %end;
 record= "output;"; output;
 record = " "; output;
 if eof then do;
-   output; "run;"; output;
+   record= "run;"; output;
 end;  
 
 run;

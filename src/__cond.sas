@@ -142,7 +142,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 length __where $ 2000;
 __where = trim(left(symget("where")));
@@ -159,7 +159,7 @@ __where = trim(left(symget("where")));
     record=" select distinct &labelvar into: label4cond separated by ' ' "; output;
     record=" from __dataset (where=(&tabwhere and &where));"; output;
     record="quit;"; output;
-    record=" ";
+    record=" "; output;
 %end;
 
 record=" "; output;
@@ -292,19 +292,19 @@ record="  *----------------------------------------------------;"; output;
 record="  * NO RECORDS SATISFYING CONDITION;"; output;
 record="  *----------------------------------------------------;"; output;
 record=" ";    output;
-record='  %else %do;'; output;
-record="    data __condcnt;"; output;
+record='  %if &nobsd>0 %then %do;'; output;
+record="        data __condcnt;"; output;
 %if &denomincltrt=Y %then %do;
-    record="    set __conddenom (keep= &denomvars __trtid &trtvars __tby);"; output;
+    record="        set __conddenom (keep= &denomvars __trtid &trtvars __tby);"; output;
 %end;
 %else %do;
-    record="    set __conddenom (keep= &denomvars __tby);"; output;
+    record="        set __conddenom (keep= &denomvars __tby);"; output;
 %end;  
-record="    __cnt=0;"; output;
-record="    __tby=1;"; output;
-record="    __cntevt=0;"; output;
+record="       __cnt=0;"; output;
+record="       __tby=1;"; output;
+record="       __cntevt=0;"; output;
 
-record="    run;"; output;
+record="      run;"; output;
 record='  %end;'; output;
 record=" "; output;
 record='  %else %do;'; output;
@@ -459,7 +459,10 @@ record=" "; output;
 record="data __condcnt2;"; output;
 
 %if %index(&events,EVENTS) >0  %then %do;
-record="merge __condcnt2 __condcnt2a __condcnt3;"
+record="merge __condcnt2 __condcnt2a __condcnt3;"; output;
+%end;
+%else %do;
+record="merge __condcnt2 __condcnt2a ;"; output;
 %end;
 
 record="by &by __tby &groupvars ;"; output;
@@ -568,10 +571,10 @@ record="end;"; output;
     record="end;"; output;
 %end;
 
-__stat0 = quote("&s0"); output;
+__stat0 = quote("&s0"); 
 record="__order=&sord0;"; output;
 record="__col_0 = put(" ||strip(__stat0)||  ", &statf.);"; output;
-record="__stat="||strip(__stat0)|| ";";
+record="__stat="||strip(__stat0)|| ";"; output;
 %* NOTE: currently, event count will be always placed next to first non-model based statistics;
 record="output;"; output;
 
@@ -586,7 +589,7 @@ record="output;"; output;
                   pctfmt=&pctfmt);
         record="end;"; output;
         record="__order=&sord0;"; output;
-        __stat0 = quote("&s0"); output;
+        __stat0 = quote("&s0"); 
         record="__col_0 = put("||strip(__stat0)||  ", &statf.);"; output;
         record="__stat=" ||strip(__stat0)|| ";"; output;
         record="output;"; output;
@@ -629,7 +632,7 @@ run;
 
 
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     set __modelstat end=eof;
     if _n_=1 then do;      
@@ -719,16 +722,14 @@ run;
             run;
         %end;
       
-        %local modelds;
+
     
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
-        length __macroname2  $ 2000;
         set __modelp end=eof;
-        __macroname2 = cats('%', name,'(');
         record=" "; output;
-        record=strip() __macroname2); output;
+        record=strip(cats('%', name,'(')); output;
         
         record="   trtvar = &trtvars,"; output;
 
@@ -745,8 +746,7 @@ run;
         end;
         record="   subjid = &subjid);"; output;
         record=" "; output;
-        %local modelds;
-        call symput ('modelds', cats(name));
+       
         
         %* collect overall statistics;
         
@@ -758,7 +758,7 @@ run;
             record=" "; output;
             record='data __overallstats0;'; output;
             record="length __fname $ 2000;"; output;
-            record="set __overallstats0 &modelds(in=__a where=(__overall=1));"; output;
+            record="set __overallstats0 "||strip(name)||"(in=__a where=(__overall=1));"; output;
             record="__blockid = &varid;"; output;
             record="if __a then do;"; output;
             record="  __fname = upcase(cats('"||strip("&currentmodel")|| "','.',__stat_name));"; output;
@@ -774,9 +774,9 @@ run;
         record="* KEEP ONLY REQUESTED STATISTICS FROM CURRENT MODEL;"; output;
         record="*---------------------------------------------------------;"; output;
         record=" "; output;
-        record="  data &modelds;"; output;
+        record="  data "||strip(name)||";"; output;
         record="    length __fname $ 2000;"; output;
-        record="    set &modelds;"; output;
+        record="    set "||strip(name)||";"; output;
         record="    if __overall ne 1;"; output;
         record="    __fname = upcase(cats('"||strip("&currentmodel")|| "', '.', __stat_name));"; output;
         record="  run;"; output;
@@ -787,22 +787,22 @@ run;
         record=" "; output;
         record='%local dsid rc nobsmdl;'; output;
         record='%let dsid ='; output;
-        record='  %sysfunc(open('||strip("&modelds")||" ));;"; output;
+        record='  %sysfunc(open('||strip(name)||" ));;"; output;
         record='%let nobsmdl = %sysfunc(attrn(&dsid, NOBS));;'; output;
         record='%let rc=%sysfunc(close(&dsid));;'; output;
         record=" "; output;
         record='%if &nobsmdl>0 %then %do;';     output;
         record=" "; output;
-        record="  proc sort data=&modelds;"; output;
+        record="  proc sort data="||strip(name)||";"; output;
         record="    by __fname __overall;"; output;
         record="  run;"; output;
         record="  proc sort data=__modelstat;"; output;
         record="    by __fname __overall;"; output;
         record="  run;"; output;
         record=" "; output;
-        record="  data &modelds;"; output;
+        record="  data "||strip(name)||";"; output;
         record="    length __col_0 __col __tmpcol __tmpcol_0 $ 2000 __tmpalign __tmpal $ 8;"; output;
-        record="    merge &modelds (in=__a) __modelstat (in=__b);"; output;
+        record="    merge "||strip(name)||" (in=__a) __modelstat (in=__b);"; output;
         record="    by __fname __overall;"; output;
         record="    __sid=__stat_order;"; output;
         record="    if __a and __b;"; output;
@@ -836,7 +836,7 @@ run;
         record="         __tmpal __tmpcol __tmpcol_0;"; output;
         record="  run;"; output;
         record=" "; output;
-        record="  proc sort data=&modelds;"; output;
+        record="  proc sort data="||strip(name)||";"; output;
         %if %upcase(&grouping) ne N %then %do; 
             record="  by __order __sid __fname &trtvars &varby &groupby;"; output;
         %end;
@@ -845,8 +845,8 @@ run;
         %end;
         record="  run;"; output;
         record=" "; output;
-        record="  data &modelds (drop = __order rename=(__tmporder=__order));"; output;
-        record="  set &modelds;";  output;
+        record="  data "||strip(name)||" (drop = __order rename=(__tmporder=__order));"; output;
+        record="  set "||strip(name)||";";  output;
         %if %upcase(&grouping) ne N %then %do; 
             record="  by __order __sid __fname &trtvars &varby &groupby;";   output;
         %end;
@@ -864,7 +864,7 @@ run;
         record="*---------------------------------------------------------;"; output;
         record=" "; output;
         record="  data __modelstatr;"; output;
-        record="    set __modelstatr &modelds;"; output;
+        record="    set __modelstatr "||strip(name)||";"; output;
         record="  run;  "; output;
         record=" "; output;
         record='%end;';     output;
@@ -878,12 +878,12 @@ run;
     ** transpose model based statistics;
     
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=" "; output;
     record='%local dsid rc nobsmdl;'; output;
     record='%let dsid ='; output;
-    record='  %sysfunc(open(' "__modelstatr ));;"; output;
+    record='  %sysfunc(open(' ||"__modelstatr ));"; output;
     record='%let nobsmdl = %sysfunc(attrn(&dsid, NOBS));;'; output;
     record='%let rc=%sysfunc(close(&dsid));;'; output;
     record=" "; output;
@@ -975,7 +975,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=" "; output;
 record=" "; output;

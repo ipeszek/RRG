@@ -29,7 +29,7 @@ Note: this.xxx refers to macro parameter xxx of this macro
 3. initializes  __varinfo dataset
     
 4. creates formats from __rrgconfig ds
-    creates __rrght ds from E1 section of __rrgconfig ds 
+    creates rrgheader ds from E1 section of __rrgconfig ds 
 
     make substitutions for 
       _URI_     (this.uri), 
@@ -38,15 +38,18 @@ Note: this.xxx refers to macro parameter xxx of this macro
       _PGMNAME_ (rrguri from __rrgconfig), 
       _PURPOSE_  (from this.purpose) 
       
-      If there is no [E1] section then creates __rrght ds with rudimentary "header", which includes 
+      If there is no [E1] section then creates rrgheader ds with rudimentary "header", which includes 
       &rrguri (typically , this.uri, unless redevined in config file, 
       creator (&sysuserid), date (date of program run), and this.purpose
   
  5.  initializes __rrginlibs ds
  
- ds used:__rrgxml (if exists),__rrght (if exists) __rrgconfig
- ds created/updated: __rrght , __rrgxml (updated if exists)
- ds initialized as empty: __rrginlibs
+ds used:__rrgxml (if exists), __rrgconfig   
+ ds created:  , rrgheader (with pgm header) , __rrgxml (if not exists) WITH OUTNAME ONLY, 
+                       __rrgfmt (for cntlin)
+ ds updated:  ,  __rrgxml (updated with OUTNAME if it was created in initcomm from TOC file), 
+ ds initialized as empty: __rrginlibs, __varinfo
+ 
   
 */  
    
@@ -100,14 +103,14 @@ run;
 %** DEFINE FORMATS FOR DISPLAY OF STATISTICS AND FOR DECIMAL PRECISION MODIFIERS;
 %** TAKING THEM FROM CONFIGURATION FILE;
 
-data __rrgtmpfmt (rename=(rtype=type));
+data __rrgfmt (rename=(rtype=type));
   set __rrgconfig( where=(type=:'[A1]'));
   length start end label fmtname rtype $ 200;
   start=w1;
   end=w1;
   label=w2;
-  if type='[A1]' then fmtname="__rrgcf";
-  else if type='[A1L]' then fmtname="__rrglf";
+  if type='[A1]' then fmtname="$__rrgcf";
+  else if type='[A1L]' then fmtname="$__rrglf";
   rtype='C';
   output;
   drop type;
@@ -135,10 +138,10 @@ data __rrgtmpfmt2 (rename=(rtype=type));
   drop type;
 run;
 
-proc append base=__rrgtmpfmt data=__rrgtmpfmt2;
+proc append base=__rrgfmt data=__rrgtmpfmt2;
 run;
 
-proc format cntlin=__rrgtmpfmt;
+proc format cntlin=__rrgfmt;
 run;
 
 
@@ -146,10 +149,10 @@ run;
 %local ise1;
 %let ise1=0;
 
-data __rrght;
+data rrgheader;
   keep record;
 set __rrgconfig(where=(type='[E1]')) end=eof;
-length sdate $ 9 uri rrguri $ 200 record $ 200;
+length sdate $ 9 uri rrguri $ 200 record $ 2000;
 
 sdate_ = date();
 sdate = put(sdate_, date9.);
@@ -168,8 +171,8 @@ run;
 
 %if &ise1=0 %then %do;
 
-    data __rrght;
-    length record $ 200;
+    data rrgheader;
+    length record $ 2000;
     now = today();
     record="/*---------------------------------------------------------------------;"; output;
     record=" ";output;
@@ -189,9 +192,11 @@ run;
 
 %end;
 
+/*
 data __rrginlibs;
   if 0;
 run;
+*/
 
 %put FINISFED RRG_INIT;
 

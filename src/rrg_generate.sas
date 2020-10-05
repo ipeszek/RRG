@@ -55,10 +55,6 @@ Macro parameters:
 
 
 
-proc printto;
-run;
-
-
 
 %put;
 %put;
@@ -112,82 +108,14 @@ proc sql noprint;
   select upcase(pooled4stats) into:pooled separated by ' ' from __repinfo;
 quit;
 
-%if  &pooled=N %then %do;
-    %let pooledstr = and __grouped ne 1;
-%end;
-
+%if  &pooled=N %then     %let pooledstr = and __grouped ne 1;
 %if %upcase(&append)=Y or %upcase(&append)=TRUE %then %let append=Y;
 %else %let append=N;
 %if %upcase(&appendable)=Y or %upcase(&appendable)=TRUE %then %let appendable=Y;
 %else %let appendable=N;
 
-%if &append=N %then %do;
 
-    proc sql noprint;
-      select dataset into:indata separated by ' ' from __rrginlibs;
-    quit;
-    
-    data __rrght;
-      set __rrght ;
-      length __tmp __tmp2 $ 2000 record $ 200;
-      __tmp = strip(symget("indata"));
-      __tmp2 = strip(symget("inmacros"));
-      record = tranwrd(strip(record), '_DATASETS_', strip(__tmp));
-      record = tranwrd(strip(record), '_MACROS_', strip(__tmp2));
-    run;
 
-   
-    %if &tablepart=FIRST or  %length(&tablepart)=0 %then %do;
-    
-        data rrgpgm;
-        set __rrght (keep=record);
-
-        
-        data __drrght;
-          x=1;
-        run;
-        
-    %end;
-  
-    %else %do;
-        data rrgpgmtmp;
-        length record $ 200;
-        keep record;
-        record=  " "; output; output;
-        record=  "*-------------------------------------------------------------------;"; output;
-        record=  "*     NEXT PART OF THE TABLE                                        ;";output;
-        record=  "*-------------------------------------------------------------------;";output;
-        record=  " ";  output;  output;
-      run;
-      
-      proc append base=rrgpgm data=rrgpgmtmp;
-      run;
-
-    %end;
-  
-  
-%end;
-
-%else %do;
-    data rrgpgmtmp;
-    length record $ 200;
-    keep record;
-    record=  " ";output;
-    record=  "*-------------------------------------------------------------------;";output;
-    %If &appendable=Y %then %do; 
-        record=  "*  CONTINUING WRITING PROGRAM (APPENDING NEXT PART);";output;
-    %end;
-    %else %do;
-        record=  "*  CONTINUING WRITING PROGRAM (APPENDING LAST PART);";output;
-    %end;
-    record=  "*-------------------------------------------------------------------;";output;
-    record=  " ";output;
-    run;
-    
-    proc append base=rrgpgm data=rrgpgmtmp;
-    run;
-
-%end;
 
 %if &trtcnt>1 %then %do;
     %put &WAR.&NING.: more than one treatment variable was specified. Program aborted.;
@@ -249,7 +177,7 @@ quit;
 %if %length(&trtvar)>0 %then %let numtrt = 1;
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " "; output;
 record='%macro rrg;';output;
@@ -278,7 +206,7 @@ run;
      dsout=__dataset);
     
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " ";   output;
 record=  "*-------------------------------------------------------------------;";output;
@@ -363,7 +291,7 @@ quit;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " "; output;
 record=  "*------------------------------------------------------------------;";output;
@@ -382,7 +310,7 @@ proc append base=rrgpgm data=rrgpgmtmp;
 run;
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 
 %__getcntg(datain=__dataset, 
@@ -408,7 +336,7 @@ run;
         %let tmp2=%sysfunc(tranwrd(&varby4pop  &tmptrt, %str( ), %str(,)));
         
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=  " "; output;
         record=  "   proc sql noprint;";output;
@@ -449,7 +377,7 @@ run;
         %let tmp2=%sysfunc(tranwrd(&tmptrt, %str( ), %str(,)));
         
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=  " ";output;
         record=  "   proc sql noprint nowarn;";output;
@@ -492,7 +420,7 @@ run;
 %if &numtrt>1 %then %do;
 
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  " "; output;
     record=  "proc sql noprint;"; output;
@@ -518,8 +446,8 @@ run;
       
          
     data rrgpgmtmp;
-    length record $ 200;
-    keep record; output;
+    length record $ 2000;
+    keep record;
     record=  " "; output;
     record=  " "; output;
     
@@ -545,8 +473,8 @@ run;
     record="run;"; output;
     record="proc sql;"; output;
     record="  create table __popx as select * from __pop natural full outer join __CODES4TRT;"; output;
-    record="quit;"; output
-    record="%local __mod_nline __mod_autospan __mod_suff __mod_prefix;"; output;
+    record="quit;"; output;
+    record='%local __mod_nline __mod_autospan __mod_suff __mod_prefix;'; output;
     record="proc sql noprint;"; output;
     record="  select distinct __nline_&trtvar into: __mod_nline"; output;
     record="  separated by ' ' from __popx (where=(not missing(__nline_&trtvar)));"; output;
@@ -557,18 +485,18 @@ run;
     record="  select distinct __autospan into: __mod_autospan"; output;
     record="  separated by ' ' from __popx (where=(not missing(__autospan)));"; output;
     record="quit;"; output;
-    put ; output;
-    put ; output;
-    record="data __pop;";
-    record="  set __popx;";
-    record="  if missing(__grpid) then __grpid=999;";
-    record="  if missing(__pop_1)  then __pop_1=0;";
-    record="  if missing(__grouped)  then __grouped=0;";
-    put '  if missing(__autospan)  then __autospan="' '&__mod_autospan' '";';
-    record="  if missing(__suff_&trtvar)  then __suff_&trtvar=" '"' '&__mod_suff' '";';
-    record="  if missing(__nline_&trtvar)  then __nline_&trtvar=" '"' '&__mod_nline' '";';
-    record="  if missing(__prefix_&trtvar)  then __prefix_&trtvar=" '"' '&__mod_prefix' '";';
-    record="  run;";
+    record=" " ; output;
+    record=" " ; output;
+    record="data __pop;"; output;
+    record="  set __popx;"; output;
+    record="  if missing(__grpid) then __grpid=999;"; output;
+    record="  if missing(__pop_1)  then __pop_1=0;"; output;
+    record="  if missing(__grouped)  then __grouped=0;"; output;
+    record= '  if missing(__autospan)  then __autospan="'|| '&__mod_autospan'|| '";'; output;
+    record="  if missing(__suff_&trtvar)  then __suff_&trtvar="|| '"'|| '&__mod_suff'|| '";'; output;
+    record="  if missing(__nline_&trtvar)  then __nline_&trtvar="|| '"'|| '&__mod_nline'|| '";'; output;
+    record="  if missing(__prefix_&trtvar)  then __prefix_&trtvar="|| '"' ||'&__mod_prefix'|| '";'; output;
+    record="  run;"; output;
     run;
 
     proc append base=rrgpgm data=rrgpgmtmp;
@@ -578,7 +506,7 @@ run;
 %end;    
     
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record; 
 record=  "*------------------------------------------------------------------;"; output;
 record=  "* CREATE TREATMENT ID, ENUMERATING ALL TREATMENTS SEQUENTIALLY ;"; output;
@@ -751,6 +679,7 @@ CREATE DATASET __GRPCODES_EXEC:
 %do i=1 %to &ngrpv;
     %local tmp;
     %let tmp = %scan(&groupby,&i, %str( ));
+    
         %__makecodeds (
         vinfods = __varinfo, 
         varname = &tmp, 
@@ -830,7 +759,7 @@ quit;
     %let tmp = %scan(&gdsset,1,%str( ));
     
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  " "; output;
     record=  " "; output;
@@ -922,7 +851,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " "; output;
 record=  "*------------------------------------------------------------------;"; output;
@@ -969,7 +898,7 @@ run;
                outds = __fcat&i);
 
        data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=  " "; output;
         record=  " "; output;
@@ -1009,7 +938,7 @@ run;
 
 
          data rrgpgmtmp;
-          length record $ 200;
+          length record $ 2000;
           keep record;
           record=  " "; output;
           record=  "data __all;"; output;
@@ -1046,7 +975,7 @@ run;
 
 
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=  " ";     output;
         record=  "data __all;"; output;
@@ -1082,7 +1011,7 @@ run;
 
 
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=  " "; output;
         record=  "data __all;"; output;
@@ -1104,7 +1033,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " "; output;
 record=  "data __all;"; output;
@@ -1181,6 +1110,7 @@ quit;
       where upcase(type)='CAT';
       select count(*) into:numcatblocks separated by ' ' from __varinfo
       where upcase(type)='CAT';
+     
       %do ii=1 %to &numcatblocks;
            %local cb&ii cbname&ii;
            %let cb&ii = %scan(&catblocks, &ii, %str( ));
@@ -1194,7 +1124,7 @@ quit;
     quit;
 
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  " ";  output;
     record=  "*---------------------------------------------------------------;"; output;
@@ -1206,7 +1136,7 @@ quit;
         %do i=1 %to &ovorder;
       
             %* MERGE IN CONDITION BLOCKS WITHOUT GROUPING;
-            record=  '%let k = %eval(&maxtrt' "+&i);"; output;
+            record=  '%let k = %eval(&maxtrt'|| "+&i);"; output;
             
             %if %length(&condblocksng) %then %do;      
                 record=  "proc sort data=__overallstats "; output;
@@ -1254,7 +1184,7 @@ quit;
                 record=  'length __col_&k $ 2000;';output;
                 record=  "if __a;";output;
                 record=  "__align = trim(left(__align))||' '||trim(left(__stat_align));";output;
-                record=  "if first.__blockid and __blockid in (&condblocksg &catblocks) " 'then __col_&k=__stat_value;';output;
+                record=  "if first.__blockid and __blockid in (&condblocksg &catblocks) "|| 'then __col_&k=__stat_value;';output;
                 record=  'drop __stat_value;';output;
                 record=  "run;";output;
                 record=  " ";output;
@@ -1270,7 +1200,7 @@ quit;
     
     %else %do;
         %do i=1 %to &ovorder;
-            record=  '%let k = %eval(&maxtrt' "+&i);";
+            record=  '%let k = %eval(&maxtrt'|| "+&i);";
             %* MERGE IN CONDITION BLOCKS WITHOUT GROUPING;
             
             %if %length(&condblocksng) %then %do;
@@ -1318,7 +1248,7 @@ quit;
                 record=  'length __col_&k $ 2000;';                                                                         output;
                 record=  "if __a;";                                                                                         output;
                 record=  "__align = trim(left(__align))||' '||trim(left(__stat_align));";                                   output;
-                record=  "if first.__blockid and __blockid in (&condblocksg) " 'then __col_&k=__stat_value;';               output;
+                record=  "if first.__blockid and __blockid in (&condblocksg) "|| 'then __col_&k=__stat_value;';               output;
                 record=  'drop __stat_value;';                                                                              output;
                 record=  "run;";                                                                                            output;
                 record=  " ";                                                                                               output;
@@ -1489,7 +1419,7 @@ quit;
     %if %sysfunc(exist(__grpcodes_exec)) %then %do;
 
          data rrgpgmtmp;
-         length record $ 200;
+         length record $ 2000;
          keep record;
          record=  " ";                                                      output;
          record=  "data __grpcodes;";                                       output;
@@ -1525,7 +1455,7 @@ quit;
       
   
      data rrgpgmtmp;
-     length record $ 200;
+     length record $ 2000;
      keep record;
      record=  "*------------------------------------------------------------;";                            output;
      record=  "* GROUP VARIABLES  WITH CODELIST:&grps_w_cl ;";                                             output;
@@ -1560,7 +1490,7 @@ quit;
          %end;
          
          data rrgpgmtmp;
-         length record $ 200;
+         length record $ 2000;
          keep record;
      
          record=  "*------------------------------------------------------------;";                       output;
@@ -1643,7 +1573,7 @@ quit;
         %end;
       
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=  "*------------------------------------------------------------;";                             output;
         record=  "* CASE: NO GROUPING VARIABLES HAVE CODELIST;";                                               output;
@@ -1735,7 +1665,7 @@ quit;
         
         %do i=1 %to &ngrpv;
              %let tmp = &&grp&i;
-             record=  " __grplabel_&&grp&i =" __grplab&i ";";                                                                    output; 
+             record=  " __grplabel_&&grp&i =" ||strip(__grplab&i)|| ";";                                                                    output; 
              %if %length(&&grpdec_&tmp) %then %do;
                 record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grpdec_&tmp);";                          output; 
              %end;
@@ -1795,12 +1725,11 @@ quit;
             %let vdecodestr=&vdecodestr &&vbdec_&tmp2;
          %end;
         
-        %if %length(&vdecodestr)>0 %then %do;
-            %let tmpdec = %sysfunc(tranwrd(&varby &vdecodestr, %str( ), %str(,))); 
-        %end;
+        %if %length(&vdecodestr)>0 %then    %let tmpdec = %sysfunc(tranwrd(&varby &vdecodestr, %str( ), %str(,))); 
+  
    
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=  "*------------------------------------------------------------;";                                        output;
         record=  "* CASE: ALL GROUPING VARIABLES HAVE CODELIST;";                                                         output;
@@ -1892,7 +1821,7 @@ quit;
         
         %do i=1 %to &ngrpv;
             %let tmp = &&grp&i;
-            record=  " __grplabel_&&grp&i =" __grplab&i ";";                                                                            output;
+            record=  " __grplabel_&&grp&i =" ||strip(__grplab&i)|| ";";                                                                            output;
             %if %length(&&grpdec_&tmp) %then %do;
                 record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grpdec_&tmp);";                                 output;
             %end;
@@ -1906,7 +1835,7 @@ quit;
             %do j=1 %to &nvarby;
                %let tmp = &&vby&j;
                %if %length(&&vblabel&j) %then %do;
-                    record=  " __varbylab =strip(__varbylab)||' '||" __vblabel&j ";";                                                    output;
+                    record=  " __varbylab =strip(__varbylab)||' '||" __vblabel&j ||";";                                                    output;
                %end;
                %if %length(&&vbdec_&tmp) %then %do;
                     record=  "   __varbylab = trim(left(__varbylab))||' '||&&vbdec_&tmp;";                                               output;
@@ -1987,7 +1916,7 @@ quit;
      
 
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=  "*------------------------------------------------------------;";                                   output;
         record=  "* CASE: SOME GROUPING VARIABLES HAVE CODELIST, OTHERS DO NOT;";                                    output;
@@ -2102,7 +2031,7 @@ quit;
         
         %do i=1 %to &ngrpv;
            %let tmp = &&grp&i;
-           record=  " __grplabel_&&grp&i =" __grplab&i ";";                                                        output; 
+           record=  " __grplabel_&&grp&i =" ||strip(__grplab&i) ||";";                                                        output; 
            %if %length(&&grpdec_&tmp) %then %do;
               record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grpdec_&tmp);";              output; 
            %end;
@@ -2231,7 +2160,7 @@ quit;
 %let ngrpv=&tmp;  
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " ";                                                                                                 output;
 record=  "*-----------------------------------------------------------------;";                               output;
@@ -2261,16 +2190,13 @@ record=  " ";                                                                   
     record=  "run;";                                                                                          output;
     record=  " ";                                                                                             output;
 %end;
-
-run;
+
 
 %local nn;
 %let nn=&ngrpv;
 %if %upcase(&Statsacross)=Y %then %let nn=%eval(&ngrpv-1);
 
-data rrgpgmtmp;
-length record $ 200;
-keep record;
+
 record=  "data __all ;";                                                                                      output;
 record=  "length __suffix $ 2000;";                                                                           output;
 record=  "  set __all;";                                                                                      output;
@@ -2281,7 +2207,7 @@ record=  "     __order __tmprowid;";                                            
 record=  "  array cols{*} __col_:;";                                                                          output;
 
 %if &ngrpv>0 %then %do;
-    record=  "  array grpl{*} " %do i=1 %to &ngrpv; " __grplabel_&&grp&i " %end;" ;";                         output;
+    record=  "  array grpl{*}" || %do i=1 %to &ngrpv; " __grplabel_&&grp&i"||  %end;";" ;                         output;
 %end;
 %else %do;
     record="   array grpl{*} __grplabel_0;";                                                                  output;
@@ -2306,11 +2232,12 @@ run;
 proc append base=rrgpgm data=rrgpgmtmp;
 run;  
 
-data rrgpgmtmp;
-length record $ 200;
-keep record;
+
 
 %if %upcase(&aetable) ne N %then %do;
+    data rrgpgmtmp;
+    length record $ 2000;
+    keep record;
     record=  "    * ASSIGN CORRECT DISPLAY VALUES TO ROWS ";                                                  output;
     record=  "         REPRESENTING GROUPING VARIABLES;";                                                     output;
     record=  "    if __vtype not in ('COND','CONDS','CONDLAB') then do;";                                     output;
@@ -2376,26 +2303,37 @@ keep record;
     
     record=  "    if last.__blockid and __skipline='Y' then __suffix = '~-2n';";                              output;
   
-%* end of AETABLE ne N;
+
+    proc append base=rrgpgm data=rrgpgmtmp;
+    run; 
+    
+    %* end of AETABLE ne N;
+
 %end;
 
 %else %do;
-    %if %upcase(&Statsacross)=Y and &ngrpv>0 %then %do;
-        %if &ngrpv>1 %then %do;
-          record=  "     __col_0 = trim(left(__grplabel_&&grp&ngrpv));";                                      output;
-        %end;
+    
+    %if %upcase(&Statsacross)=Y and &ngrpv>1 %then %do;
+        data rrgpgmtmp;
+        length record $ 2000;
+        keep record;
+        record=  "     __col_0 = trim(left(__grplabel_&&grp&ngrpv));";  output;
+        run;
+        proc append base=rrgpgm data=rrgpgmtmp;
+        run;                                     
     %end;
+    
+    
 %end;
 
 run;
 
-proc append base=rrgpgm data=rrgpgmtmp;
-run;  
+ 
 
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " ";                                                                                                output; 
 record=  "  output;";                                                                                        output; 
@@ -2535,7 +2473,7 @@ run;
 %if %upcase(&aetable)=EVENTSE %then %do;
   
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  "*----------------------------------------------------------------;";                           output;
     record=  "  * ADD EVENT COUNT TO TABLE;";                                                                output;
@@ -2568,7 +2506,7 @@ run;
 %if %upcase(&aetable)=EVENTS %then %do;
   
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  "*----------------------------------------------------------------;";                           output;
     record=  "  * ADD EVENT COUNT TO TABLE;";                                                                output;
@@ -2603,7 +2541,7 @@ run;
 
 %if %upcase(&aetable)=EVENTSES %then %do;
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  "*----------------------------------------------------------------;";                           output;
     record=  "  * ADD EVENT COUNT TO TABLE;";                                                                output;
@@ -2637,7 +2575,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  '%if &numobsinall>1 %then %do;';                                                                                output;
 record=  " ";                                                                                                            output;
@@ -2660,7 +2598,7 @@ proc append base=rrgpgm data=rrgpgmtmp;
 run; 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " ";                                                                                                            output;
 record=  "*----------------------------------------------------------------;";                                           output;
@@ -2683,7 +2621,7 @@ proc append base=rrgpgm data=rrgpgmtmp;
 run; 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 
 set __repinfo;
@@ -2727,7 +2665,7 @@ run;
 %if %upcase(&aetable)=EVENTS   %then %do;
 
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  " ";                                                                                           output;
     record=  "*--------------------------------------------------------------------;";                      output;
@@ -2808,7 +2746,7 @@ run;
 %if %upcase(&aetable)=EVENTSES %then %do;
 
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  " ";                                                                                             output;
     record=  "*--------------------------------------------------------------------;";                        output;
@@ -2896,7 +2834,7 @@ quit;
 %if %length(&splitrow) %then %do;
 
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=  "  data __head(drop=__rowid __i __ncol: __split __issplit: ";                                          output;
     record=  "             rename=(__newrowid=__rowid));";                                                          output;
@@ -2970,7 +2908,7 @@ quit;
 %end;
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " ";                                                                                                      output;
 record=  "proc sort data=__head;";                                                                                 output;
@@ -3014,7 +2952,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 set __repinfo;
 
@@ -3153,7 +3091,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " ";                                                                                                          output;
 record=  "data &rrguri;";                                                                                              output;
@@ -3203,7 +3141,7 @@ proc sql noprint;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=  " ";                                                                                                                                     output;
 record=  " ";                                                                                                                                     output;
@@ -3241,6 +3179,46 @@ proc append base=rrgpgm data=rrgpgmtmp;
 run; 
 
 
+
+data _null_;
+  set rrgfmt;
+  call execute(cats('%nrstr(',record,')'));
+
+run;
+
+
+
+
+
+%let __workdir = %sysfunc(getoption(work));
+%let __workdir=%sysfunc(tranwrd(&__workdir, %str(\), %str(/) ));
+
+
+data _null_;
+  set rrgpgm;
+ 
+  file "&__workdir./rrgpgm.sas"  lrecl=1000;
+
+  put record  ;
+  
+run;
+
+data _null_;
+  set rrgpgm;
+ 
+
+  file "c:/tmp/&rrguri..sas"  lrecl=1000;
+  put record  ;
+  
+run;
+
+
+
+
+%inc "&__workdir./rrgpgm.sas";
+
+
+
 %exit:
 
 
@@ -3253,6 +3231,8 @@ run;
 %put ------------------------------------------------------------------------;;
 %put;
 %put;
+
+/*
 
 proc optload 
    data=__sasoptions(where=(
@@ -3274,7 +3254,7 @@ proc optload
       'missing')));
 run;
 
-
+*/
 
 
 

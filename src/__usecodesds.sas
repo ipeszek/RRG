@@ -91,7 +91,7 @@ quit;
     quit;  
     
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record = " ";
     *----------------------------------------------------;
@@ -165,7 +165,7 @@ quit;
         quit;
       
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record = " ";output;
         *----------------------------------------------------;
@@ -193,7 +193,7 @@ quit;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record = " "; output;
 record =  "*---------------------------------------------------------------;"; output;
@@ -280,9 +280,7 @@ run;
 
 %let rc=%sysfunc(close(&dsid));     
 
-data rrgpgmtmp;
-length record $ 200;
-keep record;
+
 
 %* CHECK WHICH DECODES FROM CODELIST EXIST IN &DATASET-THEY NEED TO BE DROPPED;
 %local decodes2drop;
@@ -303,7 +301,7 @@ keep record;
     %if &isorder=0 %then %do;
 
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;       
         record = " ";   output; 
         record =  "proc sort data=&codelistds out=&outds;"; output;
@@ -342,7 +340,7 @@ keep record;
     %end;
     %else %do;
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record = " ";   output;
         record =  "     data &outds &outds.2; ";  output;
@@ -364,7 +362,7 @@ keep record;
         
 %else %do;
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record = " ";    output;
     record =  "  data &outds &outds.2; "; output;
@@ -393,7 +391,7 @@ keep record;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record =  '*-------------------------------------------------------------------;'; output;
 record =  '* CROSS-JOINN CODELIST DATASET WITH ALL VALUES OF GROUPING VARIABLES' ; output;
@@ -490,13 +488,13 @@ record =  "*-------------------------------------------------------------------;
 
 
  
-    record =  "    proc sql noprint;";
-    record =  "      create table __grptemplate as";
-    record =  "      select distinct ";
-    record =  "        &tmp ";
-    record =  "      from &outds.2;";
-    record =  "      quit;";
-    record = " ";
+    record =  "    proc sql noprint;";output;
+    record =  "      create table __grptemplate as";output;
+    record =  "      select distinct ";output;
+    record =  "        &tmp ";output;
+    record =  "      from &outds.2;";output;
+    record =  "      quit;";output;
+    record = " ";output;
     run;
 
 

@@ -271,12 +271,14 @@ proc sql noprint;
 
 quit;
 
+/*
 %if %length(&statlist)=0 %then %do;
   data __contstat2;
     if 0;
   run;
 %end;
-
+*/
+/*
 %* create "template" including all statistics and groupign variables;
 
 %* determine which grouping variables have template defined;
@@ -308,10 +310,10 @@ quit;
 %let tmp_nt = %sysfunc(tranwrd(%sysfunc(compbl(&by &trtvars 
       __tby &gv_nt)) , 
        %str( ), %str(,)));
-
+*/
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=" "; output;
 record="  data &outds;"; output;
@@ -338,7 +340,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 set __contstatlist end=eof;
 
@@ -375,7 +377,7 @@ proc append data=rrgpgmtmp base=rrgpgm;
 run;
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 __tabwhere = cats(symget("tabwhere"));
 __where = cats(symget("where"));
@@ -393,7 +395,7 @@ record=" "; output;
 record="  proc sql noprint;"; output;
 record="       create table __contds2 as select distinct"; output;
 record="       &tmp"; output;
-record="       from __dataset (where=( " ||strip(__tabwhere)|| " and "||strip(__where) "))"; output;
+record="       from __dataset (where=( " ||strip(__tabwhere)|| " and "||strip(__where)|| "))"; output;
 record="       order by "; output;
 record="       &tmp;"; output;
 record="  quit;"; output;
@@ -519,7 +521,147 @@ record="  * CHECK IF ANY STATISTICS ARE CALCULATED;";output;
 record="  * IF NOT THEN CREATE DUMMY OUTPUT DATASET SHOWING N WITH VALUE=0;";output;
 record="  *------------------------------------------------------------------;";output;
 record=" ";output;
+run;
 
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
+***;
+
+%* create "template" including al statistics nd groupign variables;
+
+%* determine which grouping variables have template defined;
+%local i gv_wt gv_nt gdsset tmp;
+proc sql noprint;
+  select value into:gdsset separated by ' ' from __rrgpgminfo
+    (where=(key='gtemplate'));
+quit;
+
+%if %length(&groupby) %then %do;
+    proc sql noprint;
+    %do i=1 %to %sysfunc(countw(&groupby,%str( )));
+      %let tmp=;
+      select value into:tmp separated by ' ' from __rrgpgminfo
+      (where=(
+      upcase(value)=upcase("__grp_template_"||"%scan(&groupby,&i,%str( ))")
+      ));
+      %if %length(&tmp) %then %let gv_wt=&gv_wt %scan(&groupby,&i,%str( ));
+      %else %do;
+        %let gv_nt=&gv_nt %scan(&groupby,&i,%str( ));
+      %end;
+    %end;
+quit;
+%end;
+
+%local tmp;
+
+%local tmp_wt tmp_nt ;
+%let tmp_nt = %sysfunc(tranwrd(%sysfunc(compbl(&by &trtvars 
+      __tby &gv_nt)) , 
+       %str( ), %str(,)));
+       
+       
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+length __tabwhere __where $ 2000;
+__tabwhere = cats(symget("tabwhere"));
+__where = cats(symget("where"));
+__templatewhere = cats(symget("templatewhere"));
+if __templatewhere='' then __templatewhere='1=1';
+
+
+record = " ";                                                                                                             output;
+record =   "data __contstat0;";                                                                                           output;
+record =  ' length __name $ 2000;';                                                                                       output;
+record =  "   __statlist = compbl(upcase('"|| "&statlist"|| "'));";                                                           output;
+record =  "   do __i =1 to  countw(__statlist, ' ') ;";                                                                   output;
+record =  "      __name = scan(__statlist,  __i, ' ');";                                                                  output;
+record =  '      output;';                                                                                                output;
+record =  '   end;';                                                                                                      output;
+record =  " drop __i __statlist;";                                                                                        output;
+record =   "run;";                                                                                                        output;
+record = " ";                                                                                                             output;
+
+%if %length(&gv_wt) %then %do;
+    record =  "proc sql noprint nowarn;";                                                                                 output;
+    record =  "  create table __tmp1 as select * from ";                                                                  output;
+    record =  "  (select distinct";                                                                                       output;
+    record =  "     &tmp_nt";                                                                                             output;
+    record =  "     from __dataset (where=( " ||strip(__templatewhere)|| ")))";                                                      output;
+    record =  "     cross join __grpcodes;";                                                                              output;
+    record =  "  create table __tmp as select * from ";                                                                   output;
+    record =  "  __tmp1 cross join __contstat0;";                                                                         output;
+%end;
+%else %do;
+    record =  "proc sql noprint nowarn;";                                                                                 output;
+    record =  "  create table __tmp as select * from ";                                                                   output;
+    record =  "  (select distinct";                                                                                       output;
+    record =  "     &tmp_nt";                                                                                             output;
+    record =  "     from __dataset (where=( " ||strip(__templatewhere)|| ")))";                                                      output;
+    record =  "     cross join __contstat0;";                                                                             output;
+%end;
+
+record =  "  create table __contstat0 as select * from __tmp order by __name;";                                           output;
+record =  "quit;";                                                                                                        output;
+record = " ";                                                                                                             output;
+record = " ";                                                                                                             output;
+record =  '  proc sort data=__contstatlist;';                                                                             output;
+record =  '    by __name;';                                                                                               output;
+record =  '  run;';                                                                                                       output;
+record = " ";                                                                                                             output;
+record =  '  data __contstat0;';                                                                                          output;
+record =  '    merge __contstat0 (in=__a) __contstatlist ';                                                               output;
+record =  '    (keep=__fname __name __order __sid __disp __dispname __basedec);';                                         output;
+record =  '    by __name;';                                                                                               output;
+record =  '    if __a;';                                                                                                  output;
+record =  '  run;  ';                                                                                                     output;
+record = " ";                                                                                                             output;
+%* end of template;
+
+
+
+record = " ";                                                                                                             output;
+record =  '%local dsid rc nobs;';                                                                                         output;
+record =  '%let dsid =%sysfunc(open(__contstat));';                                                                       output;
+record =  '%let nobs = %sysfunc(attrn(&dsid, NOBS));';                                                                    output;
+record =  '%let rc=%sysfunc(close(&dsid));';                                                                              output;
+record = " ";                                                                                                             output;
+record =  '%if &nobs>0 %then %do;';                                                                                       output;
+record = " ";                                                                                                             output;
+record = " ";                                                                                                             output;
+record = " ";                                                                                                             output;
+record = " ";                                                                                                             output;
+record =  '  data __contstat;';                                                                                           output;
+record =  '    set __contstat;';                                                                                          output;
+record =  '    length __name __statlist $ 2000;';                                                                         output;
+record =  "    __statlist = upcase('"||strip( "&statlist")|| "');";                                                                  output;
+record =  "    array stats{*} &statlist;";                                                                                output;
+record =  '      do __i =1 to dim(stats);';                                                                               output;
+record =  "        __name = scan(__statlist,  __i, ' ');";                                                                output;
+record =  '        __val = stats[__i];';                                                                                  output;
+record =  '        output;';                                                                                              output;
+record =  '      end;';                                                                                                   output;
+record =  "      drop __statlist &statlist;";                                                                             output;
+record =  '    run;';                                                                                                     output;
+record = " ";                                                                                                             output;
+record =  '  proc sort data=__contstat;';                                                                                 output;
+record =  "    by &by &trtvars __tby &groupvars  __name;";                                                                output;
+record =  '  run;';                                                                                                       output;
+record = " ";                                                                                                             output;
+record =  '  proc sort data=__contstat0;';                                                                                output;
+record =  "    by &by &trtvars __tby &groupvars  __name;";                                                                output;
+record =  '  run;';                                                                                                       output;
+record = " ";                                                                                                             output;
+record =  '  data __contstat;';                                                                                           output;
+record =  '    merge __contstat  __contstat0(in=__a); ';                                                                  output;
+record =  "    by &by &trtvars __tby &groupvars  __name;";                                                                output;
+record =  "   if __a;";                                                                                                   output;
+record =  "      if upcase(__name)='N' and __val=. then __val=0;";                                                        output;
+record =  '  run;  ';                                                                                                     output;
+record = " ";                                                                                                             output;
+record =  '%end;';                                                                                                        output;
 
 record=" ";output;
 record=  '%else %do;';output;
@@ -616,7 +758,7 @@ record="  if first.__order and last.__order then do;";output;
 record="    __ncol =upcase(__name);";output;
 record="    __col =tranwrd(strip(__ncol), strip(upcase(__name)), strip(__col));";output;
 record="    if compress(__col, '.,(): ')='' then __col='';     ";output;
-record="    __tmpalign = cats('" "&align" "');";   output;
+record="    __tmpalign = cats('"|| "&align"|| "');";   output;
 record="    output;";output;
 record="  end;";output;
 
@@ -640,7 +782,6 @@ record=" ";output;
 record="  data __contstat2;";output;
 record="  set __contstat2;";output;
 record="     __col = tranwrd(strip(__col),'(.','(NA');";output;
-record="  run;";output;
 %if %length(&maxdec) %then %do;
     record="     if   __basedec>&maxdec then __basedec = &maxdec;";output;
 %end;
@@ -709,7 +850,7 @@ record="  if first.__order and last.__order then do;";output;
 record="    __ncol =upcase(__name);";output;
 record="    __col =tranwrd(strip(__ncol), strip(upcase(__name)), strip(__col));";output;
 record="    if compress(__col, '.,(): ')='' then __col='';     ";output;
-record="    __tmpalign = cats('" "&align" "');";   output;
+record="    __tmpalign = cats('"|| "&align"|| "');";   output;
 record="    output;";output;
 record="  end;";output;
 
@@ -722,12 +863,12 @@ record="       if last.__order then do;";output;
 record="          if compress(__ncol, '.,(): ')='' then __ncol='';     ";output;
 record="          __col=strip(__ncol);";output;
 
-record="    __tmpalign = cats('" "&align" "');"; output;
+record="    __tmpalign = cats('"|| "&align"|| "');"; output;
 record="          output;";output;
 record="       end;";output;
 record="  end;";output;
 
-record=" ";output;
+record="run; ";output;
 
 record=" ";output;
 record="  data __contstat2;";output;
@@ -800,7 +941,7 @@ run;
 
 
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
         set __contstatlistm end=eof;
         if _n_=1 then do;      
@@ -822,7 +963,7 @@ run;
         record="      __overall = "||put(__overall,best.)|| ";";      output;
         record="        __fname = '" ||strip(__fname)|| "';";output;
         record="         __name = '" ||strip(__name)|| "';";output;
-        record="         __disp = '"|| __disp)|| "';";output;
+        record="         __disp = '"|| strip(__disp)|| "';";output;
         record="        __order = "||put( __order,best.)|| ";";output;
         record="          __sid = "||put( __sid,best.)|| ";";output;
         record="      __basedec = "||put( __basedec,best.)|| ";";  output;
@@ -901,18 +1042,25 @@ run;
         
         
           %local modelds;
+          
+          data modelp;
+            set modelp end=eof;
+            if eof then  call symput ('modelds', cats(name));
+            run;
+          
       
    
       
           data rrgpgmtmp;
-          length record $ 200;
+          length record $ 2000;
           keep record;
-          length __macroname2  $ 2000;
-          set __modelp ;
-          __macroname2 = cats('%', name,'(');
+          *length __macroname2  $ 2000;
+          set __modelp end=eof;
+          *__macroname2 = cats('%', name,'(');
           record=" ";output;
          
-          record="  __macroname2;"; output;
+          /*record=strip(__macroname2); output;*/
+          record=strip(cats('%', name,'('));output;
           record="     var=&var,";output;
           record="     trtvar=&trtvars,";output;
           record="     groupvars=&by &groupby,";    output;
@@ -925,15 +1073,14 @@ run;
               record="     decvar=&decvar,";output;
           %end;
           if parms ne '' then do;
-              record="  parms,";output;
+              record=strip(parms)||",";output;
           end;
           record="     subjid=&subjid);";output;
           record=" ";output;
           
           
           if eof then do;
-              %local modelds;
-              call symput ('modelds', cats(name));
+              
           
               %* collect overall statistics;
               %if %length(&ovstat) %Then %do;
@@ -1058,7 +1205,7 @@ run;
   
   
       data rrgpgmtmp;
-      length record $ 200;
+      length record $ 2000;
       keep record;
       record=" "; output;
       record=" ";output;
@@ -1095,7 +1242,7 @@ run;
 %end;
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=" ";output;
 record="  *----------------------------------------------------------------;";output;
@@ -1168,7 +1315,7 @@ record="         __suffix __vtype $ 20 __skipline $ 1;";output;
 record=" ";output;
 record="  if 0 then do;";output;
 record=   '  %do i=0 %to &maxtrt;';output;
-record=   '    __col_&i =' "' ';";output;
+record=   '    __col_&i ='|| "' ';";output;
 record=   '  %end;';output;
 record="  end;";output;
 record="  array cols{*} __col_:;";output;
@@ -1176,14 +1323,14 @@ record="  __col_0 = __disp;";output;
 record="  __align = 'L';";output;
 length __label $ 2000;
 __label = quote(dequote(trim(left(symget("label")))));
-record=  '__varlabel = '||strip(__label) ';';output;
+record=  '__varlabel = '||strip(__label)|| ';';output;
 record=" ";output;
 record="  __tmpalign = cats(__tmpalign,'_');";output;
 record="    __align = trim(left(__align))||' '||repeat(__tmpalign,"|| '&maxtrt );';output;
 record="  __align = tranwrd(__align,'_',' ');";output;
 record=" ";output;
 record="  __keepn=1;";output;
-record="  __keepnvar='" "&keepn" "';";output;
+record="  __keepnvar='"|| "&keepn"|| "';";output;
 
 %local ngrpv;
 %let ngrpv=0;
@@ -1222,7 +1369,7 @@ record=" ";output;
 record=" ";output;
 record="  __vtype='CONT';";output;
 record=   '__grpid=999;';output;
-record="    __skipline=cats('" "&skipline" "');";output;
+record="    __skipline=cats('"|| "&skipline"|| "');";output;
 record="  do __i = 1 to dim(cols);";output;
 record="    if index(cats(cols[__i]),'-')=1 and compress(cols[__i], '-0.')='' then ";output;
 record="      cols[__i] = substr(cats(cols[__i]),2);";output;
@@ -1236,7 +1383,7 @@ record=" ";output;
 record=   '%end;';output;
 record=" ";output;
 
-record=  '%exit' "c&varid:";output;
+record=  '%exit'|| "c&varid:";output;
 run;
          
 proc append data=rrgpgmtmp base=rrgpgm;

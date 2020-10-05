@@ -20,7 +20,7 @@
     - if finalize=Y then : 
         writes rrgpgmds to &rrguri.sas file, 
         submits &rrguri.sas,
-        saves rcd (if requested), saves gentxt (if requested), updates metadata (if requested)
+        saves rcd (if requested), saves gentxt (if requested)
     
     
     
@@ -42,6 +42,7 @@
 %* Revision notes:  07Apr2014 commented out recoding of curly braces to #123 and #125 (superscript did not work except in header);
 %*                  12Aug2020 added handling of no data so that headers and footnotes are displayed 
  
+%local numvars i dataset orderby j isspanrow ispage debug  indentsize filename savexml; 
 %local debugc;
 %let debugc=%str(%%*);
 %if &debug>0 %then %let debugc=;
@@ -49,7 +50,7 @@
  
 
  
-%local numvars i dataset orderby j isspanrow ispage debug  indentsize fname;
+
 
 %local numcol numpagev numspanv lastvb lastspan;
 %let numcol=-1;
@@ -62,10 +63,10 @@
 
 proc sql noprint;
   select dataset,  orderby, indentsize, upcase(append), upcase(appendable), nodatamsg, 
-    savercd, gentxt , fname, metadatads            
+    savercd, gentxt , filename, print            
            into
          :dataset,:orderby, :indentsize,:append,       :appendable,    :nodatamsg, 
-         :savercd, :gentxt   ,:fname,:metadatads
+         :savercd, :gentxt   ,:filename,:print
          separated by ' '
        from __repinfo;
   select max(varid) into: numvars separated by ' ' from __listinfo;    
@@ -114,8 +115,8 @@ data __listinfo;
     end;
   end;
   
-    call symput(cats("label",varid)       dequote(label));     
-    call symput(cats("width",varid)       width);               
+    call symput(cats("label",varid)       ,dequote(label));     
+    call symput(cats("width",varid)       ,width);               
     call symput(cats("group",varid)       ,strip(upcase(group)        ));
     call symput(cats("spanrow",varid)     ,strip(upcase(spanrow)      ));
     call symput(cats("align",varid)       ,strip(upcase(align)        ));
@@ -135,7 +136,8 @@ run;
   
    
  
-
+%let isspanrow=0;
+%let ispage=0;
  
 %do i=1 %to &numvars;
   
@@ -227,14 +229,14 @@ run;
  
 
 
-
+/*
 %if &append ne Y %then %do;
   
     proc append data=__rrght (keep=record) base=rrgpgmtmp;
     run;
    
 %end;
-
+*/
 
 %* DEFINE COLUMN HEADERS;
 
@@ -279,7 +281,7 @@ run;
 
 
 data rrgpgmtmp;
-  length record $ 200;
+  length record $ 2000;
   keep record;
   set __head0 end=eof;
   
@@ -330,17 +332,17 @@ data rrgpgmtmp;
         %do i=0 %to &numcol; 
             record=  "    __col_&i ";  output;
         %end;
-         "      $ 2000 ; ";  output;
+        record=  "      $ 2000 ; ";  output;
         record=" ";  output;
         record=" ";  output;
         record= "retain ";  output;
         %do i=1 %to &numvars; 
-            record= "    "||strip(__vtype&i);  output;
+            record= "   __vtype&i";  output;
         %end;
         record = "    ;";  output;
         record=" ";  output;
         record= "if _n_=1 then do;";  output;
-        record= "  __dsid = open('" ||"&rrguri" "');";  output;
+        record= "  __dsid = open('" ||"&rrguri"|| "');";  output;
         %do i=1 %to &numvars;
             record= "  __vtype&i = upcase(vartype(__dsid, varnum(__dsid, '"|| "&&alias&i"|| "')));";  output;
         %end;
@@ -686,30 +688,26 @@ proc append base=rrgpgm data=rrgpgmtmp;
 run;
 
 
+%let __workdir = %sysfunc(getoption(work));
+%let __workdir=%sysfunc(tranwrd(&__workdir, %str(\), %str(/) ));
+
+
+data _null_;
+  set rrgpgm;
+ 
+  file "&__workdir./rrgpgm.sas"  lrecl=1000;
+  put record  ;
+  
+run;
+
+
+%inc "&__workdir./rrgpgm.sas";
+
 
 
 %if %upcase(&finalize)=Y %then %do;
   
-  /*  data _null_;
-      set rrgpgm;
-      file " &rrgpgmpath./&rrguri..sas" lrecl=1000;
-      put record;
-    run;
-  
-    %inc "&rrgpgmpath./&rrguri..sas";
-  */
-    %if %upcase(&savercd)=Y  %then %do;
-    %__savercd_m; *** make it after program is submitted generated;
-    %end;
-
-    %if %upcase(&gentxt)=Y  %then %do;
-        %__gentxt_m; 
-    %end;
-
-    %if %length(&metadatads) %then %do;
-        %__meta(&fname);
-    %end;
-
+%rrg_finalize(debug=&debug, savexml=&savexml);
 
 %end;
 

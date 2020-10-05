@@ -4,7 +4,16 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
- */
+ 
+ 
+ * ds created: __rrgfmt (formats from config sections A1:, A2, A3 and A4)), replaces __rrgfmt from rrg_init, 
+               __nspropskey, __nsprops, __sprops, __repinfo (by rrg_defcomm)
+ * ds used: __rrgconfig(where=(type='[B0]')), __rrgxml, __repinfo (by rrg_defcomm)
+ * ds initialized:
+ * ds updated:   __timer
+
+*/
+
 
 %macro rrg_defreport(
 Dataset=,
@@ -124,9 +133,6 @@ orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf
 
 %__defcomm;
 
-data __report;
-  set __repinfo;
-run;
 
 data __repinfo;
 	set __repinfo;
@@ -142,42 +148,37 @@ run;
 *** DETERMINE IF HEADER TEMPLATE IS PROVIDED IN CONFIGURATION FILE;
 
 
-%* START GENERATING PROGRAM;
+**** CREATE FILE WITH FORMAT ***********;
 
 
   
-data __rrght;
-  set __rrght end=eof;
-  output;
-  if eof then do;
-    record=' '; output;
-    record = '*------------------------------------------------------------;'; output;
-    record = '* DEFINE FORMATS;'; output;
-    record = '*------------------------------------------------------------;'; output;    
-    record=' '; output;
-    record='proc format;';  output;
-    record="value $__rrgsf";output;
-    record= " 'N'     = 'N'";output;
-    record= " 'PCT'   = '%'";output;
-    record= " 'NPCT'  = 'n (%)'";output;
-    record= " 'N+PCT'  = 'n (%)'";output;
-    record= " 'NNPCT' = 'n/N (%)'";output;
-    record= " 'N+D+PCT' = 'n/N (%)'";output;
-    record= " 'N/N'   ='n/N'";output;
-    record= " 'N+D'   ='n/N'";output;
-    record=';';output;
-    record=" ";output;
-    record='picture __rrgp1d (round default= 10)';output;
-    end;
+data rrgfmt;
+ length record $ 2000;
+ keep record;
+ record=' '; output;
+ record = '*------------------------------------------------------------;'; output;
+ record = '* DEFINE FORMATS;'; output;
+ record = '*------------------------------------------------------------;'; output;    
+ record=' '; output;
+ record='proc format;';  output;
+ record="value $__rrgsf";output;
+ record= " 'N'     = 'N'";output;
+ record= " 'PCT'   = '%'";output;
+ record= " 'NPCT'  = 'n (%)'";output;
+ record= " 'N+PCT'  = 'n (%)'";output;
+ record= " 'NNPCT' = 'n/N (%)'";output;
+ record= " 'N+D+PCT' = 'n/N (%)'";output;
+ record= " 'N/N'   ='n/N'";output;
+ record= " 'N+D'   ='n/N'";output;
+ record=';';output;
+ record=" ";output;
+ record='picture __rrgp1d (round default= 10)';output;
 run;
   
-data __tmp;
+data __rrght0;
   set __rrgconfig(where=(type='[A3]')) end=eof;
-run;
-  
-data  __rrght0;
-  set __tmp end=eof;
   length record $ 2000;
+  keep record;
   record = cats(w2); output;
   if eof then do;
     record=';'; output;    
@@ -186,17 +187,14 @@ data  __rrght0;
   end;
 run;
 
-data  __rrght;
-  set  __rrght __rrght0;
+proc append data=__rrght0 base=rrgfmt;
 run;
+ 
 
-data __tmp;
+data __rrght0;
   set __rrgconfig(where=(type='[A4]')) end=eof;
-run;
-  
-data  __rrght0;
-  set __tmp end=eof;
   length record $ 2000;
+  keep record;
   record = cats(w2); output;
   if eof then do;
     record=';'; output;    
@@ -205,36 +203,14 @@ data  __rrght0;
   end;
 run;
 
-data  __rrght;
-  set  __rrght __rrght0;
+proc append data=__rrght0 base=rrgfmt;
 run;
 
 
-data __tmp;
+data __rrght0;
   set __rrgconfig(where=(type='[A1]')) end=eof;
-run;
-/*
-data  __rrght0;
-  set __tmp end=eof;
   length record $ 2000;
-  w1 = quote(cats(w1));
-  w2= quote(cats(w2));
-  record = cats(w1," = ", w2); output;
-  if eof then do;
-    record=';'; output;  
-    record=' '; output;
-    record="invalue __rrgdf"; output;
-  end;
-run;
-
-data  __rrght;
-  set  __rrght __rrght0;
-run;
-*/
-
-data  __rrght0;
-  set __tmp end=eof;
-  length record $ 2000;
+  keep record;
   w1 = quote(cats(w1));
   w2= quote(cats(w2));
   record = cats(w1," = ", w2); output;
@@ -245,19 +221,14 @@ data  __rrght0;
   end;
 run;
 
-data  __rrght;
-  set  __rrght __rrght0;
+proc append data=__rrght0 base=rrgfmt;
 run;
 
 
-data __tmp;
+data __rrght0;
   set __rrgconfig(where=(type='[A1L]')) end=eof;
-run;
-
-
-data  __rrght0;
-  set __tmp end=eof;
-  length record $ 2000;
+  length record $ 2000;  
+  keep record;
   w1 = quote(cats(w1));
   w2= quote(cats(w2));
   record = cats(w1," = ", w2); output;
@@ -268,16 +239,13 @@ data  __rrght0;
   end;
 run;
 
-data  __rrght;
-  set  __rrght __rrght0;
-run;
-data __tmp;
-  set __rrgconfig(where=(type='[A2]')) end=eof;
+proc append data=__rrght0 base=rrgfmt;
 run;
 
-data  __rrght0;
-  set __tmp end=eof;
+data __rrght0;
+  set __rrgconfig(where=(type='[A2]')) end=eof;
   length record $ 2000;
+  keep record;
   w1 = quote(cats(w1));
   w2=cats(w2);
   record=cats(w1, "=", w2); output;  
@@ -300,10 +268,10 @@ data  __rrght0;
 end;
 run;
 
-data  __rrght;
-  set  __rrght __rrght0;
+proc append data=__rrght0 base=rrgfmt;
 run;
 
+/*
 %local i;
 data __rrginlibs0;
   length dataset $ 200;
@@ -311,7 +279,6 @@ data __rrginlibs0;
   %do i=1 %to %sysfunc(countw(&inlibs, %str( )));
       %let inlibs0=%scan(&inlibs,&i, %str( ));  
       if index(upcase("&dataset"), upcase("&inlibs0"))>0 then do;
-          /*dataset = scan(upcase("&dataset"),2, '. ')||'.SAS7BDAT';*/
          output;
       end;
   %end;
@@ -320,6 +287,7 @@ run;
 data __rrginlibs;
   set __rrginlibs __rrginlibs0;
 run;
+*/
 
 %skipdef:
 

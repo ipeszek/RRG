@@ -112,7 +112,7 @@ quit;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 __tabwhere = cats(symget("tabwhere"));
 __where = cats(symget("where"));
@@ -142,7 +142,7 @@ record= '%let nobs = %sysfunc(attrn(&dsid, NOBS));';                      output
 record= '%let rc=%sysfunc(close(&dsid));';                                output;
 record= " "; output;
 record= '%if &nobs<=0  %then %do;';                                        output;
-record= '   %goto exit'||strip("c&varid)"||";";                           output;
+record= '  %goto '||"exitc&varid;";                                                 output;
 record= '%end;';                                                           output;
 
 record= " "; output;
@@ -164,7 +164,7 @@ record= " "; output;
 record= " "; output;                                                        output;
 record= "data __catcnt4;";                                                  output;
 record= "if 0;";                                                            output;
-record= "run;";    
+record= "run;";                                                             output;
 run;
 
 proc append data=rrgpgmtmp base=rrgpgm;
@@ -292,7 +292,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record=" "; output;
 record= '%if %sysfunc(exist(__catcnt4)) = 0 %then %do;';                           output;
@@ -449,7 +449,7 @@ run;
     run;
 
     data rrgpgmtmp;
-   length record $ 200;
+   length record $ 2000;
    keep record;
    set __modelstat end=eof;
    if _n_=1 then do;      
@@ -543,13 +543,13 @@ run;
         %local modelds;
       
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
-        length __macroname2  $ 2000;
-        set __modelp;
-        __macroname2 = cats('%', name,'(');
+       
+        set __modelp end=eof;
+       
         record=" "; output;
-        record= __macroname2;                       output;
+        record= strip(cats('%', name,'('));                       output;
         record= "       var = &var,";               output;
         record= "   trtvar  = &trtvars,";           output;
         %if %upcase(&aetable) = N %then %do;        
@@ -561,7 +561,7 @@ run;
         %end;                                       
         record= "   dataset = __datasetp,";         output;
         if parms ne '' then do;                     
-           record= parms ",";                       output;
+           record= strip(parms)|| ",";                       output;
         end;                                        
         record= "   subjid=&subjid);";              output;
         record=" "; output;                                        output;
@@ -573,7 +573,7 @@ run;
         run;
                                      
         data rrgpgmtmp;                                
-        length record $ 200;    
+        length record $ 2000;    
         keep record;                                            
         %* collect overall statistics;              
         %if %length(&ovstat) %then %do;
@@ -698,7 +698,7 @@ run;
     %end;
  
     data rrgpgmtmp;
-      length record $ 200;
+      length record $ 2000;
       keep record;
     record=" "; output;
     record= '%local dsid rc nobs;'; output;
@@ -734,7 +734,7 @@ run;
     %if %length(&ngb)=0 %then %let ngb= &groupvars;
            
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record=" "; output;
     record= "*-----------------------------------------------------------;"; output;
@@ -833,7 +833,7 @@ run;
   
     %if %length(&ovstat)  %then %do;
         data rrgpgmtmp;
-        length record $ 200;
+        length record $ 2000;
         keep record;
         record=" "; output; 
         record=" "; output;
@@ -884,7 +884,7 @@ quit;
 %let tmp = %scan(__tby &groupvars, -1, %str( ));
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 set __catv;
 label=quote(cats(label));
@@ -1054,10 +1054,10 @@ record= "  drop __col__:;"; output;
 %* IN CASE FAKE TRATMENTS WERE ADDED, DROP COLUMN FOR FAKE TRT;
      
 record= "run;"; output;
-record=" ";
-record=" ";
-record= '%exit'||"c&varid:"; output;
-record=" ";
+record=" "; output;
+record=" "; output;
+record= '%excd'||"&varid.:"; output;
+record=" "; output;
 run;
 
 proc append data=rrgpgmtmp base=rrgpgm;

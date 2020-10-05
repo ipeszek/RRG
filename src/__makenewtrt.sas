@@ -94,7 +94,7 @@ run;
 %if &numtrt=0 or &numdummy>0 %then %do;
     
     data rrgpgmtmp;
-    length record $ 200;
+    length record $ 2000;
     keep record;
     record = " ";output;
     record =  "data &dsout;";output;
@@ -134,7 +134,7 @@ run;
 
 
 data rrgpgmtmp;
-length record $ 200;
+length record $ 2000;
 keep record;
 record = " "; output;
 __dsin = cats(symget("dsin"));

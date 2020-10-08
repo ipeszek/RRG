@@ -82,14 +82,7 @@ maxdec=%nrbquote(&maxdec),
 showneg0=%nrbquote(&showneg0),
 outds=__varinfo);
 
-data __timer;
-	set __timer end=eof;
-	output;
-	if eof then do;
-		task = "Finished analysing &name";
-		time=time(); output;
-	end;
-run;	
+
 
 %put RRG_ADDVAR USING VARIABLE &NAME COMPLETED SUCESSULLY;
 

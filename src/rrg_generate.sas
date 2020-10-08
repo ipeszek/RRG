@@ -75,14 +75,13 @@ Macro parameters:
        sfoot_l sfoot_r sfoot_m systitle
        By Statsincolumn statsacross aetable dest nodatamsg fontsize 
        orient colwidths  debug extralines print warnonnomatch
-       libsearch tablepart varby4pop varbyn4pop groupby4pop groupbyn4pop;
+       libsearch  varby4pop varbyn4pop groupby4pop groupbyn4pop;
 %local i j k breakokat;
-%local indata inmacros append appendable trtcnt ;
+%local indata inmacros  trtcnt ;
 
 
 proc sql noprint;
   select dataset into:dataset separated by ' ' from __repinfo;
-  select tablepart into:tablepart separated by ' ' from __repinfo;
   select popWhere into:popWhere separated by ' ' from __repinfo;
   select tabwhere into:tabwhere separated by ' ' from __repinfo;
   select subjid into:subjid separated by ' ' from __repinfo;
@@ -92,8 +91,7 @@ proc sql noprint;
   select print into:print separated by ' ' from __repinfo;
   select debug into:debug separated by ' ' from __repinfo;
   select nodatamsg into:nodatamsg separated by ' ' from __repinfo;
-  select append into:append separated by ' ' from __repinfo;
-  select appendable into:appendable separated by ' ' from __repinfo;
+
   
   select name into: inmacros separated by ' ' from __varinfo (where=(type='MODEL'));
   select count(*) into:trtcnt separated by ' ' from __varinfo(where=(type='TRT'));
@@ -103,26 +101,22 @@ quit;
 %let war=WAR;
 %let ning=NING;
 
+
+%local isincolv;
+
 %local pooled pooledstr;
 proc sql noprint;
-  select upcase(pooled4stats) into:pooled separated by ' ' from __repinfo;
+  select upcase(pooled4stats), upcase(statsincolumn)
+   into :pooled,  :isincolv 
+   separated by ' ' from __repinfo;
 quit;
 
 %if  &pooled=N %then     %let pooledstr = and __grouped ne 1;
-%if %upcase(&append)=Y or %upcase(&append)=TRUE %then %let append=Y;
-%else %let append=N;
-%if %upcase(&appendable)=Y or %upcase(&appendable)=TRUE %then %let appendable=Y;
-%else %let appendable=N;
-
-
-
 
 %if &trtcnt>1 %then %do;
     %put &WAR.&NING.: more than one treatment variable was specified. Program aborted.;
     %goto exit;
 %end;
-
-
 
 
 %let datasetrrg=&dataset;  
@@ -3082,7 +3076,7 @@ data __repinfo;
   set __repinfo;
   rtype='';
   dist2next='';
-  lastcheadid='0';
+  lastcheadid=0;
   gcols='';
 run;  
 
@@ -3123,13 +3117,8 @@ proc sql noprint;
 
 **** PUT REQUESTED STATISTICS IN SEPARATE COLUMN;
 
-%local isincolv;
 
-proc sql noprint;
-  select upcase(statsincolumn) into: isincolv separated by ' '
-  from __repinfo;
-  quit;
-  
+
 
 %if &isincolv=Y %then %do;
  
@@ -3187,9 +3176,6 @@ data _null_;
 run;
 
 
-
-
-
 %let __workdir = %sysfunc(getoption(work));
 %let __workdir=%sysfunc(tranwrd(&__workdir, %str(\), %str(/) ));
 
@@ -3203,21 +3189,38 @@ data _null_;
   
 run;
 
+/*
 data _null_;
   set rrgpgm;
- 
-
-  file "c:/tmp/&rrguri..sas"  lrecl=1000;
+   file "c:/tmp/&rrguri..sas"  lrecl=1000;
   put record  ;
   
 run;
-
-
+*/
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "ANALYSING RRG MACROS STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 
 %inc "&__workdir./rrgpgm.sas";
 
-
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "MACRO EXECUTION FINISHED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 %exit:
 
@@ -3232,29 +3235,7 @@ run;
 %put;
 %put;
 
-/*
 
-proc optload 
-   data=__sasoptions(where=(
-    lowcase(optname) in 
-    ( 'mprint',
-      'notes',
-      'mlogic', 
-      'symbolgen', 
-      'macrogen', 
-      'mfile', 
-      'source', 
-      'source2', 
-      'byline',
-      'orientation',
-      'date', 
-      'number', 
-      'center', 
-      'byline',
-      'missing')));
-run;
-
-*/
 
 
 

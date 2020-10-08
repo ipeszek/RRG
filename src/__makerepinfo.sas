@@ -142,14 +142,14 @@ do jj=1 to dim(titles);
       do __j =1 to 10;
         __tmpw = strip(__tmpw)||' '||strip(scan(titles[jj], 10*(__i-1)+__j,' '));
       end;
-      record=   '%let __title'||put(jj,1.)||' = %str(&__title'||put(jj,1.)||'.)%str('||
+      record=   '%let __title'||put(jj,1.)||' = %str(&__title'||put(jj,1.)||'.)%str( '||
          strip( __tmpw)||");";  output;
     end;  
     __tmpw='';
     do __j=1 to __yy2;
         __tmpw = strip(__tmpw)||' '||strip(scan(titles[jj], 10*__yy+__j,' '));
     end;
-    record=   '%let __title'||put(jj,1.)||' = %str(&__title'||put(jj,1.)||'.)%str(' ||
+    record=   '%let __title'||put(jj,1.)||' = %str(&__title'||put(jj,1.)||'.)%str( ' ||
         strip(__tmpw)||");";  output;
  end;     
       
@@ -166,14 +166,14 @@ do jj=1 to dim(titles);
         do __j =1 to 10;
           __tmpw = strip(__tmpw)||' '||strip(scan(foots[jj], 10*(__i-1)+__j,' '));
         end;
-        record=   '%let __footnot'||strip(put(jj,best.))||' = %str(&__footnot'||strip(put(jj,best.))||'.)%str('||
+        record=   '%let __footnot'||strip(put(jj,best.))||' = %str(&__footnot'||strip(put(jj,best.))||'.)%str( '||
           strip( __tmpw)||");";  output;
     end;
         __tmpw='';
         do __j=1 to __yy2;
             __tmpw = strip(__tmpw)||' '||strip(scan(foots[jj], 10*__yy+__j,' '));
         end;
-        record=   '%let __footnot'||strip(put(jj,best.))||' = %str(&__footnot'||strip(put(jj,best.))||'.)%str(' ||
+        record=   '%let __footnot'||strip(put(jj,best.))||' = %str(&__footnot'||strip(put(jj,best.))||'.)%str( ' ||
             strip(__tmpw)||");";    output;   
     
 end;
@@ -188,13 +188,13 @@ do __i = 1 to __yy;
   do __j =1 to 10;
     __tmpw = strip(__tmpw)||' '||strip(scan(shead_l, 10*(__i-1)+__j,' '));
   end;
-  record=   '%let __shead_l = %str(&__shead_l.)%str('||strip(__tmpw)||");";  output;
+  record=   '%let __shead_l = %str(&__shead_l.)%str( '||strip(__tmpw)||");";  output;
 end;
   __tmpw='';
   do __j=1 to __yy2;
     __tmpw = strip(__tmpw)||' '||strip(scan(shead_l, 10*__yy+__j,' ')); 
   end;
-  record=   '%let __shead_l = %str(&__shead_l.)%str('||strip(__tmpw)||");";  output;
+  record=   '%let __shead_l = %str(&__shead_l.)%str( '||strip(__tmpw)||");";  output;
   
 
 __xx= countw(shead_m, ' ');
@@ -207,13 +207,13 @@ do __i = 1 to __yy;
   do __j =1 to 10;
     __tmpw = strip(__tmpw)||' '||strip(scan(shead_m, 10*(__i-1)+__j,' '));
   end;
-  record=   '%let __shead_m = %str(&__shead_m.)%str('||strip(__tmpw)||");";  output;
+  record=   '%let __shead_m = %str(&__shead_m.)%str( '||strip(__tmpw)||");";  output;
 end;
   __tmpw='';
   do __j=1 to __yy2;
     __tmpw = strip(__tmpw)||' '||strip(scan(shead_m, 10*__yy+__j,' '));
   end;
-  record=   '%let __shead_m = %str(&__shead_m.)%str('||strip(__tmpw)||");";  output;
+  record=   '%let __shead_m = %str(&__shead_m.)%str( '||strip(__tmpw)||");";  output;
   
 
 __xx= countw(shead_r, ' ');
@@ -226,13 +226,13 @@ do __i = 1 to __yy;
   do __j =1 to 10;
     __tmpw = strip(__tmpw)||' '||strip(scan(shead_r, 10*(__i-1)+__j,' '));
   end;
-  record=   '%let __shead_r = %str(&__shead_r.)%str('||strip(__tmpw)||");"; output;
+  record=   '%let __shead_r = %str(&__shead_r.)%str( '||strip(__tmpw)||");"; output;
 end;
   __tmpw='';
   do __j=1 to __yy2;
     __tmpw = strip(__tmpw)||' '||strip(scan(shead_r, 10*__yy+__j,' '));
   end;
-  record=   '%let __shead_r = %str(&__shead_r.)%str('||strip(__tmpw)||");"; output;
+  record=   '%let __shead_r = %str(&__shead_r.)%str( '||strip(__tmpw)||");"; output;
   
 
 __xx= countw(sfoot_r, ' ');
@@ -245,13 +245,13 @@ do __i = 1 to __yy;
   do __j =1 to 10;
     __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_r, 10*(__i-1)+__j,' '));
   end;
-  record=   '%let __sfoot_r = %str(&__sfoot_r.)%str('||strip(__tmpw)||");"; output;
+  record=   '%let __sfoot_r = %str(&__sfoot_r.)%str( '||strip(__tmpw)||");"; output;
 end;
   __tmpw='';
   do __j=1 to __yy2;
     __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_r, 10*__yy+__j,' '));
   end;
-  record=   '%let __sfoot_r = %str(&__sfoot_r.)%str('||strip(__tmpw)||");"; output;
+  record=   '%let __sfoot_r = %str(&__sfoot_r.)%str( '||strip(__tmpw)||");"; output;
   
 
 __xx= countw(sfoot_m, ' ');
@@ -264,13 +264,13 @@ do __i = 1 to __yy;
   do __j =1 to 10;
     __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_m, 10*(__i-1)+__j,' '));
   end;
-  record=   '%let __sfoot_m = %str(&__sfoot_m.)%str('||strip(__tmpw)||");"; output;
+  record=   '%let __sfoot_m = %str(&__sfoot_m.)%str( '||strip(__tmpw)||");"; output;
 end;
   __tmpw='';
   do __j=1 to __yy2;
     __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_m, 10*__yy+__j,' '));
   end;
-  record=   '%let __sfoot_m = %str(&__sfoot_m.)%str('||strip(__tmpw)||");"; output;
+  record=   '%let __sfoot_m = %str(&__sfoot_m.)%str( '||strip(__tmpw)||");"; output;
   
 
 __xx= countw(sfoot_l, ' ');
@@ -283,13 +283,13 @@ do __i = 1 to __yy;
   do __j =1 to 10;
     __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_l, 10*(__i-1)+__j,' '));
   end;
-  record=   '%let __sfoot_l = %str(&__sfoot_l.)%str('||strip(__tmpw)||");"; output;
+  record=   '%let __sfoot_l = %str(&__sfoot_l.)%str( '||strip(__tmpw)||");"; output;
 end;
   __tmpw='';
   do __j=1 to __yy2;
     __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_l, 10*__yy+__j,' '));
   end;
-  record=   '%let __sfoot_l = %str(&__sfoot_l.)%str('||strip(__tmpw)||");"; output;
+  record=   '%let __sfoot_l = %str(&__sfoot_l.)%str( '||strip(__tmpw)||");"; output;
   
 
 %* assembe sprops;
@@ -304,13 +304,13 @@ do __i = 1 to __yy;
   do __j =1 to 10;
     __tmpw = strip(__tmpw)||','||strip(scan(sprops, 10*(__i-1)+__j,','));
   end;
-  record=   '%let __sprops= %str(&__sprops.)%str(' ||strip(__tmpw)||");"; output;
+  record=   '%let __sprops= %str(&__sprops.)%str( ' ||strip(__tmpw)||");"; output;
 end;  
   __tmpw='';
   do __j=1 to __yy2;
     __tmpw = strip(__tmpw)||','||strip(scan(sprops, 10*__yy+__j,','));
   end;
-  record=   '%let __sprops= %str(&__sprops.)%str(' ||strip(__tmpw)||");"; output;
+  record=   '%let __sprops= %str(&__sprops.)%str( ' ||strip(__tmpw)||");"; output;
   
 
 
@@ -326,7 +326,7 @@ record=   '%let __colwidths=' ||strip(colwidths)|| ";"; output;
 record=   '%let __dist2next=' ||strip(dist2next)|| ";"; output;
 record=   '%let __rtype=' ||strip(rtype)|| ";"; output;
 record=   '%let __gcols=' ||strip(gcols)|| ";"; output;
-record=   '%let __lastcheadid=' ||strip(lastcheadid)|| ";"; output;
+record=   '%let __lastcheadid=' ||put(lastcheadid,best.)|| ";"; output;
 record=   '%let __extralines=' ||strip(extralines)|| ";"; output;
 record=   '%let __margins=' ||strip(margins)|| ";"; output;
 record=   '%let __papersize=' ||strip(papersize)||";"; output;

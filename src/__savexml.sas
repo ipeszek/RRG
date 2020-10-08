@@ -19,7 +19,16 @@
 %let rc = %sysfunc(close(&dsid));
 
 
-
+  data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "SAVE XML STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 %local numfo i;
 %let numfo=0;
@@ -281,5 +290,16 @@ run;
       put "</TABLE>";
     end;  
   run;
+  
+  data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "SAVE XML FINISHED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 %mend;

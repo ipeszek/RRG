@@ -13,36 +13,46 @@
   ** calls generated program;
   
   
-%local debug lastcol savexml output_engine  fname colsp varby ;  
-%local append appendable tablepart colwidths  stretch print gcols dist2next replace;
+%local debug  savexml output_engine  varby ;  
+%local  tablepart print replace;
  
 
-%local debug savexml savercd gentxt fname ;
+%local debug savexml savercd gentxt  ;
+
+%local rrgoutpathlazy ;
+%let rrgoutpathlazy=&rrgoutpath;
+  
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "RRG FINILIZE (OUTPUT GENERATION) STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
   
 proc sql noprint;
-  select   savercd, gentxt , filename, print            
+  
+  %if %sysfunc(exist(__varinfo)) %then %do;
+    select name into:varby separated by ' ' from __varinfo(where=( upcase(page)='Y'));
+  %end;
+  select   savercd, gentxt , print            
            into
-           :savercd, :gentxt, :fname, :print
+           :savercd, :gentxt,  :print
          separated by ' '
        from __repinfo;
 quit;
 
 
+%local i;
 
 %local debugc;
 %let debugc=%str(%%*);
 %if &debug>0 %then %let debugc=;
 
-%if %upcase(&append)=Y or %upcase(&append)=TRUE %then %let append=Y;
-%else %let append=N;
-%if %upcase(&appendable)=Y or %upcase(&appendable)=TRUE %then %let appendable=Y;
-%else %let appendable=N;
-
-
-
-
-
-data __rrgfinalize;;
+data rrgfinalize;;
   length record $ 2000;
   keep record;
   record= " "; output;
@@ -60,77 +70,20 @@ data __rrgfinalize;;
   %end;
   record=  "run;";output;
   record= " ";output;
-  record=  "data &rrguri;";output;
+  record=  "data &rrguri rrgtablepart&rrgtablepartnum;";output;
   record=  "set &rrguri (where=(__datatype='RINFO')) __tmp;";output;
   record=  "__rowid=_n_-1;";output;
+  RECORD= "__dsid=&rrgtablepartnum;"; output;
   record=  "run;";output;
   record= " ";output;
   record= " ";output;
 
-%*if &tablepart=FIRST  %then %do;
-  /*
+                                      
 
-    record= " ";output;
-    record= " ";output;
-    record=  "*-------------------------------------------------------------------;";output;
-    record=  "* STORE RCD DATASET FOR FUTURE UPDATES FROM OTHER TABLE PARTS;";output;
-    record=  "*-------------------------------------------------------------------;";output;
-    record= " ";output;
-    record=  "  data &rrguri._tmp;";output;
-    record=  "    set &rrguri;";output;
-    record=  "  run;";output;
-    record= " ";output;
-  */
+%* CREATE RTF AND/OR PDF OUTPUT;
 
-%*end;
-
-
-
-
-
-
-
-/*
-%if &tablepart=MIDDLE  %then %do;
-
+%if %upcase(&print)=Y  %then %do;
   
-    record= " ";
-    record=  "*-------------------------------------------------------------------;";
-    record=  "* APPEND NEXT PART OF RCD TO EXISTING RCD;";
-    record=  "*-------------------------------------------------------------------;";
-    record= " ";
-    record=  "  data &rrguri._tmp;";
-    record=  "    set &rrguri._tmp &rrguri (where=(__datatype='TBODY'));";
-    record=  "   if __datatype='TBODY' then __rowid=_n_;";
-    record=  "  run;";
-    record= " ";
- 
-%end;
-
-%if &tablepart=LAST %then %do;
-
- 
-    record= " ";
-    record=  "*-------------------------------------------------------------------;";
-    record=  "* APPEND LAST PART OF RCD TO EXISTING RCD;";
-    record=  "*-------------------------------------------------------------------;";
-    record= " ";
-    record=  "  data &rrguri;";
-    record=  "    set &rrguri._tmp &rrguri (where=(__datatype='TBODY'));";
-    record=  "  if __datatype='TBODY' then  __rowid=_n_;";
-    record=  "  run;";
-    record= " ";
- 
-
-%end;
-
-%if &tablepart=LAST  %then %do;
-*/
-    %local rrgoutpathlazy ;
-    %let rrgoutpathlazy=&rrgoutpath;
-
-
-%if %upcase(&print)=Y %then %do;
 
     record= " ";                                                                                                       output;
     record=  "*-------------------------------------------------------------------;";                                  output;
@@ -147,115 +100,232 @@ data __rrgfinalize;;
     record= " ";                                                                                                       output;
     record = '%local __path;';                                                                                         output;
     record=  '%if %length(&rrgoutpath)=0 %then';                                                                       output;
-    record=  '  %let __path='|| "&rrgoutpathlazy;";                                                                      output;
+    record=  '  %let __path='|| "&rrgoutpathlazy;";                                                                    output;
     record=  '%else %let __path = &rrgoutpath;';                                                                       output;
     %if %symexist(__sasshiato_home) %then %do;                                                                        
           record=  '%if %symexist(__sasshiato_home) %then %do;';                                                       output;
           record=  '  %if &objname=__SASSHIATO  and  %length(&__sasshiato_home) %then %do;';                           output;
-          %if %upcase(&savexml)=Y %then %do;                                                                           
-              record=  '   %__sasshiato(path=&__path,'|| " debug=&debug, dataset=&rrguri);";                             output;
-          %end;                                                                                                       
-          %else %do;                                                                                                   
-              record=  '   %__sasshiato('|| "debug=&debug,dataset=&rrguri);";                                            output;
-          %end;                                                                                                        
+          %do i=1 %to &rrgtablepartnum;
+              %if %upcase(&savexml)=Y %then %do;                                                                           
+                  record=  '   %__sasshiato(path=&__path,'|| " debug=&debug, dataset=rrgtablepart&i);";                output;
+              %end;                                                                                                       
+              %else %do;                                                                                                   
+                  record=  '   %__sasshiato('|| "debug=&debug,dataset=rrgtablepart&i);";                               output;
+              %end;                                                                       
+          %end;                                 
           record=  '  %end;';                                                                                          output;
           record=  '%end;';                                                                                            output;
     %end;                                                                                                              
     record= " ";                                                                                                       output;
     record=  '%mend rrgout;';                                                                                          output;
-    record= " ";       
-    record=  '%rrgout;';                                                                                          output;
-    record= " ";                                                                                                       output;                                                                                                output;
-
+    record= " ";                                                                                                       output;
+    record=  '%rrgout;';                                                                                               output;
+    record= " ";                                                                                                       output;    
 %end;
     
-/* %end;   */
-
 
 run;
 
+%if &rrgfinalize_done=0 %then %do;
 
-
-proc append base=rrgpgm data=__rrgfinalize;
+  data _null_;
+    set rrgfinalize;
+    call execute(cats('%nrstr(',record,')'));
+    
+    data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "RRG FINALIZE finished";
+		  dt=datetime(); 
+		  output;
+		end;
 run;
+  run;
 
+%end;
 
-data _null_;
-  set __rrgfinalize;
-  call execute(cats('%nrstr(',record,')'));
-run;
-
-
-data _null_;
-  set rrgheader rrgfmt rrgcodebefore rrgpgm rrgcodeafter rrgfinalize;
- 
-  file "&rrgpgmpath./&rrguri..sas"  lrecl=1000;
-  put record  ;
-  
-run;
-
-
-/*
-
-dm "log; clear";
-
-proc datasets memtype=data nolist nowarn;
-  delete __rrg:;
-run;
-quit; 
-
+%*-------------------------------------------------;
+%* CREATE GENERATED PROGRAM;
+%*-------------------------------------------------;
 
 data __timer;
   set __timer end=eof;
-  output;
-  if eof then do;
-    task = "Finished Generating Program - submitting for execution";
-    time=time(); output;
-  end;
-run;  
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "WRITING GENERATED PROGRAM TO DISK STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+%if &rrgtablepart = FIRSTANDLAST  %then %do;
+
+    data _null_;
+      set %if %sysfunc(exist(rrgheader)) %then %do; rrgheader %end;
+          %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+          %if %sysfunc(exist(rrgcodebefore)) %then %do; rrgcodebefore %end;
+          rrgpgm 
+          %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end;
+          rrgfinalize;
+      file "&rrgpgmpath./&rrguri..sas"  lrecl=1000;
+      put record  ;
+      
+    run;
+    
+%end;
+
+%else %if &rrgtablepart = FIRST  %then %do;
+
+    data rrgpgm0;
+        set %if %sysfunc(exist(rrgheader)) %then %do; rrgheader %end;
+          %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+          %if %sysfunc(exist(rrgcodebefore)) %then %do; rrgcodebefore %end;
+          rrgpgm 
+          %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end;
+          rrgfinalize;
+    run;
+    
+%end;
+
+%else %if &rrgtablepart = MIDDLE  %then %do;
+
+    data rrgpgm0;
+      set rrgpgm0 
+       %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+       rrgpgm 
+       %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end; 
+      rrgfinalize;
+    run;
+    
+%end;
+
+%else %if &rrgtablepart = LAST  %then %do;
+
+    data _null_;
+      set rrgpgm0 
+         %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+      rrgpgm 
+       %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end; 
+      rrgfinalize;
+     
+      file "&rrgpgmpath./&rrguri..sas"  lrecl=1000;
+      put record  ;
+      
+    run;
+    
+%end;    
 
 
 
 
 
-/*
 data __timer;
   set __timer end=eof;
   format time time8.;
   output;
   if eof then do;
-    task = "Finished program";
+    task = "WRITING GENERATED PROGRAM TO DISK FINISHED";
     time=time(); output;
   end;
-  
 run;  
-*/
+
+
 
 
 
 
 %if &savercd=Y  %then %do;
+  
+  data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "SAVERCD STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+
   %*__savercd_m;
+  
+  data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "SAVERCD FINISHED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 %end;
+
+
+
 
 %if %upcase(&gentxt)=Y  %then %do;
 
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "GENTXT STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
     %*__gentxt_m;
+    
+    data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "GENTXT FINISHED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 %end; 
 
- 
-    
-%skippr:
+LIBNAME rrgOUT "&RRGPGMPATH";
 
+data __timer;
+  set __timer END=EOF ;
+  length pgmname $ 50;
+  pgmname="&rrguri";
+  PDT=LAG(DT);
+  RETAIN START;
+  IF _N_=1 THEN START=DT;
+  
+  IF _N_>1 THEN ELAPSED=(DT-PDT);
+  PUT "TASK= " TASK   @65 DT DATETIME19. @87 "ELAPSED:   "  ELAPSED 8.1 "   SECONDS";
+  output;
+  IF EOF THEN DO;
+    TOTALtm=DT-START;
+    PUT "TOTAL TIME: "  TOTALtm " SECONDS";
+    output;
+  END;
+run;
 
-data _null_;
-  set __timer;
-  if _n_=1 then put 'EXECUTION STATISTICS:';
-  put @1 time time8. @10 task $100.;
+proc append data=__timer base=rrgout.__execution;
 run;
 
 
+%if &rrgtablepart=LAST or &rrgtablepart=FIRSTANDLAST %then %do;
+  
+    proc datasets memtype=data nolist nowarn;
+      delete rrg: __:;
+    run;
+    quit; 
+
+%end; 
 
 
+    
 %mend;

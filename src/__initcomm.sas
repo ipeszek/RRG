@@ -32,6 +32,14 @@
 %macro __initcomm /store;
 
 
+%global rrgfinalize rrgfinalize_er er ror rrgfinalize_done;
+%let rrgfinalize=N;
+%let rrgfinalize_er=0;
+%let er=ER;
+%let ROR=ROR;
+%let rrgfinalize_done=0;
+
+
 %if %symexist(rrgoutpath) %then %do;
    %let rrgoutpath = %sysfunc(tranwrd(%nrbquote(&rrgoutpath), %str(\), %str(/)));
 %end;
@@ -43,7 +51,6 @@
 ENDSAS;
 %end;
 
-%local dirdel ;
 
 proc datasets memtype=data nolist nowarn;
 delete __:;
@@ -53,7 +60,7 @@ quit;
 data __timer;
 	length task $ 100;
 		task = "Program Starts";
-		time=time(); time_=put(time, time8.);
+		dt=datetime(); ;
 run;	
 
 *----------------------------------------------------------------;
@@ -87,8 +94,6 @@ proc optsave out=__sasoptions;
 %if %symexist(rrg_configpath)=0 %then %do;
   %global rrg_configpath;
   %let __workdir = %sysfunc(getoption(work));
-  %if %index(&__workdir, %str(\))>0 %then %let __dirdel=%str(\);
-  %else %let __dirdel=%str(/);
   %let DELRRGCONF = 1;
   %* CREATE TEMPRARY CONFIGURATION FILE;
   %__rrgconfig;

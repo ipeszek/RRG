@@ -224,16 +224,7 @@ noshow0cntvals=%nrbquote(&noshow0cntvals)
 
 
 
-data __timer;
-	set __timer end=eof;
 
-	output;
-	if eof then do;
-		task = "Finished analysing &name";
-		time=time();
-		output;
-	end;
-run;	
 
 
  

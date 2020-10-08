@@ -22,6 +22,17 @@
 %local st ;
 %let st=;
 
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "Codebefore started";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+
 data rrgcodebefore;
 length string ns tmp  $ 32000;
 string = symget("syspbuff");
@@ -226,7 +237,7 @@ if _n_=1 then do;
   record=''; output;
   record=''; output;
   record= '*----------------------------------------------------------------;'; output;
-  record= '*   BEGIN CUSTOM CODE;'; output;
+  record= '*   BEGIN CUSTOM BEFORE OTHER MACROS CODE;'; output;
   record= '*----------------------------------------------------------------;'; output;
   record=' '; output;
 end;
@@ -254,7 +265,16 @@ run;
 
 &st;
 
-
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "codebefore ended";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 
 %mend;

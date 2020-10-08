@@ -79,14 +79,7 @@ codelist=%nrbquote(&codelist),
 delimiter = %nrbquote(&delimiter)
 );
 
-data __timer;
-	set __timer end=eof;
-	output;
-	if eof then do;
-		task = "Finished analysing trt";
-		time=time(); output;
-	end;
-run;	
+
 
 %put RRG_ADDTRT USING VARIABLE &NAME COMPLETED SUCESSULLY;
 

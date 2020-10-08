@@ -85,6 +85,16 @@ splitchars esc_char  gen_size_info rtf_linesplit
 orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf
 ;
 
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "DEFLIST started";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 %let tablepart=;
 

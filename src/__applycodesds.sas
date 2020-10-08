@@ -43,6 +43,7 @@ remove=
 *   NOT ON THE LIST;
 *------------------------------------------------------------;
 
+
     
 %if %sysfunc(exist(&codelistds._exec)) %then %do; 
     %if %length(&decode) %then %do;
@@ -61,6 +62,7 @@ remove=
 %end;
 
 %if %length(%nrbquote(&missdec))=0 %then %let missdec=Missing;
+
 
 data rrgpgmtmp;
 length record $ 2000;
@@ -149,7 +151,7 @@ __missdec=quote(strip(__missdec));
     record= "if not __a and __total ne 1 and __missing ne 1 then do;";                 output;
     %if &warn_on_nomatch=1 %then %do;                                                  
           record= "   put 'WAR' 'NING: deleting the following modality ;'";            output;
-          record= "put '     as not found in codelist : ' &tmpgrp &var.=;";                 output;
+          record= "put '     as not found in codelist : ' &tmpgrp &var.=;";            output;
     %end;                                                                              
     record= "   delete;";                                                              output;
     record= "end;  ";                                                                  output;
@@ -207,10 +209,10 @@ record=" " ;                                                                    
 record= "  if __missing ne 1 and __total ne 1 then do;";                               output;
 record= "    __col_0 = cats(&var);";                                                   output;
 record=" " ;                                                                           output;
-%if %index(&aetable, EVENTS)>0 or &showmiss ne A %then %do;                            output;
+%if %index(&aetable, EVENTS)>0 or &showmiss ne A %then %do;                            
     record= "    %* THIS CLEARS 0-COUNT ROWS FOR MISSING MODALITY: ;";                 output;
     record= "    if missing(&var) and __rowtotal=0 then delete;";                      output;
-%end;                                                                                  output;
+%end;                                                                                  
                                                                                      
 record= "    if __grpid=999 and  missing(&var) and __col_0 = '' ";                     output;
 record= "       and not first.__grpid then do;";                                       output;
@@ -234,9 +236,9 @@ record= "    __order = &missorder;";                                            
 %end;                                                                                  
 %if %length(&decode) %then %do;                                                        
     record= "    __col_0=&decode;";                                                    output;
-    record= "    if missing(&var) then __col_0 =" ||strip(__missdec)|| ";";                       output;
-%end;                                                                                  output;
-record= "    if __col_0='' then __col_0="||strip(__missdec)|| ";";                            output;
+    record= "    if missing(&var) then __col_0 =" ||strip(__missdec)|| ";";            output;
+%end;                                                                                  
+record= "    if __col_0='' then __col_0="||strip(__missdec)|| ";";                     output;
 record= "  end;";                                                                      output;
 record= "__col__0=''; __cnt__0=.; __pct__0=.; __colevt__0='';";                        output;
 record= "if __fordelete=1 then delete;";                                               output;
@@ -247,8 +249,7 @@ record=" ";                                                                     
 
 run;
 
-proc append data=rrgpgmtmp base=rrgpgm;
-run;
+
 
 
 %mend;

@@ -26,7 +26,7 @@
   id=)/store;
 
  %* -----------------------------------------------------------------------
-  adds records to __listinfo dataset with properties of listing column
+  adds records to __varinfo dataset with properties of listing column
   macro parameters:
 
       formula     name of variable or SAS expression to create variable
@@ -77,10 +77,10 @@
 
    Use // to indicate new line, and /t1, /t2 etc to indicate tab
    
-   ds used __listinfo
-   ds initialized __listinfo (if does not exist)
+   ds used __varinfo
+   ds initialized __varinfo (if does not exist)
    ds created none
-   ds updated   __listinfo (if exists)
+   ds updated   __varinfo (if exists)
 
 
   -----------------------------------------------------------------------;
@@ -96,19 +96,20 @@
   %if %length(skipline)=0 %then %let skipline=Y;
 
   
-%* check if __listinfo exist, if not, create it.;
+%* check if __varinfo exist, if not, create it.;
 
-%if %sysfunc(exist(__listinfo))=0 %then %do;
-  data __listinfo;
+%if %sysfunc(exist(__varinfo))=0 %then %do;
+  data __varinfo;
     if 0;
-    length label $ 2000
-    width align halign alias  format decode dist2next $ 40
+    length formula label $ 2000
+    width  align halign name  format decode dist2next $ 40
     group page spanrow id skipline stretch keeptogether breakok $ 1
     ;
 
   
 
     varid=.;
+    formula='';
     format = '';
     decode = '';
     label = '';
@@ -119,7 +120,7 @@
     page = '';
     spanrow = '';
     id = .;
-    alias = '';
+    name = '';
     width = '';
     skipline ='';
     stretch = '';
@@ -132,7 +133,7 @@
 %* check how many records in __vlist dataset has any observations;
 %local numvar dsid rc;
 %let numvar = 0;
-%let dsid=%sysfunc(open(__listinfo));
+%let dsid=%sysfunc(open(__varinfo));
 %let numvar = %sysfunc(attrn(&dsid, NOBS));
 %let rc= %sysfunc(close(&dsid));
 
@@ -144,14 +145,15 @@
   
 
   data __tmp;
-    length /*formula */label $ 2000
-    width align halign alias  format decode  dist2next $ 40
+    length formula label $ 2000
+    width align halign name  format decode  dist2next $ 40
     group page spanrow id skipline stretch keeptogether  breakok $ 1
     ;
 
   
 
     varid=&varid;
+    formula='';
     format = cats(symget("format"));
     decode = cats(symget("decode"));
     label = cats(symget("label"));
@@ -162,7 +164,7 @@
     page = cats(symget("page"));
     spanrow = cats(symget("spanrow"));
     id = cats(symget("id"));
-    alias = cats(symget("name"));
+    name = cats(symget("name"));
     width = cats(symget("width"));
     skipline = upcase(cats(symget("skipline")));
     stretch = cats(symget("stretch"));
@@ -170,9 +172,10 @@
     keeptogether= upcase(cats(symget("keeptogether")));
   run;
 
-  proc append base=__listinfo data=__tmp;
+  data __varinfo;
+    set __varinfo __tmp;
   run;
- 
+  
 
 
     

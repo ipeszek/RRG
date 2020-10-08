@@ -11,7 +11,7 @@
     
     creates or updates metadata dataset
     
-    ds used __repinfo, __rrgpgminfo, __listinfo,__codebvars, __mout.&metadatads
+    ds used __repinfo, __rrgpgminfo, __varinfo,__codebvars, __mout.&metadatads
     ds created __cont
     ds updated __rrginlibs, __usedds, __cont&i, __mout.&metadatads
     ds initialized
@@ -68,7 +68,7 @@ data  __usedds;
   quit;
   
   data __vars;
-    set __listinfo end=eof;
+    set __varinfo end=eof;
     length name $ 32;
     name= upcase(alias);
     if name ne '' then output;

@@ -20,6 +20,9 @@ ds updated:
 
 */
 
+
+
+
 %*------------------------------------------------------------------------------------;
 %*** READ SUBJID, INDENTSIZE, NODATAMSG DEST AND WARNONNOMATCH FROM CONFIGURATION FILE;
 %*** IF NOT GIVEN IN MACRO CALL THEN USE VALUES FROM CONFIGURATION FILE;
@@ -273,6 +276,21 @@ run;
 
 %if %length(&__fname)=0 %then %let __fname=&rrguri;
 
+%global rrgtablepart rrgtablepartnum;
+%let append=%upcase(&append);
+%let appendable=%upcase(&appendable);
+%if &append ne Y %then %let append=N;
+%if &appendable ne Y %then %let appendable=N;
+
+%if &append=Y and &appendable=Y %then %let rrgtablepart=MIDDLE;
+%else %if &append ne Y and &appendable=Y %then %let rrgtablepart=FIRST;
+%else %if &append = Y and &appendable ne Y %then %let rrgtablepart=LAST;
+%else %if &append ne Y and &appendable ne Y %then %let rrgtablepart=FIRSTANDLAST;
+
+%if &rrgtablepart=FIRST or &rrgtablepart=FIRSTANDLAST %then %let rrgtablepartnum=1;
+%else %let rrgtablepartnum=%eval(&rrgtablepartnum+1);
+
+
 data __repinfo;
   length footnot1 -footnot14
   title1 title2 title3 title4 title5 title6 Colhead1
@@ -336,9 +354,7 @@ end;
 
 
 
-append = upcase(trim(left(symget("append"))));
-appendable = upcase(trim(left(symget("appendable"))));
-tablepart= upcase(trim(left(symget("tablepart"))));
+
 *watermark = upcase(trim(left(symget("cwatermark"))));
 watermark = trim(left(symget("cwatermark")));
 sfoot_fs = upcase(trim(left(symget("csfoot_fs"))));
@@ -365,10 +381,10 @@ sprops = trim(left(symget('sprops')));
 %if %length(&addlines)>0 %then %do;
  sprops = cats( sprops, ",rtfpl_extlns=", upcase(trim(left(symget("addlines")))));
 %end;
-%if %upcase(&appendable) =TRUE or %upcase(&appendable)=Y %then %do;
+%if &appendable =Y  %then %do;
  sprops = cats( sprops, ",appendable=true");
 %end;
-%if %upcase(&append)=TRUE or %upcase(&append)=Y %then %do;
+%if &append=Y  %then %do;
  sprops = cats( sprops, ",append=true");
 %end;
 %if %length(&splitchars)>0 %then %do;

@@ -24,6 +24,23 @@ ds used:
 %local st ;
 %let st=;
 
+
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "CODEAFTERLIST STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+
+%if %upcase(&rrgfinalize)=Y %then %do;
+  %put &WAR.NING: =======  DID YOU FORGET TO SET FINALIZE=N IN RRG GENLIST? PROGRAM MAY MALFUNCTION...====== ;
+  
+%END;  
+
 data rrgcodeafter;
 length string ns tmp  $ 32000;
 string = symget("syspbuff");
@@ -250,6 +267,17 @@ end;
 run;
 
 &st;
+
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "CODEAFTERLIST finished";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 %mend rrg_codeafterlist;
 

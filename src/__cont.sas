@@ -782,6 +782,9 @@ record=" ";output;
 record="  data __contstat2;";output;
 record="  set __contstat2;";output;
 record="     __col = tranwrd(strip(__col),'(.','(NA');";output;
+record="  run;"; output;
+
+/*
 %if %length(&maxdec) %then %do;
     record="     if   __basedec>&maxdec then __basedec = &maxdec;";output;
 %end;
@@ -877,7 +880,8 @@ record="     __col = tranwrd(strip(__col),'(.','(NA');";output;
 record="  run;";output;
 record=" ";output;
 run;
-
+*/
+run;
 proc append data=rrgpgmtmp base=rrgpgm;
 run;
 
@@ -1043,8 +1047,8 @@ run;
         
           %local modelds;
           
-          data modelp;
-            set modelp end=eof;
+          data _null_;
+            set __modelp end=eof;
             if eof then  call symput ('modelds', cats(name));
             run;
           

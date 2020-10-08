@@ -55,7 +55,7 @@ proc sql noprint;
   select trim(left(countwhat))  into:countwhat  separated by ' ' from __catv;
 quit;
 
-/* catv is__varinfo subset on where varid=&varid */
+
 
 %if %length(&codelistds)=0 %then %do;
  

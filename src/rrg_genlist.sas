@@ -12,7 +12,7 @@
     note: this.xxx below refers to macro parameter xxx of this macro; yyy.xxx refers to variable xxx in yyy dataset                                 
 
 
-    - Collects info from __repinfo, __listinfo, updates them
+    - Collects info from __repinfo, __varinfo, updates them
     - if append=N then appends __rrght to rrgpgmtmp which creates macro to create 
        &rrguri ds for listings 
     - if finalize=Y then appends to rrgpgmtmp records to call sasshiato
@@ -24,16 +24,16 @@
     
     
     
-    ds used __repinfo, __listinfo, __rrght
+    ds used __repinfo, __varinfo, __rrght
     ds created
-    ds updated __listinfo, __repinfo
+    ds updated __varinfo, __repinfo
     ds initialized
     
     
 
 */
 
-%macro rrg_genlist(debug=0, savexml=, finalize=y)/store;
+%macro rrg_genlist(debug=0, savexml=, finalize=N)/store;
 %* note: for now, colsize and dist2next (if in units) shoudl be number of chars if java2sas is used; 
 %* assumes __tcol takes only one line between //;
 %* assumes varbygrp has only one line;
@@ -42,7 +42,12 @@
 %* Revision notes:  07Apr2014 commented out recoding of curly braces to #123 and #125 (superscript did not work except in header);
 %*                  12Aug2020 added handling of no data so that headers and footnotes are displayed 
  
-%local numvars i dataset orderby j isspanrow ispage debug  indentsize filename savexml; 
+%local numvars i dataset orderby j isspanrow ispage debug  
+       indentsize filename savexml finalize;
+       
+%let rrgfinalize=%upcase(&finalize);
+
+ 
 %local debugc;
 %let debugc=%str(%%*);
 %if &debug>0 %then %let debugc=;
@@ -57,73 +62,73 @@
 %let numpagev=0;
 %let numspanv=0;
 
-%local  z  append appendable appendm nodatamsg savercd gentxt;
+%local  z   appendm nodatamsg savercd gentxt;
 
  
 
 proc sql noprint;
-  select dataset,  orderby, indentsize, upcase(append), upcase(appendable), nodatamsg, 
+  select dataset,  orderby, indentsize,  nodatamsg, 
     savercd, gentxt , filename, print            
            into
-         :dataset,:orderby, :indentsize,:append,       :appendable,    :nodatamsg, 
+         :dataset,:orderby, :indentsize,  :nodatamsg, 
          :savercd, :gentxt   ,:filename,:print
          separated by ' '
        from __repinfo;
-  select max(varid) into: numvars separated by ' ' from __listinfo;    
+  select max(varid) into: numvars separated by ' ' from __varinfo;    
 quit;
 
 
 
-%if %upcase(&append) ne Y %then %let append=N;
+
 
 
 %do i=1 %to &numvars;
     %local label&i  width&i group&i spanrow&i align&i halign&i
-    page&i id&i alias&i  decode&i format&i stretch&i
+    page&i id&i name&i  decode&i format&i stretch&i
     break&i d2n&i keeptogether&i;
 %end;
 
-data __listinfo;
-  set __listinfo end=eof;
+data __varinfo;
+  set __varinfo end=eof;
   length __orderby $ 2000;
   __orderby = strip(symget("orderby"));
   __fm=0;
   
   do __kk=1 to countw(__orderby, ' ');
-   if upcase(alias)=upcase(scan(__orderby, __kk, ' ')) then __fm=1;
+   if upcase(name)=upcase(scan(__orderby, __kk, ' ')) then __fm=1;
   end;
   if __fm = 0 then do;
     if upcase(group)='Y' then do;
-      put 'WAR' 'NING: GROUP=Y requested for ' alias ' but ' alias ' is not specified in ORDERBY. GROUP=Y is ignored.';
+      put 'WAR' 'NING: GROUP=Y requested for ' name ' but ' name ' is not specified in ORDERBY. GROUP=Y is ignored.';
       group='N';
     end;  
     if upcase(skipline)='Y' then  do;
-      put 'WAR' 'NING: SKIPLINE=Y requested for ' alias ' but ' alias ' is not specified in ORDERBY. SKIPLINE=Y is ignored.';
+      put 'WAR' 'NING: SKIPLINE=Y requested for ' name ' but ' name ' is not specified in ORDERBY. SKIPLINE=Y is ignored.';
       skipline='N';
     end;
     if upcase(keeptogether)='Y' then  do;
-      put 'WAR' 'NING: KEEPTOGETHER=Y requested for ' alias ' but ' alias ' is not specified in ORDERBY. KEEPTOGETHER=Y is ignored.';
+      put 'WAR' 'NING: KEEPTOGETHER=Y requested for ' name ' but ' name ' is not specified in ORDERBY. KEEPTOGETHER=Y is ignored.';
       keeptogether='N';
     end;
     if upcase(spanrow)='Y' then  do;
-      put 'WAR' 'NING: SPANROW=Y requested for ' alias ' but ' alias ' is not specified in ORDERBY. SPANROW=Y is ignored.';
+      put 'WAR' 'NING: SPANROW=Y requested for ' name ' but ' name ' is not specified in ORDERBY. SPANROW=Y is ignored.';
       SPANROW='N';
     end;
     if upcase(PAGE)='Y' then  do;
-      put 'WAR' 'NING: PAGE=Y requested for ' alias ' but ' alias ' is not specified in ORDERBY. PAGE=Y is ignored.';
+      put 'WAR' 'NING: PAGE=Y requested for ' name ' but ' name ' is not specified in ORDERBY. PAGE=Y is ignored.';
       PAGE='N';
     end;
   end;
   
-    call symput(cats("label",varid)       ,dequote(label));     
-    call symput(cats("width",varid)       ,width);               
+    call symput(cats("label",varid)       ,strip(dequote(label)));     
+    call symput(cats("width",varid)       ,strip(upcase(width)        ));               
     call symput(cats("group",varid)       ,strip(upcase(group)        ));
     call symput(cats("spanrow",varid)     ,strip(upcase(spanrow)      ));
     call symput(cats("align",varid)       ,strip(upcase(align)        ));
     call symput(cats("halign",varid)      ,strip(upcase(halign)       ));
     call symput(cats("page",varid)        ,strip(upcase(page)         ));
     call symput(cats("id",varid)          ,strip(upcase(id)           ));
-    call symput(cats("alias",varid)       ,strip(upcase(alias)        ));
+    call symput(cats("name",varid)        ,strip(upcase(name)         ));
     call symput(cats("skipline",varid)    ,strip(upcase(skipline)     ));
     call symput(cats("decode",varid)      ,strip(upcase(decode)       ));
     call symput(cats("format",varid)      ,strip(upcase(format)       ));
@@ -134,6 +139,7 @@ data __listinfo;
 run;
 
   
+
    
  
 %let isspanrow=0;
@@ -169,14 +175,14 @@ run;
         %let numpagev = %eval(&numpagev+1);
         %local pvn&numpagev;
         %let pvn&numpagev=&i;
-        %let lastvb=&&alias&i;
+        %let lastvb=&&name&i;
     %end;
     
     %else %if &&spanrow&i = Y %then %do;
         %let numspanv = %eval(&numspanv+1);
         %local svn&numspanv;
         %let svn&numspanv=&i;
-      %let lastspan=&&alias&i;
+      %let lastspan=&&name&i;
     %end;
  
     %if %length(&&align&i)=0 %then %let align&i = L;
@@ -190,9 +196,10 @@ run;
  
 %* define breakokat;
 %local breakokat;
+%let breakokat=&numcol;
 %do i=0 %to &numcol;
     %let z = &&vcn&i;
-    %if &&break&z=Y %then %%let breakokat=&breakokat &i;
+    %if &&break&z=Y %then %let breakokat=&breakokat &i;
 %end;
  
  
@@ -212,6 +219,7 @@ run;
 %local rrgoutpathlazy;
 %let rrgoutpathlazy=&rrgoutpath;
 
+
 data __repinfo;
   set __repinfo;
   lastcheadid=&lastcheadid;
@@ -219,7 +227,7 @@ data __repinfo;
   colwidths = cats(symget("colwidths"));
   dist2next = cats(symget("dist2next"));
   stretch = cats(symget("stretch"));
-  breakokat = trim(left(symget('breakokat')));
+  breakokat = trim(left(symget("breakokat")));
   rtype = 'LISTING';
 run;  
 
@@ -327,7 +335,7 @@ data rrgpgmtmp;
         record= "  set &rrguri end=eof;";  output;
         record= "  by &orderby;";  output;
 
-        record= "  length __datatype $ 8 __suffix  $ 20";  output;
+        record= "  length __datatype $ 8 __suffix  $ 2000";  output;
         record= "  __spanrowtmp __varbylab  __tcol __align __tmp __tmp2 $ 2000";  output;
         %do i=0 %to &numcol; 
             record=  "    __col_&i ";  output;
@@ -344,7 +352,7 @@ data rrgpgmtmp;
         record= "if _n_=1 then do;";  output;
         record= "  __dsid = open('" ||"&rrguri"|| "');";  output;
         %do i=1 %to &numvars;
-            record= "  __vtype&i = upcase(vartype(__dsid, varnum(__dsid, '"|| "&&alias&i"|| "')));";  output;
+            record= "  __vtype&i = upcase(vartype(__dsid, varnum(__dsid, '"|| "&&name&i"|| "')));";  output;
         %end;
         record= "  __rc = close(__dsid);";  output;
         record= "end;  ";  output;
@@ -374,7 +382,7 @@ data rrgpgmtmp;
             %let z = &pvn1;
             %if %length(&&format&z) %then %do;
                 record= '      __varbylab = cats("'||
-                     "&&label&z"|| '"'|| "||' '||put(&&alias&z, &&format&z));";  output;
+                     "&&label&z"|| '"'|| "||' '||put(&&name&z, &&format&z));";  output;
             %end;
             %else %if %length(&&decode&z) %then %do;
                 record= '      __varbylab = cats("'|| "&&label&z"|| '"'|| "||' '||&&decode&z);";  output;
@@ -382,9 +390,9 @@ data rrgpgmtmp;
             %else %do;
 
                 record= "      if __vtype&z = 'C' then  __varbylab = cats(" ||
-                            '"'|| "&&label&z"|| '"'|| "||' '||&&alias&z);";  output;
+                            '"'|| "&&label&z"|| '"'|| "||' '||&&name&z);";  output;
                 record= '      else __varbylab = cats("'||
-                            "&&label&z"|| '"'|| "||' '||strip(put(&&alias&z, best.)));";  output;
+                            "&&label&z"|| '"'|| "||' '||strip(put(&&name&z, best.)));";  output;
                 
             %end;
            
@@ -392,7 +400,7 @@ data rrgpgmtmp;
                 %let z = &&pvn&i;
                 %if %length(&&format&z) %then %do;
                     record= '        __varbylab = cats(__varbylab,"//","'||
-                       "&&label&z"|| '"||" "'|| "||put(&&alias&z, &&format&z));";  output;
+                       "&&label&z"|| '"||" "'|| "||put(&&name&z, &&format&z));";  output;
                 %end;
                 %else %if %length(&&decode&z) %then %do;
                     record= '        __varbylab = cats(__varbylab,"//","' ||
@@ -400,9 +408,9 @@ data rrgpgmtmp;
                 %end;
                 %else %do;
                    record= "        if __vtype&z = 'C' then __varbylab = " ||
-                       'cats(__varbylab,"//","'|| "&&label&z"|| '"||" "'|| "||&&alias&z);";  output;
+                       'cats(__varbylab,"//","'|| "&&label&z"|| '"||" "'|| "||&&name&z);";  output;
                    record= '        else __varbylab = cats(__varbylab,"//","' ||
-                        "&&label&z" ||'"||" "'|| "||strip(put(&&alias&z, best.)));";  output;
+                        "&&label&z" ||'"||" "'|| "||strip(put(&&name&z, best.)));";  output;
 
                 %end;
 
@@ -423,14 +431,14 @@ data rrgpgmtmp;
                 %let z = &&svn&i;
                 record= "       __tmp = '';";  output;
                 %if %length(&&format&z) %then %do;
-                    record= "       __tmp = put(&&alias&z, &&format&z);";  output;
+                    record= "       __tmp = put(&&name&z, &&format&z);";  output;
                 %end;
                 %else %if %length(&&decode&z) %then %do;
                     record= "       __tmp = &&decode&z;";  output;
                 %end;
                 %else %do;
-                     record= "       if __vtype&z ='C' then __tmp = &&alias&z;";  output;
-                     record= "       else __tmp = strip(put(&&alias&z, best.));";  output;
+                     record= "       if __vtype&z ='C' then __tmp = &&name&z;";  output;
+                     record= "       else __tmp = strip(put(&&name&z, best.));";  output;
 
                 %end;
               %if %length(&&label&z) %then %do;
@@ -438,7 +446,7 @@ data rrgpgmtmp;
               %end;
               
               %else %do;
-                  record= "       &&alias&z"|| ' = cats(__tmp);';  output;
+                  record= "       &&name&z"|| ' = cats(__tmp);';  output;
                   record= "       __tmp2"|| ' = cats(__tmp);';  output;
               %end;
               
@@ -450,7 +458,7 @@ data rrgpgmtmp;
               %end;
              
               %if &&keeptogether&z=Y %then %do;
-                  record= "        if last.&&alias&z then __keepn = 0; else __keepn=1;";  output;
+                  record= "        if last.&&name&z then __keepn = 0; else __keepn=1;";  output;
               %end;
             
             
@@ -470,26 +478,26 @@ data rrgpgmtmp;
         %do i=0 %to &numcol;
             %let z = &&vcn&i;
             %if %length(&&format&z) %then %do;
-                record= "     __col_&i = cats(put(&&alias&z, &&format&z));";  output;
+                record= "     __col_&i = cats(put(&&name&z, &&format&z));";  output;
             %end;
             %else %if %length(&&decode&z) %then %do;
                 record= "     __col_&i = cats(&&decode&z);";  output;
             %end;
             %else %do;
-                record= "     if __vtype&z='C' then __col_&i = strip(&&alias&z);";  output;
-                record= "     else __col_&i = strip(put(&&alias&z, best.));";  output;
+                record= "     if __vtype&z='C' then __col_&i = strip(&&name&z);";  output;
+                record= "     else __col_&i = strip(put(&&name&z, best.));";  output;
 
             %end;
             record= '     __align = cats(__align)||" "||cats("' ||"&&align&z"|| '");';  output;
             %if &&skipline&z=Y %then %do;
-                record= "        if last.&&alias&z then __suffix = '~-2n';";  output;
+                record= "        if last.&&name&z then __suffix = '~-2n';";  output;
             %end;
 
            
             %if &&group&z=Y %then %do;
-                record= "        if  first.&&alias&z then __first_&i=1;";  output;
+                record= "        if  first.&&name&z then __first_&i=1;";  output;
                 %if &&keeptogether&z=Y %then %do;
-                    record= "        if last.&&alias&z then __keepn = 0; else __keepn=1;";  output;
+                    record= "        if last.&&name&z then __keepn = 0; else __keepn=1;";  output;
                 %end;
             %end;
         %end;
@@ -641,45 +649,7 @@ if eof then do;
     record= "run;";  output;
     record=" ";   output;
     
-    %if %upcase(&finalize)=Y %then %do;
-      
-      
-        record=" ";  output;
-        record=" ";  output;
-        record= '%macro rrgout;';  output;
-        record=" ";  output;
-        record= '  %local objname;';  output;
-        record=" ";  output;
-        record= "  proc sql noprint;";  output;
-        record= "  select upcase(objname) into:objname from sashelp.vcatalg";  output;
-        record= "  where libname='RRGMACR' and upcase(objname)='__SASSHIATO';";  output;
-        record= "  quit;";  output;
-        record= " ";  output;
-        record= '%local __path;';  output;
-        record= '%if %length(&rrgoutpath)=0 %then';  output;
-        record= '  %let __path='|| "&rrgoutpathlazy;";  output;
-        record= '%else %let __path = &rrgoutpath;';  output;
-        record=" ";  output;
-        %if %symexist(__sasshiato_home) %then %do;
-            record= '  %if %symexist(__sasshiato_home) %then %do;';  output;
-            record= '    %if &objname=__SASSHIATO  and  %length(&__sasshiato_home) %then %do;';  output;
-            %if %upcase(&savexml)=Y %then %do;
-                record= '   %__sasshiato(path=&__path,' ||
-                   " debug=&debug, dataset=&rrguri, reptype=L);";  output;
-            %end; 
-            %else %do;
-                  record= '     %__sasshiato(' ||"debug=&debug,dataset=&rrguri,reptype=L);";  output;
-            %end;
-            record= '    %end;';  output;
-            record= '  %end;';  output;
-        %end;
-        record=" ";  output;
-        record= '%mend rrgout;';  output;
-        record=" ";  output;
-        record= '%rrgout;';  output;
-      
-    %end;
-    
+  
 end;
     
 run;
@@ -700,14 +670,34 @@ data _null_;
   
 run;
 
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "ANALYSING RRG MACROS finished";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 %inc "&__workdir./rrgpgm.sas";
 
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "MACRO EXECUTION FOR LISTING FINISHED ";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
-
-%if %upcase(&finalize)=Y %then %do;
+%if %upcase(&finalize) =Y %then %do;
   
-%rrg_finalize(debug=&debug, savexml=&savexml);
+    %rrg_finalize(debug=&debug, savexml=&savexml);
+    %let rrgfinalize_done=1;
 
 %end;
 

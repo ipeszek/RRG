@@ -93,7 +93,16 @@ splitchars esc_char  gen_size_info rtf_linesplit
 orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf
 ;
 
-
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "Defreport STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
 
 %let aetable=N;
 %if %upcase(&reptype)=EVENTS %then %do;
@@ -291,13 +300,17 @@ run;
 
 %skipdef:
 
+/*
 data __timer;
-	set __timer end=eof;
+  set __timer end=eof;
+	length task $ 100;
 	output;
-	if eof then do;
-		task = "Finished def-report";
-		time=time(); output;
-	end;
-run;	
+		if eof then do; 
+		  task = "Defreport finished";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+*/	
 
 %mend;

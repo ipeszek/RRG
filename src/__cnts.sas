@@ -53,6 +53,8 @@ data __catv;
 set __varinfo (where=(varid=&varid));
 run;
 
+
+
 %let indent=0;
 %let codesds=0;
 %let codes=0;
@@ -238,7 +240,13 @@ run;
       
 */
 
+/**** get new decode;*/
 
+
+proc sql noprint;
+  select trim(left(decode))    into:decode    separated by ' '  from __catv;
+  select codelist              into:tmpcodes  separated by ' ' from __catv;
+quit;
 %*-------------------------------------------------------------;
 %* PROCESS DATASET WITH LIST OF CODES (IF GIVEN);
 %*-------------------------------------------------------------;
@@ -311,8 +319,6 @@ run;
 *-----------------------------------------------------------------------;
 * APPLY TEMPLATE: KEEP ONLY MODALITIES FROM TEMPLATE;
 *-----------------------------------------------------------------------;
-
-
 
 
 
@@ -448,7 +454,7 @@ run;
       if eof then call symput("nmodels", cats(__modelnum));
     run;
 
-    data rrgpgmtmp;
+   data rrgpgmtmp;
    length record $ 2000;
    keep record;
    set __modelstat end=eof;
@@ -479,16 +485,16 @@ run;
    record= "  output;";                                                    output;
    record=" "; output;                                                                    
    if eof then do;                                                         
-   record=" "; output;                                                                  
-   record= "  run;";                                                     output;
-   record=" "; output;
-   record=" "; output;
+       record=" "; output;                                                                  
+       record= "  run;";                                                     output;
+       record=" "; output;
+       record=" "; output;
    
-     record=" "; output;
+       record=" "; output;
 
-     record= "*-------------------------------------------------------------;";    output;
-     record= "* PREPARE DATASET FOR CUSTOM MODEL, REMOVING POOLED TREATMENTS;";    output;
-     record= "*-------------------------------------------------------------;";    output;
+       record= "*-------------------------------------------------------------;";    output;
+       record= "* PREPARE DATASET FOR CUSTOM MODEL, REMOVING POOLED TREATMENTS;";    output;
+       record= "*-------------------------------------------------------------;";    output;
         record=" "; output;                                                                          
         record= "data __datasetp;";                                                   output;
         record= "set __dataset(where=(&tabwhere and &where &pooledstr));";            output;
@@ -541,6 +547,12 @@ run;
         %end;
           
         %local modelds;
+        
+       /* data _null_;
+          set __modelp end=eof;
+          if eof then call symput(modelds, cats(name));
+        run;
+        */
       
         data rrgpgmtmp;
         length record $ 2000;
@@ -1056,7 +1068,7 @@ record= "  drop __col__:;"; output;
 record= "run;"; output;
 record=" "; output;
 record=" "; output;
-record= '%excd'||"&varid.:"; output;
+record= '%exitc'||"&varid.:"; output;
 record=" "; output;
 run;
 

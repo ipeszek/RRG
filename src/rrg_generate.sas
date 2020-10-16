@@ -67,32 +67,20 @@ Macro parameters:
 %* PRINT GENERATED PROGRAM HEADER AND FORMATS;
 
 
-%local Dataset datasetRRG popWhere tabwhere tablabel Colhead1 subjid 
+%local  datasetRRG   tablabel   
        Title1 title2 title3 title4 title5 title6 
        Footnot1 Footnot2 Footnot3 Footnot4 Footnot5 Footnot6 
        Footnot7 footnot8 footnot9 footnot10 
        footnot11 footnot12 footnot13 footnot14 shead_l shead_r shead_m
        sfoot_l sfoot_r sfoot_m systitle
-       By Statsincolumn statsacross aetable dest nodatamsg fontsize 
-       orient colwidths  debug extralines print warnonnomatch
+       By    dest  fontsize 
+       orient colwidths   extralines  
        libsearch  varby4pop varbyn4pop groupby4pop groupbyn4pop;
 %local i j k breakokat;
 %local indata inmacros  trtcnt ;
 
 
 proc sql noprint;
-  select dataset into:dataset separated by ' ' from __repinfo;
-  select popWhere into:popWhere separated by ' ' from __repinfo;
-  select tabwhere into:tabwhere separated by ' ' from __repinfo;
-  select subjid into:subjid separated by ' ' from __repinfo;
-  select aetable into:aetable separated by ' ' from __repinfo;
-  select Statsacross into:Statsacross separated by ' ' from __repinfo;
-  select warnonnomatch into:warnonnomatch separated by ' ' from __repinfo;
-  select print into:print separated by ' ' from __repinfo;
-  select debug into:debug separated by ' ' from __repinfo;
-  select nodatamsg into:nodatamsg separated by ' ' from __repinfo;
-
-  
   select name into: inmacros separated by ' ' from __varinfo (where=(type='MODEL'));
   select count(*) into:trtcnt separated by ' ' from __varinfo(where=(type='TRT'));
 quit;
@@ -102,16 +90,11 @@ quit;
 %let ning=NING;
 
 
-%local isincolv;
 
-%local pooled pooledstr;
-proc sql noprint;
-  select upcase(pooled4stats), upcase(statsincolumn)
-   into :pooled,  :isincolv 
-   separated by ' ' from __repinfo;
-quit;
+%local  pooledstr;
 
-%if  &pooled=N %then     %let pooledstr = and __grouped ne 1;
+
+%if  &defreport_pooled4stats=N %then     %let pooledstr = and __grouped ne 1;
 
 %if &trtcnt>1 %then %do;
     %put &WAR.&NING.: more than one treatment variable was specified. Program aborted.;
@@ -119,7 +102,7 @@ quit;
 %end;
 
 
-%let datasetrrg=&dataset;  
+%let datasetrrg=&defreport_dataset;  
   
 proc sort data=__varinfo;
   by varid;
@@ -132,9 +115,11 @@ run;
 proc sql noprint;
   select across into:grpinc separated by ' ' from
    __varinfo(where=(type='GROUP' and across='Y'));
-  select across into:trtacross separated by ' ' from
+  select across, name into :trtacross, :trtvar separated by ' ' from
    __varinfo(where=(type='TRT'));
 quit;
+
+%let trtvar=%scan(&trtvar,1,%str( ));
 
 %if %upcase(&trtacross)=N %then %do;
     data __varinfo;
@@ -147,8 +132,8 @@ quit;
 %* CREATE DUMMY WHERE CONDITIONS;
 *----------------------------------------------------------------;
 
-%if %length(&popwhere)=0  %then  %let popwhere=%str(1=1);
-%if %length(&tabwhere)=0  %then   %let tabwhere=%str(1=1);
+%if %length(&defreport_popwhere)=0  %then  %let defreport_popwhere=%str(1=1);
+%if %length(&defreport_tabwhere)=0  %then   %let defreport_tabwhere=%str(1=1);
 
 
 *----------------------------------------------------------------;
@@ -159,11 +144,7 @@ quit;
 %local numtrt trtvar;
 %let numtrt=0;
 
-proc sql noprint;
-select name into:trtvar separated by ' '
-  from __varinfo(where=(type in ('TRT')));
-quit;
-%let trtvar=%scan(&trtvar,1,%str( ));
+
 
 %* ensures only one trt variable;
 
@@ -196,7 +177,7 @@ run;
 
 %__makenewtrt( 
       dsin=&datasetrrg,
-      wherein = %nrbquote(&popwhere),  
+      wherein = %nrbquote(&defreport_popwhere),  
      dsout=__dataset);
     
 data rrgpgmtmp;
@@ -256,15 +237,15 @@ run;
 
 
 proc sql noprint;
-  select count(*) into:ngrpv 
-    from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' ));    
-  select name into:groupby separated by ' ' 
-    from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' ));    
-  select count(*) into:nvarby
+  
+  
+    select count(*) , name    into :ngrpv , :groupby separated by ' ' 
+    from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' ));   
+    
+    select count(*), name into:nvarby,:varby  separated by ' ' 
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y'));
-  select name into:varby separated by ' ' 
-    from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y'));
-  select name into:varby4pop separated by ' ' 
+  
+   select name into:varby4pop separated by ' ' 
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y' and upcase(popsplit)='Y'));
   select name into:varbyn4pop separated by ' ' 
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y' and upcase(popsplit) ne 'Y'));
@@ -308,7 +289,7 @@ length record $ 2000;
 keep record;
 
 %__getcntg(datain=__dataset, 
-        unit=&subjid, 
+        unit=&defreport_subjid, 
         group=&varby4pop __grouped &trt1 __dec_&trt1 __suff_&trt1 __prefix_&trt1
                   __nline_&trt1 __autospan,        
         cnt=__pop_1, 
@@ -446,12 +427,12 @@ run;
     record=  " "; output;
     
     %if &nvarby>0 %then %do;
-        record= "proc sql;"; output;
+        record= "proc sql noprint;"; output;
         record="  create table varbytbl";  output;
         record="  as select distinct &varby4sql";  output;
         record="  from __dataset; "; output;
         record="  quit;"; output;
-        record="proc sql nowarn;"; output;
+        record="proc sql nowarn noprint;"; output;
         record="  create table __CODES4TRT2 as"; output;
         record="  select * from varbytbl cross join __CODES4TRT;"; output;
         record="quit;"; output;
@@ -465,7 +446,7 @@ run;
     record="  set __pop;"; output;
     record="  drop __dec_&trtvar;"; output;
     record="run;"; output;
-    record="proc sql;"; output;
+    record="proc sql noprint;"; output;
     record="  create table __popx as select * from __pop natural full outer join __CODES4TRT;"; output;
     record="quit;"; output;
     record='%local __mod_nline __mod_autospan __mod_suff __mod_prefix;'; output;
@@ -677,7 +658,7 @@ CREATE DATASET __GRPCODES_EXEC:
         %__makecodeds (
         vinfods = __varinfo, 
         varname = &tmp, 
-        dsin = &dataset, 
+        dsin = &defreport_dataset, 
           outds = __grp_template_&tmp,
           id = &i);
 
@@ -877,18 +858,17 @@ run;
           %__cnts (
                dsin  = __dataset,
             dsinrrg  = &datasetrrg,
-            tabwhere = %nrbquote(&tabwhere), 
-                unit = %nrbquote(&subjid), 
+                unit = %nrbquote(&defreport_subjid), 
                varid = &i, 
        groupvars4pop = &groupby4pop, 
       groupvarsn4pop = &groupbyn4pop,
              byn4pop = &varbyn4pop ,
               by4pop = &varby4pop ,       
              trtvars = %cmpres(&trtvar),
-          %if %upcase(&warnonnomatch) ne Y %then %do;
+          %if %upcase(&defreport_warnonnomatch) ne Y %then %do;
               warn_on_nomatch=0,
           %end;     
-             aetable = %upcase(&aetable),
+             aetable = %upcase(&defreport_aetable),
                outds = __fcat&i);
 
        data rrgpgmtmp;
@@ -920,13 +900,12 @@ run;
            %__cond(
                outds = __fcond&i,
                varid = &i,
-            tabwhere = %nrbquote(&tabwhere),
-                unit = &subjid,
+                unit = &defreport_subjid,
        groupvars4pop = &groupby4pop, 
       groupvarsn4pop = &groupbyn4pop,
              byn4pop = &varbyn4pop ,
               by4pop = &varby4pop ,       
-              events = %upcase(&aetable),
+              events = %upcase(&defreport_aetable),
              trtvars = &trtvar);
         
 
@@ -994,8 +973,7 @@ run;
     %if &&type&i=CONT %then %do;
         %__cont (
              varid=&i,
-          tabwhere=%nrbquote(&tabwhere), 
-              unit=&subjid, 
+              unit=&defreport_subjid, 
      groupvars4pop=&groupby4pop, 
     groupvarsn4pop=&groupbyn4pop,
            byn4pop=&varbyn4pop ,
@@ -1126,7 +1104,7 @@ quit;
     record=  "*---------------------------------------------------------------;"; output;
     record=  " "; output;
    
-    %if %upcase(&aetable) = N %then %do;
+    %if %upcase(&defreport_aetable) = N %then %do;
         %do i=1 %to &ovorder;
       
             %* MERGE IN CONDITION BLOCKS WITHOUT GROUPING;
@@ -1377,12 +1355,10 @@ quit;
          %let grp&i = %scan(&groupby, &i, %str( ));
          %let tmp = &&grp&i;
          %local grpdec_&&grp&i;
-         select distinct decode into:grpdec_&&grp&i separated by ' '
+         select distinct decode, label into :grpdec_&&grp&i, :grplab&i separated by ' '
           from __varinfo where upcase(name)=upcase("&&grp&i") 
                and type='GROUP' and page ne 'Y';
-         select distinct label into:grplab&i separated by ' '
-          from __varinfo where upcase(name)=upcase("&&grp&i") 
-               and type='GROUP' and page ne 'Y';
+        
          %let decodestr=&decodestr &&grpdec_&tmp;
     %end;
 
@@ -1391,12 +1367,10 @@ quit;
          %let vby&i = %scan(&varby, &i, %str( ));
          %let tmp = &&vby&i;
          %local vbdec_&&vby&i;
-         select distinct decode into:vbdec_&&vby&i separated by ' '
+         select distinct decode, label  into:vbdec_&&vby&i,:vblabel&i  separated by ' '
           from __varinfo where upcase(name)=upcase("&&vby&i") 
               and type='GROUP' and page='Y';
-         select distinct label into:vblabel&i separated by ' '
-          from __varinfo where upcase(name)=upcase("&&vby&i") 
-             and type='GROUP' and page='Y';
+        
          %let decodestr=&decodestr &&vbdec_&tmp;
          %let vbdecodestr=&vbdecodestr &&vbdec_&tmp;
     %end;
@@ -2098,7 +2072,7 @@ quit;
   varby=&varby,
   groupby=&groupby,
   trtvar=&trtvar,
-  sta=%upcase(&statsacross));
+  sta=%upcase(&defreport_statsacross));
 
 %*****************************************************************;
 %* RETRIEVE MODIFFIED LIST OF GROUPING VARIABLES FROM __PGMINFO;
@@ -2127,7 +2101,7 @@ quit;
 
 
 
-%if %upcase(&Statsacross)=Y %then %do;
+%if %upcase(&defreport_statsacross)=Y %then %do;
 
 
     %__transposes(
@@ -2167,7 +2141,7 @@ record=  "     __order __tmprowid;";                                            
 record=  "run;";                                                                                              output;
 record=  " ";                                                                                                 output;
 
-%if %upcase(aetable) ne N %then %do;
+%if %upcase(&defreport_aetable) ne N %then %do;
     record=  "* IF >1 CATVAR SPECIFIED FOR AE TABLE, ;";                                                      output;
     record=  "*   GROUPING VARIABLES ARE REP EATED.;";                                                        output;
     record=  "data __all;";                                                                                   output;
@@ -2188,7 +2162,7 @@ record=  " ";                                                                   
 
 %local nn;
 %let nn=&ngrpv;
-%if %upcase(&Statsacross)=Y %then %let nn=%eval(&ngrpv-1);
+%if %upcase(&defreport_statsacross)=Y %then %let nn=%eval(&ngrpv-1);
 
 
 record=  "data __all ;";                                                                                      output;
@@ -2228,7 +2202,7 @@ run;
 
 
 
-%if %upcase(&aetable) ne N %then %do;
+%if %upcase(&defreport_aetable) ne N %then %do;
     data rrgpgmtmp;
     length record $ 2000;
     keep record;
@@ -2239,7 +2213,7 @@ run;
     record=  "           __ind = floor(__grpid);";                                                            output;
     record=  "           if __ind=998 then __ind = &ngrpv;";                                                  output;
     
-    %if %upcase(&Statsacross)=Y and &ngrpv>0 %then %do;
+    %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
         record=  "           __indentlev = max(__ind-1,0);";                                                  output;
     %end;
     %else %do;
@@ -2258,7 +2232,7 @@ run;
       
         record=  "         if first.&&grp&i  then do;";                                                       output;
     
-        %if %upcase(&Statsacross)=Y and &ngrpv>0 %then %do;
+        %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
            record=  "          if __grpid ne 999 then __nindentlev = __indentlev-&ngrpv+__grpid-1;";          output;
            record=  "          else __nindentlev = __indentlev;";                                             output;
         %end;
@@ -2307,7 +2281,7 @@ run;
 
 %else %do;
     
-    %if %upcase(&Statsacross)=Y and &ngrpv>1 %then %do;
+    %if %upcase(&defreport_statsacross)=Y and &ngrpv>1 %then %do;
         data rrgpgmtmp;
         length record $ 2000;
         keep record;
@@ -2336,7 +2310,7 @@ record=  "    cols[__i]='';";                                                   
 record=  "  end;";                                                                                           output; 
 record=  " ";                                                                                                output; 
 
-%if %upcase(&aetable)=N %then %do;
+%if %upcase(&defreport_aetable)=N %then %do;
    
   
     record=  "    * CREATE ROWS FOR DISPLAY OF GROUPING VARIABLES;";                                         output; 
@@ -2346,7 +2320,7 @@ record=  " ";                                                                   
       
         record=  "      if first.&&grp&i then do;";                                                          output; 
         
-        %if %upcase(&Statsacross)=Y and &ngrpv>0 %then %do;
+        %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
             record=  "     __indentlev=max(&i-1+__oldind-&nn,0);";                                           output; 
          %end;        
          %else %do;
@@ -2373,7 +2347,7 @@ record=  "     if __labelline ne 1 then do;";                                   
 record=  "        __sid=0;";                                                                                 output; 
 record=  "        __suffix='';";                                                                             output; 
 
-%if %upcase(&Statsacross)=Y and &ngrpv>1 %then %do;
+%if %upcase(&defreport_statsacross)=Y and &ngrpv>1 %then %do;
     record=  "        if last.%scan(&groupby,-2, %str( )) then do;";                                         output; 
     record=  "          __suffix = '~-2n';";                                                                 output; 
     record=  "          __keepn=0;";                                                                         output; 
@@ -2394,7 +2368,7 @@ record=  " ";                                                                   
 record=  "run;";                                                                                             output; 
 record=  " ";                                                                                                output; 
 
-%if &ngrpv=0 and %upcase(&aetable) ne N %then %do;   
+%if &ngrpv=0 and %upcase(&defreport_aetable) ne N %then %do;   
     record=  " ";                                                                                            output; 
     record=  "data __all;";                                                                                  output; 
     record=  "set __all;";                                                                                   output; 
@@ -2414,7 +2388,7 @@ record=  "set __all end=eof;";                                                  
 record=  "if eof then call symput ('numobsinall', cats(_n_));";                                              output; 
 record=  "__tmprowid=_n_;";                                                                                  output; 
 
-%if %upcase(&Statsacross) ne Y /*or &ngrpv<=1*/ %then %do;
+%if %upcase(&defreport_statsacross) ne Y /*or &ngrpv<=1*/ %then %do;
     record=  "if index(__vtype,'GLABEL')>0 then __suffix='';";                                               output; 
 %end;
 
@@ -2464,7 +2438,7 @@ run;
 
 
 
-%if %upcase(&aetable)=EVENTSE %then %do;
+%if %upcase(&defreport_aetable)=EVENTSE %then %do;
   
     data rrgpgmtmp;
     length record $ 2000;
@@ -2497,7 +2471,7 @@ run;
 
 
 
-%if %upcase(&aetable)=EVENTS %then %do;
+%if %upcase(&defreport_aetable)=EVENTS %then %do;
   
     data rrgpgmtmp;
     length record $ 2000;
@@ -2533,7 +2507,7 @@ run;
 
 
 
-%if %upcase(&aetable)=EVENTSES %then %do;
+%if %upcase(&defreport_aetable)=EVENTSES %then %do;
     data rrgpgmtmp;
     length record $ 2000;
     keep record;
@@ -2609,21 +2583,7 @@ record=  "id __trtid;";                                                         
 record=  "var __col;";                                                                                                   output;
 record=  "run;";                                                                                                         output;
 record=  " ";                                                                                                            output;
-run;
 
-proc append base=rrgpgm data=rrgpgmtmp;
-run; 
-
-data rrgpgmtmp;
-length record $ 2000;
-keep record;
-
-set __repinfo;
-
-colhead1=quote(strip(colhead1));
-colhead1   = tranwrd(strip(colhead1),"#lpar","(");
-colhead1   = tranwrd(strip(colhead1),"#rpar",")");
-colhead1   = tranwrd(strip(colhead1),"#squot","'");
 
 record=  "data __head;";                                                                                    output;
 record=  '  length __datatype $ 8 __align __col_0 - __col_&maxtrt $ 2000;';                                 output;
@@ -2633,10 +2593,10 @@ record=  '  array __col{*} __col_1-__col_&maxtrt;';                             
 record=  "  __col_0='';";                                                                                   output;
 
 %if &nvarby=0 %then %do;
-    record=  "  if eof then __col_0 = " ||strip(colhead1)|| ";";                                              output;
+    record=  "  if eof then __col_0 = " ||quote(dequote(strip(symget("defreport_colhead1"))))|| ";";                                              output;
 %end;
 %else %do;
-    record=  "  if last.&&vby&nvarby then __col_0 = " ||strip(colhead1)||";";                               output;
+    record=  "  if last.&&vby&nvarby then __col_0 = " ||quote(dequote(strip(symget("defreport_colhead1"))))||";";                               output;
 %end;
 
 record=  "  __datatype='HEAD';";                                                                            output;
@@ -2656,7 +2616,7 @@ run;
 
 %__spanh(dsin=__head);
 
-%if %upcase(&aetable)=EVENTS   %then %do;
+%if %upcase(&defreport_aetable)=EVENTS   %then %do;
 
     data rrgpgmtmp;
     length record $ 2000;
@@ -2737,7 +2697,7 @@ run;
 %end;
 
 
-%if %upcase(&aetable)=EVENTSES %then %do;
+%if %upcase(&defreport_aetable)=EVENTSES %then %do;
 
     data rrgpgmtmp;
     length record $ 2000;
@@ -2948,7 +2908,7 @@ run;
 data rrgpgmtmp;
 length record $ 2000;
 keep record;
-set __repinfo;
+*set __repinfo;
 
 %if &nvarby>0 %then %do;
   
@@ -3072,13 +3032,7 @@ run;
 proc append base=rrgpgm data=rrgpgmtmp;
 run; 
 
-data __repinfo;
-  set __repinfo;
-  rtype='';
-  dist2next='';
-  lastcheadid=0;
-  gcols='';
-run;  
+
 
 
 %__makerepinfo;
@@ -3120,7 +3074,7 @@ proc sql noprint;
 
 
 
-%if &isincolv=Y %then %do;
+%if &defreport_statsincolumn=Y %then %do;
  
   %__rrg_unindentv;
   
@@ -3189,14 +3143,16 @@ data _null_;
   
 run;
 
-/*
+
 data _null_;
   set rrgpgm;
    file "c:/tmp/&rrguri..sas"  lrecl=1000;
   put record  ;
   
 run;
-*/
+
+
+%if &rrg_debug>0 %then %do;
 data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -3207,10 +3163,10 @@ data __timer;
 		  output;
 		end;
 run;
-
+%end;
 
 %inc "&__workdir./rrgpgm.sas";
-
+%if &rrg_debug>0 %then %do;
 data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -3221,7 +3177,7 @@ data __timer;
 		  output;
 		end;
 run;
-
+%end;
 %exit:
 
 

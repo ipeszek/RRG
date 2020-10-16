@@ -136,7 +136,7 @@ run;
    
 %if %upcase(&showmiss)=Y or %upcase(&showmiss)=A or %length(&totaltext) %then %do;
         %local dsid rc vnum vtype vlen;
-        %let dsid = %sysfunc(open(&dataset));
+        %let dsid = %sysfunc(open(&defreport_dataset));
         %let vnum = %sysfunc(varnum(&dsid,&var));
         %let vtype=%sysfunc(vartype(&dsid, &vnum));
         %let vlen = %sysfunc(varlen(&dsid, &vnum));

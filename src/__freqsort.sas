@@ -149,7 +149,7 @@ if eof then do;
     record = " ";output;
     record = " ";output;
 
-    %if %upcase(&ordervar)=__ORDER and %upcase(&Statsacross) ne Y
+    %if %upcase(&ordervar)=__ORDER and %upcase(&defreport_statsacross) ne Y
      and %length(&sortmods)=0 %then %do;
      
         record = " ";output;
@@ -180,7 +180,7 @@ run;
 
 %if %upcase(&ordervar) ne __ORDER or %length(&sortmods)>0  %then %do;
   
-    %if %upcase(&Statsacross) ne Y and %length(&sortmods)=0  %then %do;
+    %if %upcase(&defreport_statsacross) ne Y and %length(&sortmods)=0  %then %do;
   
         
         data rrgpgmtmp;

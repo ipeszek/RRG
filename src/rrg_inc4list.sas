@@ -38,22 +38,24 @@
 %end;  
 
 
-%if %sysfunc(exist(__rrginc))=0 %then %do;
+%if %sysfunc(exist(rrginc)) %then %do;
     data __tmp;
     length record $ 2000;
+    keep record;
     record =  '%inc '||"'"||cats(symget("string"))||"' ;";;
     call execute(cats('%nrstr(',record,')'));
     run;
     
-    proc append data=__tmp base=__rrginc;
+    proc append data=__tmp base=rrginc;
     run;
 
 %end;
 
 %else %do;
   
-   data __rrginc;
+   data rrginc;
     length record $ 2000;
+    keep record;
     record =  '%inc '||"'"||cats(symget("string"))||"' ;";;
    call execute(cats('%nrstr(',record,')'));
    run;

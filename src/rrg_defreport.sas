@@ -90,8 +90,30 @@ csfoot_fs tablepart
 cpapersize corient coutformat cfontsize cfont cmargins 
 cshead_l cshead_r cshead_m csfoot_l csfoot_m csfoot_r 
 splitchars esc_char  gen_size_info rtf_linesplit
-orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf
+orderby cwatermark savercd   bookmark_rtf bookmark_pdf
 ;
+
+%global defreport_pooled4stats defreport_statsincolumn defreport_statsacross defreport_savercd 
+      defreport_print defreport_colhead1 defreport_popwhere defreport_dataset
+      defreport_tabwhere defreport_warnonnomatch defreport_debug defreport_aetable defreport_nodatamsg defreport_subjid
+      defreport_aetable;
+
+%let defreport_statsincolumn=%upcase(&statsincolumn);
+%if %length(&statsincolumns)>0 %then  %let defreport_statsacross=%upcase(&statsincolumns);;
+%let defreport_pooled4stats=%upcase(&pooled4stats);
+%let defreport_print=%upcase(&print);
+%let defreport_savercd=%upcase(&savercd);
+%let defreport_colhead1=&colhead1;
+
+%let defreport_popwhere                             =     &popwhere                  ;
+%let defreport_dataset                              =     &dataset                   ;
+%let defreport_tabwhere                             =     &tabwhere                  ;
+%let defreport_warnonnomatch                        =     &warnonnomatch             ;
+%let defreport_debug                                =     &debug                     ;
+%let defreport_nodatamsg                            =     &nodatamsg                 ;
+%let defreport_subjid                               =     &subjid                    ;
+                                                                                     
+%if &rrg_debug>0 %then %do;
 
 data __timer;
   set __timer end=eof;
@@ -104,19 +126,21 @@ data __timer;
 		end;
 run;
 
-%let aetable=N;
+%end;
+
+%let defreport_aetable=N;
 %if %upcase(&reptype)=EVENTS %then %do;
-  %if %qupcase(&eventcnt)=Y %then %let aetable=EVENTS;
-  %else %if %qupcase(&eventcnt)=%nrbquote(Y(SE)) %then %let aetable=EVENTS;
-  %else %if %qupcase(&eventcnt)=%nrbquote(Y(ES)) %then %let aetable=EVENTSES;
-  %else %if %qupcase(&eventcnt)=%nrbquote(Y(E)) %then %let  aetable=EVENTSE;
-  %else %let aetable=Y;
+  %if %qupcase(&eventcnt)=Y %then %let defreport_aetable=EVENTS;
+  %else %if %qupcase(&eventcnt)=%nrbquote(Y(SE)) %then %let defreport_aetable=EVENTS;
+  %else %if %qupcase(&eventcnt)=%nrbquote(Y(ES)) %then %let defreport_aetable=EVENTSES;
+  %else %if %qupcase(&eventcnt)=%nrbquote(Y(E)) %then %let  defreport_aetable=EVENTSE;
+  %else %let defreport_aetable=Y;
 %end;
 
 
 %let tablepart=%upcase(&tablepart);
 
-%if %length(&statsincolumns)>0 %then %let statsacross=&statsincolumns;
+
 
 %local nsubjid nindentsize nwarnonnomatch 
        npapersize nfontsize nfont nmargins nsystitle_l
@@ -143,14 +167,6 @@ run;
 %__defcomm;
 
 
-data __repinfo;
-	set __repinfo;
-pooled4stats = "&pooled4stats";
-/*
-if bookmarks_pdf ne '' or bookmarks_rtf ne '' then sprops = 
-sprops = cats( sprops, ',bookmarks_enabled=true');
-*/
-run;
 
 
 
@@ -300,17 +316,5 @@ run;
 
 %skipdef:
 
-/*
-data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "Defreport finished";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
-*/	
 
 %mend;

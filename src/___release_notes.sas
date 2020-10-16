@@ -12,6 +12,9 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
   
+08Oct2020 if rrg_debug is set to 1 prior to invoking rrg-init, additional info is printed/created. In particular, dataset __execution
+  is created in rrgpgmpath folder with execution statistics.   
+  
 01Oct2020 rewrote to improve performance (generated program stored in dataset and written to file at the end, and many other performance improvements)
           removed metadata finctionality
           updated no-data functionality to create report with titles, headers and footnotes  

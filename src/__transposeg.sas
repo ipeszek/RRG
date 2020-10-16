@@ -344,7 +344,7 @@ record= " "; output;
 
   
     %__getcntg(datain=__dataset, 
-          unit=&subjid, 
+          unit=&defreport_subjid, 
           group=&varby4pop &tmptrt,
           cnt=__nline_&i, 
           dataout=__nline_&i);

@@ -18,7 +18,7 @@ data __catv_t;
   set &vinfods (where=(upcase(type)='TRT'));
   run;
 
-proc sql ;
+proc sql noprint;
   select trim(left(name))      into:var    separated by ' ' from  __catv_t;
   select trim(left(fmt))       into:fmt    separated by ' ' from  __catv_t;
   select trim(left(desc))       into:desc    separated by ' ' from  __catv_t;
@@ -86,9 +86,14 @@ data __CODES4TRT_exec;
     end;
 run;
 
+%if &rrg_debug=1 %then %do;
+  
 proc print data=__CODES4TRT_exec;
   title '__CODES4TRT_exec';
 run;
+
+%end;
+
 
 
 data __CODES4TRT_exec;

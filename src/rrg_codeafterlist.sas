@@ -25,16 +25,6 @@ ds used:
 %let st=;
 
 
-data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "CODEAFTERLIST STARTED";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
 
 %if %upcase(&rrgfinalize)=Y %then %do;
   %put &WAR.NING: =======  DID YOU FORGET TO SET FINALIZE=N IN RRG GENLIST? PROGRAM MAY MALFUNCTION...====== ;
@@ -266,8 +256,25 @@ end;
 
 run;
 
+%if &rrg_debug>0 %then %do;
+  
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "CODEAFTERLIST STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+
+%end;
+
 &st;
 
+%if &rrg_debug>0 %then %do;
+  
 data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -278,6 +285,8 @@ data __timer;
 		  output;
 		end;
 run;
+
+%end;
 
 %mend rrg_codeafterlist;
 

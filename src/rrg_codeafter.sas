@@ -23,16 +23,7 @@ ds created RRGCODEAFTER
 %local st ;
 %let st=;
 
-data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "RRGCODEAFTER STARTED";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
+
 
 %if %upcase(&rrgfinalize)=Y %then %do;
   %put &WAR.NING: =======  DID YOU FORGET TO SET FINALIZE=N IN RRG GENLIST? ====== ;
@@ -263,8 +254,27 @@ end;
 
 run;
 
+%if &rrg_debug>0 %then %do;
+  
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "RRGCODEAFTER STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+
+%end;
+
 &st;
 
+%if &rrg_debug>0 %then %do;
+
+  
+  
 data __timer;
   set __timer end=eof;
 	output;
@@ -275,5 +285,6 @@ data __timer;
 		end;
 run;
 
+%end;
 %mend rrg_codeafter;
 

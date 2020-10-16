@@ -9,7 +9,6 @@
 %macro __cond(
 outds=,
 varid=,
-tabwhere=,
 unit=,
 groupvars4pop=, 
 groupvarsn4pop=,
@@ -26,7 +25,7 @@ rrg_addcond macro. It was supposed to be the name of the variable which value wa
 
 */
 
-%local outds varid tabwhere  unit groupvars by  events  trtvars 
+%local outds varid   unit groupvars by  events  trtvars 
        denomvars denomwhere stat allstat indent skipline label 
        templateds  grouping  showfirst where pctfmt labelline 
        keepwithnext asubjid templatewhere show0cnt notcondition labelvar
@@ -144,8 +143,6 @@ run;
 data rrgpgmtmp;
 length record $ 2000;
 keep record;
-length __where $ 2000;
-__where = trim(left(symget("where")));
 
 %if %length(&labelvar) %then %do;
     record=" "; output;
@@ -157,14 +154,16 @@ __where = trim(left(symget("where")));
     record=" "; output;
     record=" proc sql noprint;"; output;
     record=" select distinct &labelvar into: label4cond separated by ' ' "; output;
-    record=" from __dataset (where=(&tabwhere and &where));"; output;
+    record=" from __dataset (where=(";
+    record=strip(record)|| trim(left(symget("defreport_tabwhere")))||" and "
+    record=strip(record)|| trim(left(symget("where"))) ||" ));"; output;
     record="quit;"; output;
     record=" "; output;
 %end;
 
 record=" "; output;
 record="*-----------------------------------------------------------------------;" ; output;
-record="* COUNT SUBJECTS SATISFYING CONDITION "||strip(__where)|| ";";  output;
+record="* COUNT SUBJECTS SATISFYING CONDITION "||trim(left(symget("where")))|| ";";  output;
 record="*-----------------------------------------------------------------------;" ; output;
 
 record=" "; output;
@@ -175,7 +174,7 @@ record=" "; output;
 
     %let events=N;
     
-    %__getcntg(datain=__dataset (where=(&tabwhere and &where)), 
+    %__getcntg(datain=__dataset (where=(&defreport_tabwhere and &where)), 
               unit=__eventid, 
               group=__tby &groupvars &by __trtid &trtvars, 
               cnt=__cnt, 
@@ -185,14 +184,14 @@ record=" "; output;
 
 %else %do;
 
-    %__getcntg(datain=__dataset (where=(&tabwhere and &where)), 
+    %__getcntg(datain=__dataset (where=(&defreport_tabwhere and &where)), 
               unit=&unit, 
               group=__tby &groupvars &by __trtid &trtvars, 
               cnt=__cnt, 
               dataout=__condcnt);
               
     %if %index(&events,EVENTS) >0  %then %do;
-        %__getcntg(datain=__dataset (where=(&tabwhere and &where)), 
+        %__getcntg(datain=__dataset (where=(&defreport_tabwhere and &where)), 
                   unit=__eventid, 
                   group=__tby &groupvars &by __trtid  &trtvars , 
                   cnt=__cntevt, 
@@ -212,7 +211,7 @@ record=" "; output;
 
    
   
-    %__getcntg(datain=__dataset (where=(&tabwhere)), 
+    %__getcntg(datain=__dataset (where=(&defreport_tabwhere)), 
             unit=&unit, 
             group=__tby &groupvars &by __trtid &trtvars, 
             cnt=__cnt_tmp, 
@@ -309,7 +308,8 @@ record='  %end;'; output;
 record=" "; output;
 record='  %else %do;'; output;
 
-record="    proc sort data=__dataset (where=(&tabwhere))"; output;
+record="    proc sort data=__dataset (where=( ";
+record=   strip(record)|| trim(left(symget("defreport_tabwhere")))||"))"; output;
 record="     out= __condcnt (keep = &denomvars __trtid &trtvars __tby) "; output;
 record="     nodupkey;"; output;
 record="     by  &denomvars __trtid &trtvars __tby;"; output;
@@ -341,7 +341,7 @@ record=" "; output;
         record="    proc sql noprint nowarn;"; output;
         record="      create table __tmp as select * from __condcnt "; output;
         record="      cross join (select distinct &gvsql "; output;
-        record="      from __dataset (where=(&tabwhere)));"; output;
+        record="      from __dataset (where=( "||trim(left(symget("defreport_tabwhere"))) || ")));"; output;
         record="      create table __condcnt as select * from __tmp;"; output;
         record="    quit;"; output;
     %end;
@@ -479,7 +479,7 @@ record=" "; output;
     record=" "; output;
     record="proc sql noprint;                                 "; output;
     record="create table __bymods as select distinct &sqlby   "; output;
-    record="from __dataset (where=(&tabwhere))                ";  output;
+    record="from __dataset (where=( "||trim(left(symget("defreport_tabwhere"))) || " ))";  output;
     record="order by &sqlby;                                  "; output;
     record="quit;                                             ";  output;  
     record=" "; output;
@@ -673,7 +673,7 @@ run;
       record="*-------------------------------------------------------------;"; output;
       record=" "; output;
       record="data __datasetp;"; output;
-      record="set __dataset(where=(&tabwhere &pooledstr));"; output;
+      record="set __dataset(where=("||  trim(left(symget("defreport_tabwhere")))  ||" &pooledstr));"; output;
       record="  if &where then __condok=1;"; output;
       record="  else __condok=0;"; output;
       record="run;"; output;
@@ -744,7 +744,7 @@ run;
         if parms ne '' then do;
          record=strip(parms)|| ","; output;
         end;
-        record="   subjid = &subjid);"; output;
+        record="   subjid = &defreport_subjid);"; output;
         record=" "; output;
        
         
@@ -1030,7 +1030,7 @@ record="  __vtype='COND';"; output;
 record="__grpid=999;"; output;
 record="  __skipline=cats('" ||strip("&skipline")|| "');"; output;
 length __label $ 2000;
-__label = quote(dequote(trim(left(symget("label"))))); output;
+__label = quote(dequote(trim(left(symget("label"))))); 
 %local ngrpv;
 %let ngrpv=0;
 %if %upcase(&grouping)=N %then %do; 

@@ -44,7 +44,7 @@
    
         data _null_;
         file "&v_fil_loc" mod lrecl=32000;;
-        put ' ';
+        put " ";
         run;
   
     %end;

@@ -10,7 +10,6 @@
 dsin =,
 dsinrrg=,
 varid=,
-tabwhere=, 
 unit=, 
 groupvars4pop=, 
 groupvarsn4pop=,
@@ -26,9 +25,9 @@ outds=)/store;
 %local allgrpcnt i j lastms;
 
 
-%local dsin varid tabwhere unit groupvars by aetable  
+%local dsin varid  unit groupvars by aetable  
            outds dsinrrg
-       tabwhere where   unit var  by trtvars 
+        where   unit var  by trtvars 
        fmt    indent skipline   label 
        outds labelline  decode  countwhat outds  codes codesds
        warn_on_nomatch indent stats ovstat codes codesds totalpos
@@ -116,8 +115,6 @@ quit;
 data rrgpgmtmp;
 length record $ 2000;
 keep record;
-__tabwhere = cats(symget("tabwhere"));
-__where = cats(symget("where"));
 record= " "; output;
 record= "*-------------------------------------------------------------;"; output;
 record= "*  CALCULATE STATISTICS FOR &VAR      ;";                         output;
@@ -135,7 +132,7 @@ record= "*-------------------------------------------------------------;"; outpu
 record= " "; output;
 record= "proc sql noprint;";                                               output;
 record= "  create table __datasetc as select * ";                          output;
-record= "     from __dataset (where=("||strip(__tabwhere)||" and "||strip(__where)|| "));";   output;     
+record= "     from __dataset (where=("||strip(symget("defreport_tabwhere"))||" and "||strip(symget("where")) || "));";   output;     
 record= "quit;";                                                           output;
 record= " "; output;
 record= '%local dsid rc nobs ;';                                           output;
@@ -497,7 +494,9 @@ run;
        record= "*-------------------------------------------------------------;";    output;
         record=" "; output;                                                                          
         record= "data __datasetp;";                                                   output;
-        record= "set __dataset(where=(&tabwhere and &where &pooledstr));";            output;
+        record= "set __dataset(where=( ";
+        record=strip(record)|| strip(symget("defreport_tabwhere")) || " and ";
+        record=strip(record)|| strip(symget("where")) || " &pooledstr));";            output;
         record= "run;";                                                               output;
         record=" "; output;                                                                          
         record= "data __bincntds;";                                                   output;
@@ -575,7 +574,7 @@ run;
         if parms ne '' then do;                     
            record= strip(parms)|| ",";                       output;
         end;                                        
-        record= "   subjid=&subjid);";              output;
+        record= "   subjid=&defreport_subjid);";              output;
         record=" "; output;                                        output;
         %local modelds;                             
         call symput ('modelds', cats(name));        
@@ -943,7 +942,7 @@ record= "  if __tmpl1 ne '' then __varlabel = __tmpl1;   "; output;
 record=" "; output;  
 record= "__keepnvar='"||strip("&keepn")|| "';"; output;
 record=" "; output;
-%if %upcase(&Statsacross)=Y and &ngrpv>0 %then %do;
+%if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
     record= "  __indentlev=max(&indent+&ngrpv-1,0);"; output;
 %end;
 %else %do;

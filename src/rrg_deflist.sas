@@ -85,6 +85,18 @@ splitchars esc_char  gen_size_info rtf_linesplit
 orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf
 ;
 
+%global defreport_pooled4stats defreport_statsincolumn defreport_statsacross defreport_savercd 
+      defreport_print defreport_colhead1 defreport_popwhere defreport_dataset
+      defreport_tabwhere defreport_warnonnomatch defreport_debug defreport_aetable defreport_nodatamsg defreport_subjid
+      defreport_aetable;
+%let defreport_print=%upcase(&print);
+%let defreport_savercd=%upcase(&savercd);
+%let defreport_dataset                              =     &dataset                   ;
+%let defreport_debug                                =     &debug                     ;
+%let defreport_nodatamsg                            =     &nodatamsg                 ;
+
+
+%if &rrg_debug>0 %then %do;
 data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -95,6 +107,7 @@ data __timer;
 		  output;
 		end;
 run;
+%end;
 
 %let tablepart=;
 

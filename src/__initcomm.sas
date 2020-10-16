@@ -32,7 +32,7 @@
 %macro __initcomm /store;
 
 
-%global rrgfinalize rrgfinalize_er er ror rrgfinalize_done;
+%global rrgfinalize rrgfinalize_er er ror rrgfinalize_done rrg_debug;
 %let rrgfinalize=N;
 %let rrgfinalize_er=0;
 %let er=ER;
@@ -57,11 +57,13 @@ delete __:;
 run;
 quit;
 
+%if &rrg_debug>0 %then %do;
 data __timer;
 	length task $ 100;
 		task = "Program Starts";
 		dt=datetime(); ;
 run;	
+%end;
 
 *----------------------------------------------------------------;
 * STORE USER OPTIONS ;

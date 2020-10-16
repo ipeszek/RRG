@@ -22,16 +22,7 @@
 %local st ;
 %let st=;
 
-data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "Codebefore started";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
+
 
 data rrgcodebefore;
 length string ns tmp  $ 32000;
@@ -261,20 +252,37 @@ end;
 keep record;
 run;
 
-
-
-&st;
-
+%if &rrg_debug>0 %then %do;
+  
 data __timer;
   set __timer end=eof;
 	length task $ 100;
 	output;
 		if eof then do; 
-		  task = "codebefore ended";
+		  task = "Codebefore started";
 		  dt=datetime(); 
 		  output;
 		end;
 run;
+
+%end;
+
+&st;
+
+%if &rrg_debug>0 %then %do;
+  
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "codebefore finished";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+
+%end;
 
 
 %mend;

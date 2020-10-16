@@ -166,6 +166,7 @@ Notes:
 
     data __rrgjoinds;
     length record $ 2000;
+    keep record;
     %if %length(&notin1) and %length(&notin2) %then %do;
         record= "proc sql noprint nowarn;"; output;
         record= "  create table __tmp as select distinct ";output;
@@ -318,19 +319,21 @@ Notes:
 %end;
 
 
-/*
 
-data __usedds0;
-  length ds $ 2000;
-  ds = strip(symget("data1"));
-  output;
-  ds = strip(symget("data2"));
-  output;
-run;
+%if %sysfunc(exist(rrgjoinds)) %then %do;
+    
+    
+    proc append data=__rrgjoinds base=rrgjoinds;
+    run;
 
-data __usedds;
-  set __usedds __usedds0;
+%end;
+
+%else %do;
+  
+   data rrgjoinds;
+  set __rrgjoinds;
 run;
-*/
+  
+%end;
 
 %mend ;

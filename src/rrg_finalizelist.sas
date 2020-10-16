@@ -10,7 +10,7 @@
 
 %local debug  savexml output_engine;  
 
-%rrg_finalize(debug=0, savexml=, output_engine=JAVA, replace=)  ;
+%rrg_finalize(debug=&debug, savexml=, output_engine=JAVA, replace=)  ;
 
     
  

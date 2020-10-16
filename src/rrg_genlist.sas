@@ -20,7 +20,7 @@
     - if finalize=Y then : 
         writes rrgpgmds to &rrguri.sas file, 
         submits &rrguri.sas,
-        saves rcd (if requested), saves gentxt (if requested)
+        saves rcd (if requested)
     
     
     
@@ -62,18 +62,17 @@
 %let numpagev=0;
 %let numspanv=0;
 
-%local  z   appendm nodatamsg savercd gentxt;
+%local  z   appendm nodatamsg ;
 
  
 
 proc sql noprint;
-  select dataset,  orderby, indentsize,  nodatamsg, 
-    savercd, gentxt , filename, print            
+  select dataset,  orderby, indentsize,  nodatamsg, filename        
            into
-         :dataset,:orderby, :indentsize,  :nodatamsg, 
-         :savercd, :gentxt   ,:filename,:print
+     :dataset,:orderby, :indentsize,  :nodatamsg,  :filename
          separated by ' '
        from __repinfo;
+       
   select max(varid) into: numvars separated by ' ' from __varinfo;    
 quit;
 
@@ -222,11 +221,11 @@ run;
 
 data __repinfo;
   set __repinfo;
-  lastcheadid=&lastcheadid;
-  gcols = cats(symget("gcols"));
-  colwidths = cats(symget("colwidths"));
-  dist2next = cats(symget("dist2next"));
-  stretch = cats(symget("stretch"));
+  lastcheadid=strip(symget("lastcheadid"));
+  gcols = strip(symget("gcols"));
+  colwidths = strip(symget("colwidths"));
+  dist2next = strip(symget("dist2next"));
+  stretch = strip(symget("stretch"));
   breakokat = trim(left(symget("breakokat")));
   rtype = 'LISTING';
 run;  
@@ -369,7 +368,7 @@ data rrgpgmtmp;
         record= "  __rowid=_n_;";  output;
         record= "  __tmp='';";  output;
         record= "  __tmp2='';";  output;
-        record=" ";
+        record=" ";output;
 
         %if &isspanrow=1 %then %do;
             record= "retain __fospanvar;";  output;
@@ -515,7 +514,7 @@ data rrgpgmtmp;
             record= "__first_&i=0;";  output;
         %end;
         /* create "no data" as __tcol;*/
-        record= "__tcol='&nodatamsg';";  output;
+        record= "__tcol='"||strip(symget("nodatamsg"))||"';";  output;
         record= "__col_0=' ';";  output;
         record= "__datatype='TBODY';";  output;
         record= "__align='C';";  output;
@@ -669,7 +668,7 @@ data _null_;
   put record  ;
   
 run;
-
+%if &rrg_debug>0 %then %do;
 data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -680,9 +679,11 @@ data __timer;
 		  output;
 		end;
 run;
+%end;
 
 %inc "&__workdir./rrgpgm.sas";
 
+%if &rrg_debug>0 %then %do;
 data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -693,6 +694,7 @@ data __timer;
 		  output;
 		end;
 run;
+%end;
 
 %if %upcase(&finalize) =Y %then %do;
   

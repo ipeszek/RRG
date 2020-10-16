@@ -17,7 +17,6 @@
 
 %macro __cont (
 varid=,
-tabwhere=, 
 unit=, 
 groupvars4pop=, 
 groupvarsn4pop=,
@@ -29,10 +28,10 @@ outds=)/store;
 
 
 
-%local varid tabwhere where unit var groupvars trtvars stat statsetid
+%local varid  where unit var groupvars trtvars stat statsetid
        indent skipline   label labelline indent groupvars4pop groupvarsn4pop
        basedec basedecds outds align j outds by ovstat by4pop byn4pop
-       decinfmt sdfmt keepn templatewhere popgrp popwhere groupvars  condfmt 
+       decinfmt sdfmt keepn templatewhere popgrp  groupvars  condfmt 
        pvfmt maxdec showneg0;
 
 %let by = &by4pop &byn4pop;
@@ -56,7 +55,6 @@ run;
 %let indent=0;
 proc sql noprint;
   select trim(left(where))     into:where         separated by ' ' from  __contv;
-  select trim(left(popwhere))  into:popwhere      separated by ' ' from  __contv;
   select trim(left(popgrp))    into:popgrp        separated by ' ' from  __contv;
   select trim(left(templatewhere))    
                                into:templatewhere separated by ' ' from  __contv;
@@ -84,8 +82,7 @@ quit;
 
 
 %if %length(&where)=0 %then %let where=%str(1=1);
-%if %length(&tabwhere)=0 %then %let tabwhere=%str(1=1);
-%if %length(&templatewhere)=0 %then %let templatewhere = &where and &tabwhere;
+%if %length(&templatewhere)=0 %then %let templatewhere = &where and &defreport_tabwhere;
 
 %if %length(&popgrp)=0 %then %let popgrp=&groupvars4pop &by4pop;
 
@@ -105,7 +102,7 @@ quit;
 %* FOR TABLES WITH STATISTICS IN COLUMNS, THIS IS IGNORED,;
 %* AS WELL AS INDENTATION;
    
-%if %upcase(&Statsacross)=Y %then %do;
+%if %upcase(&defreport_statsacross)=Y %then %do;
     %let labelline=0;
     %let indent=0;
 %end;
@@ -379,8 +376,6 @@ run;
 data rrgpgmtmp;
 length record $ 2000;
 keep record;
-__tabwhere = cats(symget("tabwhere"));
-__where = cats(symget("where"));
 record=" "; output;
 record="  *------------------------------------------------------------------;"; output;
 record="  * SELECT ONLY UNIQUE RECORDS PER GROUPING VARIABLE;"; output;
@@ -395,7 +390,7 @@ record=" "; output;
 record="  proc sql noprint;"; output;
 record="       create table __contds2 as select distinct"; output;
 record="       &tmp"; output;
-record="       from __dataset (where=( " ||strip(__tabwhere)|| " and "||strip(__where)|| "))"; output;
+record="       from __dataset (where=( "|| strip(symget("defreport_tabwhere"))||" and "||strip(symget("where")) ||"))"; output;
 record="       order by "; output;
 record="       &tmp;"; output;
 record="  quit;"; output;
@@ -464,7 +459,6 @@ record=" ";output;
       record="  *-----------------------------------------------------;";output;
       record=" ";output;
 
-      %if %length(&popwhere)=0 %then %let popwhere=%str(1=1);
 
       %* calculate number of missing;
 
@@ -476,7 +470,8 @@ record=" ";output;
 
       record="  proc sql noprint;";output;
       record="    create table __nm as select count(*) as __totn, &tmp";output;
-      record="    from (select distinct &tmp, &unit from __dataset(where=(&var ne . and &tabwhere and &where )))";output;
+      record="    from (select distinct &tmp, &unit from __dataset(where=(&var ne . and ";
+      record=  strip(record)|| strip(symget("defreport_tabwhere")) || " and"  || strip(symget("where")) ||")))";output;
       record="    group by &tmp";output;
       record="    order by &tmp";output;
       record="    ;";output;
@@ -565,11 +560,8 @@ quit;
 data rrgpgmtmp;
 length record $ 2000;
 keep record;
-length __tabwhere __where $ 2000;
-__tabwhere = cats(symget("tabwhere"));
-__where = cats(symget("where"));
-__templatewhere = cats(symget("templatewhere"));
-if __templatewhere='' then __templatewhere='1=1';
+
+
 
 
 record = " ";                                                                                                             output;
@@ -589,7 +581,7 @@ record = " ";                                                                   
     record =  "  create table __tmp1 as select * from ";                                                                  output;
     record =  "  (select distinct";                                                                                       output;
     record =  "     &tmp_nt";                                                                                             output;
-    record =  "     from __dataset (where=( " ||strip(__templatewhere)|| ")))";                                                      output;
+    record =  "     from __dataset (where=( "|| strip(symget("templatewhere")) ||")))";                                                      output;
     record =  "     cross join __grpcodes;";                                                                              output;
     record =  "  create table __tmp as select * from ";                                                                   output;
     record =  "  __tmp1 cross join __contstat0;";                                                                         output;
@@ -599,7 +591,7 @@ record = " ";                                                                   
     record =  "  create table __tmp as select * from ";                                                                   output;
     record =  "  (select distinct";                                                                                       output;
     record =  "     &tmp_nt";                                                                                             output;
-    record =  "     from __dataset (where=( " ||strip(__templatewhere)|| ")))";                                                      output;
+    record =  "     from __dataset (where=( "|| strip(symget("templatewhere")) ||")))";                                                      output;
     record =  "     cross join __contstat0;";                                                                             output;
 %end;
 
@@ -999,7 +991,7 @@ run;
             record=" ";output;
             
             record="  data __datasetp;";output;
-            record="  set __dataset(where=(&tabwhere and &where &pooledstr));";output;
+            record="  set __dataset(where=("|| strip(symget("defreport_tabwhere"))|| " and "|| strip(symget("where")) || " &pooledstr));";output;
            
             record="  run;";output;
             record=" ";output;
@@ -1079,7 +1071,7 @@ run;
           if parms ne '' then do;
               record=strip(parms)||",";output;
           end;
-          record="     subjid=&subjid);";output;
+          record="     subjid=&defreport_subjid);";output;
           record=" ";output;
           
           
@@ -1340,7 +1332,7 @@ record="  __keepnvar='"|| "&keepn"|| "';";output;
 %let ngrpv=0;
 %if %length(&groupvars) %then %let ngrpv = %sysfunc(countw(&groupvars,%str( )));
 
-%if %upcase(&Statsacross)=Y and &ngrpv>0 %then %do;
+%if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
     record="  __indentlev=max(&indent+&ngrpv-1,0);";output;
 %end;
 %else %do;

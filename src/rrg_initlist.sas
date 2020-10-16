@@ -23,7 +23,7 @@
 %macro RRG_initlist (URI=, purpose=, outname=)/store;
   
   
-  %rrg_init(uri=&uri, purpose=&purpose, outname=outname);
+  %rrg_init(uri=&uri, purpose=&purpose, outname=&outname);
 
 
 

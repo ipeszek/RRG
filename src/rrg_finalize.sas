@@ -14,14 +14,15 @@
   
   
 %local debug  savexml output_engine  varby ;  
-%local  tablepart print replace;
+%local  tablepart  replace;
  
 
-%local debug savexml savercd gentxt  ;
+%local debug savexml    ;
 
 %local rrgoutpathlazy ;
 %let rrgoutpathlazy=&rrgoutpath;
-  
+
+%if &rrg_debug>0 %then %do; 
 data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -32,17 +33,15 @@ data __timer;
 		  output;
 		end;
 run;
+
+%end;
   
 proc sql noprint;
   
   %if %sysfunc(exist(__varinfo)) %then %do;
     select name into:varby separated by ' ' from __varinfo(where=( upcase(page)='Y'));
   %end;
-  select   savercd, gentxt , print            
-           into
-           :savercd, :gentxt,  :print
-         separated by ' '
-       from __repinfo;
+  
 quit;
 
 
@@ -82,7 +81,7 @@ data rrgfinalize;;
 
 %* CREATE RTF AND/OR PDF OUTPUT;
 
-%if %upcase(&print)=Y  %then %do;
+%if %upcase(&defreport_print)=Y  %then %do;
   
 
     record= " ";                                                                                                       output;
@@ -132,7 +131,8 @@ run;
     set rrgfinalize;
     call execute(cats('%nrstr(',record,')'));
     
-    data __timer;
+   %if &rrg_debug>0 %then %do; 
+  data __timer;
   set __timer end=eof;
 	length task $ 100;
 	output;
@@ -142,14 +142,14 @@ run;
 		  output;
 		end;
 run;
-  run;
+%end;
 
 %end;
 
 %*-------------------------------------------------;
 %* CREATE GENERATED PROGRAM;
 %*-------------------------------------------------;
-
+%if &rrg_debug>0 %then %do;
 data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -160,11 +160,15 @@ data __timer;
 		  output;
 		end;
 run;
+%end;
 %if &rrgtablepart = FIRSTANDLAST  %then %do;
 
     data _null_;
       set %if %sysfunc(exist(rrgheader)) %then %do; rrgheader %end;
           %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+          %if %sysfunc(exist(rrginc)) %then %do; rrginc %end;
+          %if %sysfunc(exist(rrgjoinds)) %then %do; rrgjoinds %end;
+
           %if %sysfunc(exist(rrgcodebefore)) %then %do; rrgcodebefore %end;
           rrgpgm 
           %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end;
@@ -181,6 +185,11 @@ run;
     data rrgpgm0;
         set %if %sysfunc(exist(rrgheader)) %then %do; rrgheader %end;
           %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+          %if %sysfunc(exist(rrginc)) %then %do; rrginc %end;
+          %if %sysfunc(exist(rrgjoinds)) %then %do; rrgjoinds %end;
+
+          
+
           %if %sysfunc(exist(rrgcodebefore)) %then %do; rrgcodebefore %end;
           rrgpgm 
           %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end;
@@ -220,24 +229,24 @@ run;
 
 
 
-
+%if &rrg_debug>0 %then %do;
 data __timer;
   set __timer end=eof;
-  format time time8.;
   output;
   if eof then do;
     task = "WRITING GENERATED PROGRAM TO DISK FINISHED";
     time=time(); output;
   end;
 run;  
+%end;
 
 
 
 
 
 
-%if &savercd=Y  %then %do;
-  
+%if &defreport_savercd=Y  %then %do;
+  %if &rrg_debug>0 %then %do;
   data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -248,9 +257,10 @@ run;
 		  output;
 		end;
 run;
+%end;
 
-  %*__savercd_m;
-  
+  %__savercd_m;
+  %if &rrg_debug>0 %then %do;
   data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -262,39 +272,16 @@ run;
 		end;
 run;
 %end;
+%end;
 
 
 
 
-%if %upcase(&gentxt)=Y  %then %do;
 
-data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "GENTXT STARTED";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
-    %*__gentxt_m;
-    
-    data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "GENTXT FINISHED";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
-
-%end; 
 
 LIBNAME rrgOUT "&RRGPGMPATH";
 
+%if &rrg_debug>0 %then %do;
 data __timer;
   set __timer END=EOF ;
   length pgmname $ 50;
@@ -308,6 +295,7 @@ data __timer;
   output;
   IF EOF THEN DO;
     TOTALtm=DT-START;
+    TASK="TOTAL EXECUTION TIME";
     PUT "TOTAL TIME: "  TOTALtm " SECONDS";
     output;
   END;
@@ -315,7 +303,7 @@ run;
 
 proc append data=__timer base=rrgout.__execution;
 run;
-
+%end;
 
 %if &rrgtablepart=LAST or &rrgtablepart=FIRSTANDLAST %then %do;
   

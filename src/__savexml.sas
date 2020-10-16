@@ -17,8 +17,8 @@
 %let varnumfo= %sysfunc(varnum(&dsid, __gcols));
 %let fospan= %sysfunc(varnum(&dsid, __fospan));
 %let rc = %sysfunc(close(&dsid));
-
-
+%if %symexist(rrg_debug)=0 %then %let rrg_debug=0;
+%if &rrg_debug>0 %then %do;
   data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -29,7 +29,7 @@
 		  output;
 		end;
 run;
-
+%end;
 %local numfo i;
 %let numfo=0;
  
@@ -291,6 +291,7 @@ run;
     end;  
   run;
   
+  %if &rrg_debug>0 %then %do;
   data __timer;
   set __timer end=eof;
 	length task $ 100;
@@ -301,5 +302,6 @@ run;
 		  output;
 		end;
 run;
+%end;
 
 %mend;

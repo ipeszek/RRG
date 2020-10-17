@@ -1355,7 +1355,8 @@ quit;
          %let grp&i = %scan(&groupby, &i, %str( ));
          %let tmp = &&grp&i;
          %local grpdec_&&grp&i;
-         select distinct decode, label into :grpdec_&&grp&i, :grplab&i separated by ' '
+         select distinct decode, label into :grpdec_&&grp&i separated by ' ', 
+         :grplab&i separated by ' '
           from __varinfo where upcase(name)=upcase("&&grp&i") 
                and type='GROUP' and page ne 'Y';
         
@@ -1367,7 +1368,7 @@ quit;
          %let vby&i = %scan(&varby, &i, %str( ));
          %let tmp = &&vby&i;
          %local vbdec_&&vby&i;
-         select distinct decode, label  into:vbdec_&&vby&i,:vblabel&i  separated by ' '
+         select distinct decode, label  into:vbdec_&&vby&i separated by ' ',:vblabel&i  separated by ' '
           from __varinfo where upcase(name)=upcase("&&vby&i") 
               and type='GROUP' and page='Y';
         

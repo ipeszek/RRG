@@ -18,17 +18,39 @@ data __catv_t;
   set &vinfods (where=(upcase(type)='TRT'));
   run;
 
-proc sql noprint;
-  select trim(left(name))      into:var    separated by ' ' from  __catv_t;
-  select trim(left(fmt))       into:fmt    separated by ' ' from  __catv_t;
-  select trim(left(desc))       into:desc    separated by ' ' from  __catv_t;
-  select trim(left(codelist))  into:codes  separated by ' ' from  __catv_t;
-  select trim(left(codelistds))into:codelistds separated by ' ' from  __catv_t;
-  select trim(left(delimiter)) into:delimiter separated by ' ' from  __catv_t;
-  select VARID into:ID separated by ' ' from  __catv_t;
-  select trim(left(decode))into:decode separated by ' ' from  __catv_t;
+proc sql noprint;  
+select
+  trim(left(name))                 ,
+  trim(left(fmt))                  ,
+  trim(left(desc))                 ,
+  trim(left(codelist))             ,
+  trim(left(codelistds))           ,
+  trim(left(delimiter))            ,
+  VARID                            ,
+  trim(left(decode))               
+into
+  :var                              separated by ' ' ,
+  :fmt                              separated by ' ' ,
+  :desc                             separated by ' ' ,
+  :codes                            separated by ' ' ,
+  :codelistds                       separated by ' ' ,
+  :delimiter                        separated by ' ' ,
+  :ID                               separated by ' ' ,
+  :decode                           separated by ' ' from  __catv_t;
 quit;
 
+/*
+  
+  select trim(left(name))        into:var        separated by ' ' from  __catv_t;
+  select trim(left(fmt))         into:fmt        separated by ' ' from  __catv_t;
+  select trim(left(desc))        into:desc       separated by ' ' from  __catv_t;
+  select trim(left(codelist))    into:codes      separated by ' ' from  __catv_t;
+  select trim(left(codelistds))  into:codelistds separated by ' ' from  __catv_t;
+  select trim(left(delimiter))   into:delimiter   separated by ' ' from  __catv_t;
+  select VARID                   into:ID          separated by ' ' from  __catv_t;
+  select trim(left(decode))      into:decode      separated by ' ' from  __catv_t;
+quit;
+*/
 %if %length(&codelistds) %then %do;
     data __&codelistds._exec __&codelistds; 
       set &codelistds;

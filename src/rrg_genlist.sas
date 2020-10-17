@@ -69,8 +69,8 @@
 proc sql noprint;
   select dataset,  orderby, indentsize,  nodatamsg, filename        
            into
-     :dataset,:orderby, :indentsize,  :nodatamsg,  :filename
-         separated by ' '
+     :dataset separated by ' ', :orderby separated by ' ', :indentsize separated by ' ',  
+     :nodatamsg separated by ' ',  :filename          separated by ' '
        from __repinfo;
        
   select max(varid) into: numvars separated by ' ' from __varinfo;    

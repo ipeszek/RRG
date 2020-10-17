@@ -52,10 +52,10 @@ select count(*) into:numsortvars from __sortinfo;
 %local i;
 %do i=1 %to  &numsortvars;
     %local sortvar&i sortvalue&i;
-    select sortcolumn into:sortvalue&i separated by ' '
+    select sortcolumn, name into
+    :sortvalue&i separated by ' ',    :sortvar&i separated by ' '  
       from __sortinfo(where=(__id=&i));
-    select name into:sortvar&i separated by ' '  
-    from __sortinfo(where=(__id=&i));
+
 %end;
 quit;
 

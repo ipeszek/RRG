@@ -54,6 +54,58 @@ run;
 
 %let indent=0;
 proc sql noprint;
+select 
+  trim(left(where)),        
+  trim(left(popgrp)),       
+  trim(left(templatewhere)),
+  trim(left(name)),         
+  trim(left(stat)),         
+  trim(left(statsetid)),    
+  indent  ,                 
+  upcase(skipline),         
+  trim(left(label)),        
+  labelline ,               
+  basedec ,                 
+  trim(left(align)) ,       
+  trim(left(ovstat)),       
+  trim(left(sdfmt)),        
+  trim(left(slfmt)) ,       
+  trim(left(pvalfmt)) ,     
+  trim(left(decinfmt))  ,   
+  trim(left(keepwithnext)),
+  trim(left(condfmt)),      
+  trim(left(maxdec)) ,      
+  trim(left(showneg0)) 
+  
+into
+  :where              separated by ' ' ,
+  :popgrp             separated by ' ' ,
+  :templatewhere      separated by ' ' ,
+  :var                separated by ' ' ,
+  :stat               separated by ' ' ,
+  :statsetid          separated by ' ' ,
+  :indent             separated by ' ' ,
+  :skipline           separated by ' ' ,
+  :label              separated by ' ' ,
+  :labelline          separated by ' ' ,
+  :basedec            separated by ' ' ,
+  :align              separated by ' ' ,
+  :ovstat             separated by ' ' ,
+  :sdfmt              separated by ' ' ,
+  :slfmt              separated by ' ' ,
+  :pvfmt              separated by ' ' ,
+  :decinfmt           separated by ' ' ,
+  :keepn              separated by ' ' ,
+  :condfmt            separated by ' ' ,
+  :maxdec             separated by ' ' ,
+  :showneg0           separated by ' ' 
+
+from  __contv;
+  
+  
+  
+      
+  /*
   select trim(left(where))     into:where         separated by ' ' from  __contv;
   select trim(left(popgrp))    into:popgrp        separated by ' ' from  __contv;
   select trim(left(templatewhere))    
@@ -77,6 +129,7 @@ proc sql noprint;
   select trim(left(condfmt))   into:condfmt       separated by ' ' from  __contv;
   select trim(left(maxdec))    into:maxdec        separated by ' ' from  __contv;
   select trim(left(showneg0))  into:showneg0      separated by ' ' from  __contv;
+  */
 quit;
 
 

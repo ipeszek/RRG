@@ -111,16 +111,37 @@ in rrg_generate, varname is passed to identify GROUPING variable for which
 %end;
 
 proc sql noprint;
-  select trim(left(name))      into:var    separated by ' ' from  __catv;
-  select trim(left(fmt))       into:fmt    separated by ' ' from  __catv;
-  select trim(left(desc))       into:desc    separated by ' ' from  __catv;
-  select trim(left(codelist))  into:codes  separated by ' ' from  __catv;
-  select trim(left(codelistds))into:codelistds separated by ' ' from  __catv;
-  select trim(left(delimiter)) into:delimiter separated by ' ' from  __catv;
-  select trim(left(show0cnt)) into:show0cnt separated by ' ' from  __catv;
+select
+  trim(left(name))                         ,
+  trim(left(fmt))                          ,
+  trim(left(desc))                         ,
+  trim(left(codelist))                     ,
+  trim(left(codelistds))                   ,
+  trim(left(delimiter))                    ,
+  trim(left(show0cnt))                     ,
+  trim(left(noshow0cntvals))
+into
+  :var                                     separated by ' ' ,
+  :fmt                                     separated by ' ' ,
+  :desc                                    separated by ' ' ,
+  :codes                                   separated by ' ' ,
+  :codelistds                              separated by ' ' ,
+  :delimiter                               separated by ' ' ,
+  :show0cnt                                separated by ' ' ,
+  :noshow0cntvals                          separated by ' '   from  __catv;       
+/*
+  
+  select trim(left(name))           into:var           separated by ' ' from  __catv;
+  select trim(left(fmt))            into:fmt           separated by ' ' from  __catv;
+  select trim(left(desc))           into:desc           separated by ' ' from  __catv;
+  select trim(left(codelist))       into:codes         separated by ' ' from  __catv;
+  select trim(left(codelistds))     into:codelistds    separated by ' ' from  __catv;
+  select trim(left(delimiter))      into:delimiter      separated by ' ' from  __catv;
+  select trim(left(show0cnt))       into:show0cnt       separated by ' ' from  __catv;
   select trim(left(noshow0cntvals)) into:noshow0cntvals separated by ' ' from  __catv;
 quit;
-
+*/
+quit;
 
 
 %if %length(&codelistds) %then %do;

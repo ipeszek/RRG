@@ -29,6 +29,38 @@ totorder=)/store;
 
 
 proc sql noprint;
+  
+select
+  trim(left(decode))                                  ,
+  trim(left(name))                                    ,
+  trim(left(fmt))                                     ,
+  trim(left(denom))                                   ,
+  trim(left(denomwhere))                              ,
+  upcase(trim(left(denomincltrt)))                    ,
+  trim(left(stat))                                    ,
+  trim(left(countwhat))                               ,
+  trim(left(pctfmt))                                  ,
+  dequote(trim(left(totaltext)))                      ,
+  dequote(trim(left(totalpos)))                       ,
+  dequote(trim(left(totalwhere)))       
+  
+into
+  :decode                                             separated by ' ' ,
+  :var                                                separated by ' ' ,
+  :fmt                                                separated by ' ' ,
+  :denomvars                                          separated by ' ' ,
+  :denomwhere                                         separated by ' ' ,
+  :denomincltrt                                       separated by ' ' ,
+  :allstat                                            separated by ' ' ,
+  :countwhat                                          separated by ' ' ,
+  :pctfmt                                             separated by ' ' ,
+  :totaltext                                          separated by ' ' ,
+  :totalpos                                           separated by ' ' ,
+  :totalwhere                                         separated by ' ' 
+
+from &vinfods;  
+  
+  /*
   select trim(left(decode))     into:decode     separated by ' ' from &vinfods;
   select trim(left(name))       into:var        separated by ' ' from &vinfods;
   select trim(left(fmt))        into:fmt        separated by ' ' from &vinfods;
@@ -46,6 +78,7 @@ proc sql noprint;
 
   select dequote(trim(left(totalwhere)))  into:totalwhere   separated by ' ' 
     from &vinfods;  
+    */
 quit;
 
 %if %upcase(&countwhat) ne MAX and %length(&totaltext)>0 %then %do;

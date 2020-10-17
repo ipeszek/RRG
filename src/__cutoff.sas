@@ -60,10 +60,10 @@ proc sql noprint;
   select trim(left(minpct)) into:minpct separated by ' ' from __varinfo_cutoff
    (where=(__grpid=&grpidminpct));
   
-  select trim(left(showgroupcnt)) into:showgrpcnt 
-      separated by ' ' from &vinfods;
-  select trim(left(showemptygroups)) into:showemptygroups 
-      separated by ' ' from &vinfods;      
+  select trim(left(showgroupcnt)), trim(left(showemptygroups))
+   into :showgrpcnt  separated by ' ', :showemptygroups  separated by ' ' 
+   from &vinfods;
+    
 quit;
 
 

@@ -60,33 +60,82 @@ run;
 %local tmpcodes tmpcodesds desc;
 
 proc sql noprint;
-  select trim(left(decode))    into:decode    separated by ' '  from __catv;
-  select trim(left(where))     into:where     separated by ' ' from __catv;
-  select trim(left(name))      into:var       separated by ' ' from __catv;
-  select trim(left(fmt))       into:fmt       separated by ' ' from __catv;
-  select indent into:          indent         separated by ' ' from __catv;
-  select upcase(skipline)      into:skipline  separated by ' ' from __catv;
-  select trim(left(dequote(label))) into:label separated by ' ' from __catv;
-  select labelline             into:labelline separated by ' ' from __catv;
-  select trim(left(countwhat)) into:countwhat separated by ' ' from __catv;
-  select codelist              into:tmpcodes  separated by ' ' from __catv;
-  select codelistds            into:tmpcodesds separated by ' ' from __catv;
-  select delmods               into:delmods   separated by ' ' from __catv;
-  select stat                  into:stat       separated by ' ' from __catv;
-  select ovstat                into:ovstat     separated by ' ' from __catv;
-  select trim(left(subjid))    into:asubjid    separated by ' ' from  __catv;
-  select dequote(trim(left(misstext))) into:misstext  separated by ' ' 
-    from __catv;
-  select dequote(trim(left(misspos)))  into:misspos   separated by ' ' 
-    from __catv;
-  select dequote(trim(left(totalpos)))  into:totalpos   separated by ' ' 
-    from __catv;
+select
+  trim(left(decode))                               ,
+  trim(left(where))                                ,
+  trim(left(name))                                 ,
+  trim(left(fmt))                                  ,
+  indent                                           ,
+  upcase(skipline)                                 ,
+  trim(left(dequote(label)))                       ,
+  labelline                                        ,
+  trim(left(countwhat))                            ,
+  codelist                                         ,
+  codelistds                                       ,
+  delmods                                          ,
+  stat                                             ,
+  ovstat                                           ,
+  trim(left(subjid))                               ,
+  dequote(trim(left(misstext)))                    ,
+  dequote(trim(left(misspos)))                     ,
+  dequote(trim(left(totalpos)))                    ,
+  dequote(trim(left(showmissing)))                 ,
+  trim(left(keepwithnext))                         ,
+  desc                                             ,
+  codelist
+into
+  :decode                                           separated by ' ' ,
+  :where                                            separated by ' ' ,
+  :var                                              separated by ' ' ,
+  :fmt                                              separated by ' ' ,
+  :indent                                           separated by ' ' ,
+  :skipline                                         separated by ' ' ,
+  :label                                            separated by ' ' ,
+  :labelline                                        separated by ' ' ,
+  :countwhat                                        separated by ' ' ,
+  :tmpcodes                                         separated by ' ' ,
+  :tmpcodesds                                       separated by ' ' ,
+  :delmods                                          separated by ' ' ,
+  :stat                                             separated by ' ' ,
+  :ovstat                                           separated by ' ' ,
+  :asubjid                                          separated by ' ' ,
+  :misstext                                         separated by ' ' ,
+  :misspos                                          separated by ' ' ,
+  :totalpos                                         separated by ' ' ,
+  :showmiss                                         separated by ' ' ,
+  :keepn                                            separated by ' ' ,
+  :desc                                             separated by ' ' ,
+  :tmpcodes                                         separated by ' '  
+  from __catv;            
 
-  select dequote(trim(left(showmissing)))  into:showmiss  separated by ' ' 
-    from __catv;
-  select trim(left(keepwithnext))   into:keepn  separated by ' ' from  __catv;    
-  select desc                  into:desc       separated by ' ' from __catv;
-  
+/*
+proc sql noprint;
+  select trim(left(decode))    into:decode    separated by ' '  from __catv;
+  select codelist              into:tmpcodes  separated by ' ' from __catv;
+                                       
+
+  select trim(left(decode))                into:decode      separated by ' '  from __catv;
+  select trim(left(where))                 into:where       separated by ' ' from __catv;
+  select trim(left(name))                  into:var         separated by ' ' from __catv;
+  select trim(left(fmt))                   into:fmt         separated by ' ' from __catv;
+  select indent                            into:indent         separated by ' ' from __catv;
+  select upcase(skipline)                  into:skipline    separated by ' ' from __catv;
+  select trim(left(dequote(label)))        into:label       separated by ' ' from __catv;
+  select labelline                         into:labelline   separated by ' ' from __catv;
+  select trim(left(countwhat))             into:countwhat   separated by ' ' from __catv;
+  select codelist                          into:tmpcodes    separated by ' ' from __catv;
+  select codelistds                        into:tmpcodesds   separated by ' ' from __catv;
+  select delmods                           into:delmods     separated by ' ' from __catv;
+  select stat                              into:stat        separated by ' ' from __catv;
+  select ovstat                            into:ovstat      separated by ' ' from __catv;
+  select trim(left(subjid))                into:asubjid     separated by ' ' from  __catv;
+  select dequote(trim(left(misstext)))     into:misstext    separated by ' '     from __catv;
+  select dequote(trim(left(misspos)))      into:misspos     separated by ' '     from __catv;
+  select dequote(trim(left(totalpos)))     into:totalpos    separated by ' '     from __catv;
+  select dequote(trim(left(showmissing)))  into:showmiss    separated by ' '     from __catv;
+  select trim(left(keepwithnext))          into:keepn        separated by ' ' from  __catv;    
+  select desc                              into:desc        separated by ' ' from __catv;
+*/  
 quit;
 
 %if %length(&tmpcodes) %then %let codes=1;
@@ -240,10 +289,6 @@ run;
 /**** get new decode;*/
 
 
-proc sql noprint;
-  select trim(left(decode))    into:decode    separated by ' '  from __catv;
-  select codelist              into:tmpcodes  separated by ' ' from __catv;
-quit;
 %*-------------------------------------------------------------;
 %* PROCESS DATASET WITH LIST OF CODES (IF GIVEN);
 %*-------------------------------------------------------------;

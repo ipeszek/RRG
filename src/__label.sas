@@ -52,12 +52,26 @@ run;
 *  AND WHETHER TO PRINT  SKIPLINE AFTEWARDS;
 
 proc sql noprint;
+select 
+   indent                 ,
+   upcase(skipline)       ,
+   dequote(label)         ,
+   wholerow               ,
+   upcase(keepwithnext)   
+into
+  :indent                 separated by ' ' ,
+  :skipline               separated by ' ' ,
+  :lbl                    separated by ' ' ,
+  :wholerow               separated by ' ' ,
+  :keepwithnext           separated by ' '    from __labeld1;  
+/*
   select indent            into:indent   separated by ' ' from __labeld1;
   select upcase(skipline)  into:skipline separated by ' ' from __labeld1;
   select dequote(label)    into:lbl      separated by ' ' from __labeld1;
   select wholerow          into:wholerow separated by ' ' from __labeld1;
   select upcase(keepwithnext)
          into:keepwithnext separated by ' ' from __labeld1;
+         */
 quit;
 
 %local ngrpv;

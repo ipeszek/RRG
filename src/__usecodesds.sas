@@ -48,13 +48,29 @@ NOTES:   IF CODELISTDS WAS NOT SPECIFIED FOR A VARIABLE, THIS MACRO DOES
 
 
 proc sql noprint;
+select
+  trim(left(decode))                ,
+  trim(left(name))                  ,
+  trim(left(codelist))              ,
+  trim(left(codelistds))             ,
+  trim(left(countwhat))             
+into
+:decode       separated by ' '                      ,
+:var          separated by ' '                      ,
+:codes        separated by ' '                      ,
+:codelistds   separated by ' '                      ,
+:countwhat    separated by ' '
+ from __catv;
+quit;
+/*
+  
   select trim(left(decode))     into:decode     separated by ' ' from __catv;
   select trim(left(name))       into:var        separated by ' ' from __catv;
   select trim(left(codelist))   into:codes      separated by ' ' from __catv;
   select trim(left(codelistds)) into:codelistds separated by ' ' from __catv;
   select trim(left(countwhat))  into:countwhat  separated by ' ' from __catv;
 quit;
-
+*/
 
 
 %if %length(&codelistds)=0 %then %do;

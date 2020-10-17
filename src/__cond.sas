@@ -46,27 +46,73 @@ run;
 
 
 proc sql noprint;
-  select trim(left(templateds)) into:templateds separated by ' ' from  __condv;
-  select trim(left(templatewhere)) into:templatewhere separated by ' ' from  __condv;
-  select trim(left(where))      into:where      separated by ' ' from  __condv;
-  select trim(left(denom))      into:denomvars  separated by ' ' from  __condv;
-  select trim(left(denomwhere)) into:denomwhere separated by ' ' from  __condv;
-  select labelline              into:labelline  separated by ' ' from  __condv;
-  select trim(left(stat))       into:allstat    separated by ' ' from  __condv;
-  select trim(left(ovstat))     into:ovstat     separated by ' ' from  __condv;
-  select indent                 into:indent     separated by ' ' from  __condv;
-  select upcase(skipline)       into:skipline   separated by ' ' from  __condv;
-  select trim(left(label))      into:label      separated by ' ' from  __condv;
-  select trim(left(labelvar))   into:labelvar   separated by ' ' from  __condv;
-  select trim(left(grouping))   into:grouping   separated by ' ' from  __condv;
-  select trim(left(pctfmt))     into:pctfmt     separated by ' ' from  __condv;
-  select trim(left(subjid))     into:asubjid    separated by ' ' from  __condv;
-  select trim(left(show0cnt))   into:show0cnt   separated by ' ' from  __condv;
-  select trim(left(keepwithnext)) into:keepwithnext separated by ' ' from  __condv;
-  select trim(left(notcondition)) into:notcondition separated by ' ' from  __condv;
-  select trim(left(countwhat))  into:countwhat separated by ' ' from  __condv;
-  select trim(left(denomincltrt))  into:denomincltrt separated by ' ' from  __condv;
-  
+select
+    trim(left(templateds))         ,
+    trim(left(templatewhere))      ,
+    trim(left(where))              ,
+    trim(left(denom))              ,
+    trim(left(denomwhere))         ,
+    labelline                      ,
+    trim(left(stat))               ,
+    trim(left(ovstat))             ,
+    indent                         ,
+    upcase(skipline)               ,
+    trim(left(label))              ,
+    trim(left(labelvar))           ,
+    trim(left(grouping))           ,
+    trim(left(pctfmt))             ,
+    trim(left(subjid))             ,
+    trim(left(show0cnt))           ,
+    trim(left(keepwithnext))       ,
+    trim(left(notcondition))       ,
+    trim(left(countwhat))          ,
+    trim(left(denomincltrt)) 
+into
+    :templateds                     separated by ' ' ,
+    :templatewhere                  separated by ' ' ,
+    :where                          separated by ' ' ,
+    :denomvars                      separated by ' ' ,
+    :denomwhere                     separated by ' ' ,
+    :labelline                      separated by ' ' ,
+    :allstat                        separated by ' ' ,
+    :ovstat                         separated by ' ' ,
+    :indent                         separated by ' ' ,
+    :skipline                       separated by ' ' ,
+    :label                          separated by ' ' ,
+    :labelvar                       separated by ' ' ,
+    :grouping                       separated by ' ' ,
+    :pctfmt                         separated by ' ' ,
+    :asubjid                        separated by ' ' ,
+    :show0cnt                       separated by ' ' ,
+    :keepwithnext                   separated by ' ' ,
+    :notcondition                   separated by ' ' ,
+    :countwhat                      separated by ' ' ,
+    :denomincltrt                   separated by ' ' 
+    
+from  __condv;
+
+  /*
+  select trim(left(templateds))    into:templateds      separated by ' ' from  __condv;
+  select trim(left(templatewhere)) into:templatewhere   separated by ' ' from  __condv;
+  select trim(left(where))         into:where           separated by ' ' from  __condv;
+  select trim(left(denom))         into:denomvars       separated by ' ' from  __condv;
+  select trim(left(denomwhere))    into:denomwhere      separated by ' ' from  __condv;
+  select labelline                 into:labelline       separated by ' ' from  __condv;
+  select trim(left(stat))          into:allstat         separated by ' ' from  __condv;
+  select trim(left(ovstat))        into:ovstat          separated by ' ' from  __condv;
+  select indent                    into:indent          separated by ' ' from  __condv;
+  select upcase(skipline)          into:skipline        separated by ' ' from  __condv;
+  select trim(left(label))         into:label           separated by ' ' from  __condv;
+  select trim(left(labelvar))      into:labelvar        separated by ' ' from  __condv;
+  select trim(left(grouping))      into:grouping        separated by ' ' from  __condv;
+  select trim(left(pctfmt))        into:pctfmt          separated by ' ' from  __condv;
+  select trim(left(subjid))        into:asubjid         separated by ' ' from  __condv;
+  select trim(left(show0cnt))      into:show0cnt        separated by ' ' from  __condv;
+  select trim(left(keepwithnext))  into:keepwithnext    separated by ' ' from  __condv;
+  select trim(left(notcondition))  into:notcondition    separated by ' ' from  __condv;
+  select trim(left(countwhat))     into:countwhat       separated by ' ' from  __condv;
+  select trim(left(denomincltrt))  into:denomincltrt    separated by ' ' from  __condv;
+  */
  
 quit;
 

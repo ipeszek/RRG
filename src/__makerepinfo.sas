@@ -13,7 +13,7 @@
     note: this.xxx below refers to macro parameter xxx of this macro; __repinfo.xxx refers to variable xxx in __repinfo dataset                                 
   called in RRG_GENERATE and RRG_GENLIST
  
- create and run macro __metadata  which creates dataset __REPORT, 
+  creates dataset __REPORT, 
   seting __datatype   = 'RINFO',  __rowid, __varbygrp to MISSING (numeric), 
    and variables
     __fontsize, __bookmarks_rtf, __bookmarks_pdf, __sfoot_fs, __indentsize, __orient, __filename,

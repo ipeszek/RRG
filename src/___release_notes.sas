@@ -16,7 +16,7 @@
   is created in rrgpgmpath folder with execution statistics.   
   
 01Oct2020 rewrote to improve performance (generated program stored in dataset and written to file at the end, and many other performance improvements)
-          removed metadata finctionality
+          removed metadata and gentxt functionality
           updated no-data functionality to create report with titles, headers and footnotes  
   
 31Aug2020 Removed java2sas modules

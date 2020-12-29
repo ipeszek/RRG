@@ -214,6 +214,8 @@ data __nsprops;
   tmp2=strip(symget("__program"));
   tmp = cats("&rrgpgmpath.")||cats("/&rrguri..sas");
   tmp = tranwrd(tmp, "\","/");
+  tmp = tranwrd(tmp, "/","/#47 ");
+  
   w2 = tranwrd(trim(w2), '_USERID_',"&sysuserid");
   w2 = tranwrd(trim(w2), '_PGMNAME_',trim(tmp));
   w2 = tranwrd(trim(w2), '_APGMNAME_',trim(tmp2));

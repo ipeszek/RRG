@@ -43,7 +43,6 @@ remove=
 *   NOT ON THE LIST;
 *------------------------------------------------------------;
 
-
     
 %if %sysfunc(exist(&codelistds._exec)) %then %do; 
     %if %length(&decode) %then %do;

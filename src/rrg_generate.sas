@@ -1,16 +1,16 @@
 /*
  * RRG: statistical reporting system.
- *  
+ *
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
- * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
+ * You can use RRG source code for statistical reporting but not to create for-profit selleable product.
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
 
 %macro rrg_generate/store;
 %* TODO: test freqsort with codelist;
 /*
-Purpose:  this macro calculates summary statistics for continuous and 
-          categorical   variables. 
+Purpose:  this macro calculates summary statistics for continuous and
+          categorical   variables.
           The list of variables for the table is created using
             %addvar(), %addcatvar(), %addcond() and %addlabel() macros.
           Variables are shown in table in order in which the above macros
@@ -20,14 +20,14 @@ Purpose:  this macro calculates summary statistics for continuous and
               &groupby macro parameter.
               The attributes of grouping variables (decode, label) are defined
               using %defgrp() macro
- 
-          For categorical variables, for each modality it counts number of 
-             subjects counting subject once per 
+
+          For categorical variables, for each modality it counts number of
+             subjects counting subject once per
              (treatment variables, grouping variables, modality) group
-             (this way, if subject had >1 modality per group, 
+             (this way, if subject had >1 modality per group,
               subject is counted under each modality)
-          For continuous parameters, it collapses dataset selecting 
-           distinct records per 
+          For continuous parameters, it collapses dataset selecting
+           distinct records per
         (treatment variables, grouping variables, &subjid, analysis variable)
            and calculates statistics.
            Currently only statistics available in proc means are supported,
@@ -37,15 +37,15 @@ Author: Iza Peszek, May 2008
 
 Macro parameters:
   Dataset:  input dataset
-  popWhere: population clause. This condition is applied before 
+  popWhere: population clause. This condition is applied before
                 any calculations are made
   tabwhere:   table body clause. This condition is applied after population
              count is obtained, but before any other statistics are
              calculated. Tabwhere IS NOT applied for calculation of denominator
   Colhead1:   The text of the column header for 1st column.
-  subjid:     name of the variable holding unique subject id    
+  subjid:     name of the variable holding unique subject id
     groupby:    names of grouping variables. Grouoing is applied to all
-                "variabes" defined using %addvar, %addcatvar, %addcond 
+                "variabes" defined using %addvar, %addcatvar, %addcond
                 and %addlabel macros
   Title1=,..., title6: tiles,
   footnot1=,...,  Footnot14: footnotes
@@ -67,14 +67,14 @@ Macro parameters:
 %* PRINT GENERATED PROGRAM HEADER AND FORMATS;
 
 
-%local  datasetRRG   tablabel   
-       Title1 title2 title3 title4 title5 title6 
-       Footnot1 Footnot2 Footnot3 Footnot4 Footnot5 Footnot6 
-       Footnot7 footnot8 footnot9 footnot10 
+%local  datasetRRG   tablabel
+       Title1 title2 title3 title4 title5 title6
+       Footnot1 Footnot2 Footnot3 Footnot4 Footnot5 Footnot6
+       Footnot7 footnot8 footnot9 footnot10
        footnot11 footnot12 footnot13 footnot14 shead_l shead_r shead_m
        sfoot_l sfoot_r sfoot_m systitle
-       By    dest  fontsize 
-       orient colwidths   extralines  
+       By    dest  fontsize
+       orient colwidths   extralines
        libsearch  varby4pop varbyn4pop groupby4pop groupbyn4pop;
 %local i j k breakokat;
 %local indata inmacros  trtcnt ;
@@ -102,8 +102,9 @@ quit;
 %end;
 
 
-%let datasetrrg=&defreport_dataset;  
-  
+%let datasetrrg=&defreport_dataset;
+
+
 proc sort data=__varinfo;
   by varid;
 run;
@@ -127,7 +128,7 @@ quit;
       if type='GROUP' then nline='N';
     run;
 %end;
-   
+
 *----------------------------------------------------------------;
 %* CREATE DUMMY WHERE CONDITIONS;
 *----------------------------------------------------------------;
@@ -148,6 +149,10 @@ quit;
 
 %* ensures only one trt variable;
 
+
+
+sasfile work.rrgpgm.data open;
+run;
 
 %if %length(&trtvar)>0 %then %let numtrt = 1;
 
@@ -175,11 +180,13 @@ proc append base=rrgpgm data=rrgpgmtmp;
 run;
 
 
-%__makenewtrt( 
+%__makenewtrt(
       dsin=&datasetrrg,
-      wherein = %nrbquote(&defreport_popwhere),  
+      wherein = %nrbquote(&defreport_popwhere),
      dsout=__dataset);
-    
+
+
+
 data rrgpgmtmp;
 length record $ 2000;
 keep record;
@@ -209,7 +216,7 @@ record=  " ";output;
 record=  '  %goto dotab;';output;
 record=  '%end;';output;
 record=  " ";output;
-run;    
+run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
 run;
@@ -237,24 +244,24 @@ run;
 
 
 proc sql noprint;
-  
-  
-    select count(*) , name    into :ngrpv , :groupby separated by ' ' 
-    from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' ));   
-    
-    select count(*), name into:nvarby,:varby  separated by ' ' 
+
+
+    select count(*) , name    into :ngrpv , :groupby separated by ' '
+    from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' ));
+
+    select count(*), name into:nvarby,:varby  separated by ' '
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y'));
-  
-   select name into:varby4pop separated by ' ' 
+
+   select name into:varby4pop separated by ' '
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y' and upcase(popsplit)='Y'));
-  select name into:varbyn4pop separated by ' ' 
+  select name into:varbyn4pop separated by ' '
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y' and upcase(popsplit) ne 'Y'));
-  select name into:groupby4pop  separated by ' ' 
+  select name into:groupby4pop  separated by ' '
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' and upcase(popsplit)='Y'));
-  select name into:groupbyn4pop separated by ' ' 
+  select name into:groupbyn4pop separated by ' '
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' and upcase(popsplit) ne 'Y'));
-    
-   
+
+
 quit;
 
 %let ngrpv = %cmpres(&ngrpv);
@@ -288,19 +295,19 @@ data rrgpgmtmp;
 length record $ 2000;
 keep record;
 
-%__getcntg(datain=__dataset, 
-        unit=&defreport_subjid, 
+%__getcntg(datain=__dataset,
+        unit=&defreport_subjid,
         group=&varby4pop __grouped &trt1 __dec_&trt1 __suff_&trt1 __prefix_&trt1
-                  __nline_&trt1 __autospan,        
-        cnt=__pop_1, 
+                  __nline_&trt1 __autospan,
+        cnt=__pop_1,
         dataout=__pop);
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run;        
+run;
 
-        
+
 %local tmptrt;
-%let tmptrt=__grouped &trt1 __dec_&trt1 __suff_&trt1 __prefix_&trt1 __nline_&trt1 __autospan;        
+%let tmptrt=__grouped &trt1 __dec_&trt1 __suff_&trt1 __prefix_&trt1 __nline_&trt1 __autospan;
 
 %* MAKE SURE THAT EACH DISTINCT VARBY HAS ALL TREATMENTS;
 
@@ -309,7 +316,7 @@ run;
         %local tmp1 tmp2;
         %let tmp1=%sysfunc(tranwrd(&varbyn4pop , %str( ), %str(,)));
         %let tmp2=%sysfunc(tranwrd(&varby4pop  &tmptrt, %str( ), %str(,)));
-        
+
         data rrgpgmtmp;
         length record $ 2000;
         keep record;
@@ -337,20 +344,20 @@ run;
         record=  "     if __grpid=. then __grpid=999;";output;
         %do i=1 %to &numtrt ;
             record=  "       if __pop_&i=. then __pop_&i=0;";output;
-        %end;  
+        %end;
         record=  "   run;";output;
-     
+
         run;
-        
+
         proc append base=rrgpgm data=rrgpgmtmp;
         run;
-        
+
     %end;
     %else %do;
         %local tmp1 tmp2;
         %let tmp1=%sysfunc(tranwrd(&varby,  %str( ), %str(,)));
         %let tmp2=%sysfunc(tranwrd(&tmptrt, %str( ), %str(,)));
-        
+
         data rrgpgmtmp;
         length record $ 2000;
         keep record;
@@ -378,17 +385,17 @@ run;
         record=  "     if __grpid=. then __grpid=999;";output;
          %do i=1 %to &numtrt ;
               record=  "       if __pop_&i=. then __pop_&i=0;";output;
-         %end;  
+         %end;
         record=  "   run;";output;
-        
+
         record=  " ";output;
-       
-        run; 
-        
+
+        run;
+
         proc append base=rrgpgm data=rrgpgmtmp;
         run;
-       
-    %end;  
+
+    %end;
 %end;
 
 
@@ -403,29 +410,29 @@ run;
     record=  "quit;";output;
     record=  " ";output;
     run;
-    
+
     proc append base=rrgpgm data=rrgpgmtmp;
     run;
-    
+
 %end;
 
-%__makecodeds_t (vinfods=__VARINFO, dsin=&datasetrrg); 
+%__makecodeds_t (vinfods=__VARINFO, dsin=&datasetrrg);
 
 %if %sysfunc(exist(__CODES4TRT_exec)) %then %do;
-  
+
     %local varby4sql;
      proc sql noprint;
-     select name into:varby4sql separated by ', ' 
-     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y')); 
+     select name into:varby4sql separated by ', '
+     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y'));
      quit;
-      
-         
+
+
     data rrgpgmtmp;
     length record $ 2000;
     keep record;
     record=  " "; output;
     record=  " "; output;
-    
+
     %if &nvarby>0 %then %do;
         record= "proc sql noprint;"; output;
         record="  create table varbytbl";  output;
@@ -440,7 +447,7 @@ run;
         record="set __CODES4TRT2;"; output;
         record="run;"; output;
     %end;
-      
+
 
     record="data __pop;"; output;
     record="  set __pop;"; output;
@@ -476,13 +483,13 @@ run;
 
     proc append base=rrgpgm data=rrgpgmtmp;
     run;
-    
-%* end of "if %sysfunc(exist(__CODES4TRT_exec))";     
-%end;    
-    
+
+%* end of "if %sysfunc(exist(__CODES4TRT_exec))";
+%end;
+
 data rrgpgmtmp;
 length record $ 2000;
-keep record; 
+keep record;
 record=  "*------------------------------------------------------------------;"; output;
 record=  "* CREATE TREATMENT ID, ENUMERATING ALL TREATMENTS SEQUENTIALLY ;"; output;
 record=  "*------------------------------------------------------------------;"; output;
@@ -580,12 +587,24 @@ record=  " "; output;;
           by = &trtvar,
     mergetype=INNER,
       dataout=__dataset);
-      
+
+
+record = '%local __filesizebytes ;'; output;
+record = 'data _null_; set sashelp.vtable;  '; output; 
+record = "  WHERE LIBNAME = 'WORK'  AND MEMNAME = '__DATASET'  ;"; output;
+record = "  call symput('__filesizebytes', put(FILESIZE, best.) );"; output;
+record = 'run;'; output;
+record = '%put RRG INFO: __dataset has &__filesizebytes bytes;'; output;
+record = ' ';    output;
+record=  "sasfile work.__dataset.data open; "; output;
+record=  "run; "; output;
+
 %if &numtrt>1 %then %do;
     %local nt;
     %let nt = %eval(&numtrt-1);
-    
- 
+
+
+
     record=  " "; output;
     record=  "*------------------------------------------------------------------;"; output;
     record=  "* DEFINE BREAKOKAT VARIABLE, WHICH HOLD COLUMN NUMBERS;"; output;
@@ -615,14 +634,14 @@ record=  " "; output;;
     record=  "    from __pop(where=(__cb=1));"; output;
     record=  "quit;"; output;
     record=  " "; output;
-    
-   
-    
+
+
+
 %* end of "if numtrt>0";
 %end;
 
 run;
-    
+
 proc append base=rrgpgm data=rrgpgmtmp;
 run;
 
@@ -633,20 +652,20 @@ run;
 
 /*
 CREATE DATASET __GRPCODES_EXEC:
-      this dataset contains variable names , decode values 
+      this dataset contains variable names , decode values
       (stored in __display_<variable name>), and order (stored in __order_<variable name>)
-      of all grouping variables for which codelist was provided. 
+      of all grouping variables for which codelist was provided.
       All values/decodes for grouping variables for which codelist was proveded are cross-joined.
       For those grouping variables for which codelist was not provided, dummy __order_<variable name>
       variables are created with null values.
-      This dataset is then sorted by __order_vn1, __order__vn2 etc 
+      This dataset is then sorted by __order_vn1, __order__vn2 etc
       and a variable __orderb=_n_ is added to it
-      
+
       As a by-product, at runtime the datasets __grp_template_&tmp (&tmp is the name of
         grouping variable ) are created and indicated as "group template dataset"
         if __rrgpgminfo, so they are later used by generated program to generate
         "real time" __grpcodes dataset which is a copy of __grpcodes_exec
-*/      
+*/
 
 
 
@@ -654,11 +673,11 @@ CREATE DATASET __GRPCODES_EXEC:
 %do i=1 %to &ngrpv;
     %local tmp;
     %let tmp = %scan(&groupby,&i, %str( ));
-    
+
         %__makecodeds (
-        vinfods = __varinfo, 
-        varname = &tmp, 
-        dsin = &defreport_dataset, 
+        vinfods = __varinfo,
+        varname = &tmp,
+        dsin = &defreport_dataset,
           outds = __grp_template_&tmp,
           id = &i);
 
@@ -687,7 +706,7 @@ quit;
 %if &ngs>0 %then %do;
     %local tmp;
     %let tmp = %scan(&gdsset,1,%str( ));
-    
+
     data __grpcodes_exec;
       set &tmp._exec ;
     run;
@@ -696,17 +715,17 @@ quit;
     %do i=2 %to &ngs;
         %local tmp;
         %let tmp = %scan(&gdsset,&i,%str( ));
-      
+
          create table __tmp as select * from __grpcodes_exec
            cross join &tmp._exec ;
          create table __grpcodes_exec as select * from __tmp;
-    %end;  
+    %end;
     quit;
 
     data __grpcodes_exec;
       set __grpcodes_exec;
       if 0 then do;
-    
+
       %do i=1 %to &ngrpv;
           __order_%scan(&groupby,&i, %str( ))=.;
       %end;
@@ -714,25 +733,25 @@ quit;
     run;
 
     proc sort data=__grpcodes_exec;
-      by 
+      by
       %do i=1 %to &ngrpv; __order_%scan(&groupby,&i, %str( )) %end;;
     run;
 
     data __grpcodes_exec;
       set __grpcodes_exec;
       __orderg = _n_;
-    run;  
-    
+    run;
 
-  
+
+
     /* end of CREATE DATASET __GRPCODES_EXEC: */
-    
-    
+
+
     /* in generated program, CREATE DATASET __GRPCODES which is a copy of runtime dataset __grpcodes_exec */
-    
+
     %local tmp;
     %let tmp = %scan(&gdsset,1,%str( ));
-    
+
     data rrgpgmtmp;
     length record $ 2000;
     keep record;
@@ -743,26 +762,26 @@ quit;
     record=  "  run;";output;
     record=  " ";  output;
     record=  "proc sql noprint nowarn;";output;
-    
+
     %do i=2 %to &ngs;
         %local tmp;
         %let tmp = %scan(&gdsset,&i,%str( ));
-      
+
           record=  "     create table __tmp as select * from __grpcodes";output;
           record=  "       cross join &tmp ;";output;
           record=  "     create table __grpcodes as select * from __tmp;";output;
-    %end;  
-    
+    %end;
+
     record=  "  quit;";output;
     record=  " ";output;
     record=  "  data __grpcodes;";output;
     record=  "    set __grpcodes;";output;
     record=  "    if 0 then do;";output;
-   
+
     %do i=1 %to &ngrpv;
         record=  "__order_%scan(&groupby,&i, %str( ))=.;";output;
     %end;
-    
+
     record=  "    end;";output;
     record=  "  run;";output;
     record=  " ";output;
@@ -771,7 +790,7 @@ quit;
     %do i=1 %to &ngrpv;
         %let tmp=&tmp __order_%scan(&groupby,&i, %str( ));
     %end;
-    
+
     record=  "  proc sort data=__grpcodes;";output;
     record=  "by &tmp;";output;
     record=  "  run;";output;
@@ -781,13 +800,13 @@ quit;
     record=  "    __orderg = _n_;";output;
     record=  "  run;  ";output;
     record=  " ";output;
-    
+
     run;
-    
+
     proc append base=rrgpgm data=rrgpgmtmp;
     run;
-    
-%* end of ngs>0;    
+
+%* end of ngs>0;
 %end;
 
 /* end of CREATE DATASET __GRPCODES */
@@ -852,22 +871,22 @@ run;
 
 
 %do i=1 %to &numvar;
-  
+
     %if &&type&i=CAT %then %do;
-  
+
           %__cnts (
                dsin  = __dataset,
             dsinrrg  = &datasetrrg,
-                unit = %nrbquote(&defreport_subjid), 
-               varid = &i, 
-       groupvars4pop = &groupby4pop, 
+                unit = %nrbquote(&defreport_subjid),
+               varid = &i,
+       groupvars4pop = &groupby4pop,
       groupvarsn4pop = &groupbyn4pop,
              byn4pop = &varbyn4pop ,
-              by4pop = &varby4pop ,       
+              by4pop = &varby4pop ,
              trtvars = %cmpres(&trtvar),
           %if %upcase(&defreport_warnonnomatch) ne Y %then %do;
               warn_on_nomatch=0,
-          %end;     
+          %end;
              aetable = %upcase(&defreport_aetable),
                outds = __fcat&i);
 
@@ -881,33 +900,33 @@ run;
         record=  "if __a then __grptype=1;"; output;
         record=  "run;"; output;
         record=  " "; output;
-        
+
         run;
-        
+
         proc append base=rrgpgm data=rrgpgmtmp;
         run;
 
         %* NOTE: __GRPTYPE IS USED TO CORRECTLY SORT RECORDS, SINCE ;
-        %* FOR CONDITION LINES USER HAS A CHOICE OF WHETHER OR NOT 
+        %* FOR CONDITION LINES USER HAS A CHOICE OF WHETHER OR NOT
         %* APPLY GROUPING;
-    
+
     %* end of type=CAT;
     %end;
 
 
     %if &&type&i=COND %then %do;
-  
+
            %__cond(
                outds = __fcond&i,
                varid = &i,
                 unit = &defreport_subjid,
-       groupvars4pop = &groupby4pop, 
+       groupvars4pop = &groupby4pop,
       groupvarsn4pop = &groupbyn4pop,
              byn4pop = &varbyn4pop ,
-              by4pop = &varby4pop ,       
+              by4pop = &varby4pop ,
               events = %upcase(&defreport_aetable),
              trtvars = &trtvar);
-        
+
 
 
          data rrgpgmtmp;
@@ -918,9 +937,9 @@ run;
           record=  "set __all __fcond&i ;"; output;
           record=  "run;"; output;
           record=  " "; output;
-          
+
           run;
-          
+
           proc append base=rrgpgm data=rrgpgmtmp;
           run;
 
@@ -930,11 +949,11 @@ run;
           %* MACRO __COND SETS __GRPTYPE TO 0 IF NO GROUPING IS TO BE APPLIED, ;
           %* AND TO 1 IF GROUPING IS TO BE APPLIED TO CONDITION LINE;
 
-    
+
     %*end of type=cond;
     %end;
 
-  
+
     %if &&type&i=LABEL %then %do;
 
           %__label(
@@ -944,7 +963,7 @@ run;
                 by=&varby ,
         indentbase=&ngrpv,
               dsin=__dataset);
-          
+
 
 
         data rrgpgmtmp;
@@ -956,14 +975,14 @@ run;
         record=  "if __a then __grptype=1;"; output;
         record=  "run;"; output;
         record=  " "; output;
-        
+
         run;
-        
+
         proc append base=rrgpgm data=rrgpgmtmp;
         run;
 
         %* NOTE: __GRPTYPE IS USED TO CORRECTLY SORT RECORDS, SINCE ;
-        %* FOR CONDITION LINES USER HAS A CHOICE OF WHETHER OR NOT 
+        %* FOR CONDITION LINES USER HAS A CHOICE OF WHETHER OR NOT
         %* APPLY GROUPING;
 
     %* end of type=label;
@@ -973,8 +992,8 @@ run;
     %if &&type&i=CONT %then %do;
         %__cont (
              varid=&i,
-              unit=&defreport_subjid, 
-     groupvars4pop=&groupby4pop, 
+              unit=&defreport_subjid,
+     groupvars4pop=&groupby4pop,
     groupvarsn4pop=&groupbyn4pop,
            byn4pop=&varbyn4pop ,
             by4pop=&varby4pop ,
@@ -991,15 +1010,15 @@ run;
         record=  "if __a then __grptype=1;"; output;
         record=  "run;"; output;
         record=  " "; output;
-        
+
         run;
-        
+
         proc append base=rrgpgm data=rrgpgmtmp;
         run;
 
   %* end of type=cont;
   %end;
-  
+
 %* end of i=1 to numvar;
 %end;
 
@@ -1072,7 +1091,7 @@ run;
 
 proc sql noprint;
   select max(numovs) into:ovorder separated by ' ' from __varinfo;
-quit; 
+quit;
 
 %if &ovorder>0 %then %do;
 
@@ -1082,7 +1101,7 @@ quit;
       where upcase(type)='CAT';
       select count(*) into:numcatblocks separated by ' ' from __varinfo
       where upcase(type)='CAT';
-     
+
       %do ii=1 %to &numcatblocks;
            %local cb&ii cbname&ii;
            %let cb&ii = %scan(&catblocks, &ii, %str( ));
@@ -1103,16 +1122,16 @@ quit;
     record=  "* ADD OVERALL STATISTICS TO DATASET __ALL;"; output;
     record=  "*---------------------------------------------------------------;"; output;
     record=  " "; output;
-   
+
     %if %upcase(&defreport_aetable) = N %then %do;
         %do i=1 %to &ovorder;
-      
+
             %* MERGE IN CONDITION BLOCKS WITHOUT GROUPING;
             record=  '%let k = %eval(&maxtrt'|| "+&i);"; output;
-            
-            %if %length(&condblocksng) %then %do;      
+
+            %if %length(&condblocksng) %then %do;
                 record=  "proc sort data=__overallstats "; output;
-                record=  "  (where=(__order=&i and __blockid in (&condblocksng) ))";  output;     
+                record=  "  (where=(__order=&i and __blockid in (&condblocksng) ))";  output;
                 record=  "  out = __os&i;"; output;
                 record=  "  by &varby __blockid;"; output;
                 record=  "run;"; output;
@@ -1132,15 +1151,15 @@ quit;
                 record=  'drop __stat_value;'; output;
                 record=  "run;"; output;
                 record=  " "; output;
-                
+
             %*end of condblocksng;
             %end;
-           
+
             %* MERGE IN ALL OTHER BLOCKS;
-            %if %length(&condblocksg.&catblocks) %then %do;      
-           
+            %if %length(&condblocksg.&catblocks) %then %do;
+
                 record=  "proc sort data=__overallstats"; output;
-                record=  "  (where=(__order=&i and __blockid in (&condblocksg &catblocks) ))";       output;   
+                record=  "  (where=(__order=&i and __blockid in (&condblocksg &catblocks) ))";       output;
                 record=  "  out = __os&i;";output;
                 record=  "  by &varby &groupby __blockid;";output;
                 record=  "run;";output;
@@ -1160,24 +1179,24 @@ quit;
                 record=  'drop __stat_value;';output;
                 record=  "run;";output;
                 record=  " ";output;
-                
-            %*end of condblocksg.catblocks);   
-            %end;      
+
+            %*end of condblocksg.catblocks);
+            %end;
 
         %* end of do i=1 to ovorder    ;
         %end;
 
     %* end of  aetable=N ;
-    %end;  
-    
+    %end;
+
     %else %do;
         %do i=1 %to &ovorder;
             record=  '%let k = %eval(&maxtrt'|| "+&i);";
             %* MERGE IN CONDITION BLOCKS WITHOUT GROUPING;
-            
+
             %if %length(&condblocksng) %then %do;
                 record=  "proc sort data=__overallstats ";                                                                 output;
-                record=  "  (where=(__order=&i and __blockid in (&condblocksng) ))";                                       output; 
+                record=  "  (where=(__order=&i and __blockid in (&condblocksng) ))";                                       output;
                 record=  "  out = __osa&i;";                                                                               output;
                 record=  "  by &varby __blockid;";                                                                         output;
                 record=  "run;";                                                                                           output;
@@ -1197,10 +1216,10 @@ quit;
                 record=  'drop __stat_value;';                                                                             output;
                 record=  "run;";                                                                                           output;
                 record=  " ";                                                                                              output;
-            
+
             %* end of condblocksng;
             %end;
-     
+
             %if %length(&condblocksg) %then %do;
                 %* MERGE IN CONT BLOCKS AND CONDITION BLOCKS WITH GROUPING;                                                 output;
                 record=  "proc sort data=__overallstats ";                                                                  output;
@@ -1224,10 +1243,10 @@ quit;
                 record=  'drop __stat_value;';                                                                              output;
                 record=  "run;";                                                                                            output;
                 record=  " ";                                                                                               output;
-            
+
             %* end of condblocksg;
             %end;
-    
+
             %* MERGE IN CATEGORICAL VARIABLES BLOCKS ;
             %do ii=1 %to &numcatblocks;
                   record=  '%local hasdata;';                                                                                         output;
@@ -1264,16 +1283,16 @@ quit;
                   record=  "run;";                                                                                                    output;
                   record=  " ";                                                                                                       output;
                   record=  '%end;';                                                                                                   output;
-                  
-            %*end of ii=1 to numcatblocks;      
+
+            %*end of ii=1 to numcatblocks;
             %end;
-        
-        %* end of do i=1 %to &ovorder;    
+
+        %* end of do i=1 %to &ovorder;
         %end;
-        
-    %* end of else (else to aetable = N ) ;     
+
+    %* end of else (else to aetable = N ) ;
     %end;
-    
+
     record=  " ";                                                                                                                     output;
     record=  "*---------------------------------------------------------------;";                                                     output;
     record=  "* ADD OVERALL STATISTICS HEADER TO __POPH DATASET;";                                                                    output;
@@ -1283,7 +1302,7 @@ quit;
     record=  "  by __order  ;";                                                                                                       output;
     record=  "run;";                                                                                                                  output;
     record=  " ";                                                                                                                     output;
-    
+
     %if %length(&varby) %then %do;
         %local tmp;
         %let tmp = %sysfunc(tranwrd(&varby, %str( ), %str(,))) ;
@@ -1299,7 +1318,7 @@ quit;
         record=  "    by __order &varby;";                                                                                            output;
         record=  "  run;";                                                                                                            output;
     %end;
-    
+
     record=  "data __poph0;";                                                                                                         output;
     record=  "set __poph;";                                                                                                           output;
     record=  "if _n_=1;";                                                                                                             output;
@@ -1329,7 +1348,7 @@ quit;
     record=  " ";                                                                                                                     output;
     record=  '%let maxtrt=%eval(&maxtrt'|| "+&ovorder);";                                                                               output;
     run;
-    
+
     proc append base=rrgpgm data=rrgpgmtmp;
     run;
 
@@ -1349,17 +1368,17 @@ quit;
     %* GRPDEC_&grp1, GRPDEC_&grp2, ETC ARE DECODES FOR &GRP1, &GRP2, ....;
 
     proc sql noprint;
-      
+
     %do i=1 %to &ngrpv;
          %local grp&i  grplab&i tmp;
          %let grp&i = %scan(&groupby, &i, %str( ));
          %let tmp = &&grp&i;
          %local grpdec_&&grp&i;
-         select distinct decode, label into :grpdec_&&grp&i separated by ' ', 
+         select distinct decode, label into :grpdec_&&grp&i separated by ' ',
          :grplab&i separated by ' '
-          from __varinfo where upcase(name)=upcase("&&grp&i") 
+          from __varinfo where upcase(name)=upcase("&&grp&i")
                and type='GROUP' and page ne 'Y';
-        
+
          %let decodestr=&decodestr &&grpdec_&tmp;
     %end;
 
@@ -1369,13 +1388,13 @@ quit;
          %let tmp = &&vby&i;
          %local vbdec_&&vby&i;
          select distinct decode, label  into:vbdec_&&vby&i separated by ' ',:vblabel&i  separated by ' '
-          from __varinfo where upcase(name)=upcase("&&vby&i") 
+          from __varinfo where upcase(name)=upcase("&&vby&i")
               and type='GROUP' and page='Y';
-        
+
          %let decodestr=&decodestr &&vbdec_&tmp;
          %let vbdecodestr=&vbdecodestr &&vbdec_&tmp;
     %end;
-    
+
     quit;
 
 
@@ -1401,7 +1420,7 @@ quit;
          record=  "run;";                                                   output;
          record=  " ";                                                      output;
          run;
-          
+
          proc append base=rrgpgm data=rrgpgmtmp;
          run;
 
@@ -1413,16 +1432,16 @@ quit;
              %else %let grps_no_cl=&grps_no_cl &&grp&i;
          %end;
          %let rc = %sysfunc(close(&dsid));
-         
+
      %* end of  exist(__grpcodes_exec);
      %end;
-     
+
      %else %do;
            %let grps_no_cl=&groupby;
-     %* end of else;      
+     %* end of else;
      %end;
-      
-  
+
+
      data rrgpgmtmp;
      length record $ 2000;
      keep record;
@@ -1431,21 +1450,21 @@ quit;
      record=  "* GROUP VARIABLES  WITH NO CODELIST:&grps_NO_cl &VARBY;";                                   output;
      record=  "*------------------------------------------------------------;";                            output;
      record=  " ";                                                                                         output;
-     RUN; 
-     
+     RUN;
+
      proc append base=rrgpgm data=rrgpgmtmp;
      run;
-    
+
      %* case 1: no grouping variables;
      %* Case 2: no grouping variable has codelist;
-     %* Case 3: all grouping variables have codelist;  
+     %* Case 3: all grouping variables have codelist;
      %* Case 4: some grouping variables have codelist, other do not;
-        
+
      %*-------------------------------------------------------------------------;
      %* Case1: no grouping variables - only create __varbylab ;
-     
+
      %if &ngrpv=0 %then %do;
-     
+
          %local tmp tmp1;
          %let tmp = ;
          %let tmp1=;
@@ -1455,13 +1474,13 @@ quit;
          %end;
          %local tmpdec;
          %if %length(&decodestr)>0 %then %do;
-             %let tmpdec = %sysfunc(tranwrd(&varby &decodestr, %str( ), %str(,))); 
+             %let tmpdec = %sysfunc(tranwrd(&varby &decodestr, %str( ), %str(,)));
          %end;
-         
+
          data rrgpgmtmp;
          length record $ 2000;
          keep record;
-     
+
          record=  "*------------------------------------------------------------;";                       output;
          record=  "* CASE: NO GROUPING VARIABLES - ONLY CREATE __VARBYLAB ;";                             output;
          record=  "*------------------------------------------------------------;";                       output;
@@ -1471,9 +1490,9 @@ quit;
          %do j=1 %to &nvarby;
              __vblabel&j = quote(trim(left(symget("vblabel&j"))));
          %end;
-         
+
          %if %length(&decodestr)>0 %then %do;
-                record=  "*---------------------------------------------------------;";                  output; 
+                record=  "*---------------------------------------------------------;";                  output;
                 record=  "* ADD DECODES FROM __DATASET TO __ALL;";                                       output;
                 record=  "*---------------------------------------------------------;";                  output;
                 record=  " ";                                                                            output;
@@ -1486,8 +1505,8 @@ quit;
                 record=  "quit;";                                                                        output;
                 record=  " ";                                                                            output;
          %end;
-         
-         record=  " ";                                                                                   output; 
+
+         record=  " ";                                                                                   output;
          record=  "*---------------------------------------------------------;";                         output;
          record=  "* CREATE __VARBYLAB WITH DECRIPTION OF PAGE-BY VARIABLES  ;";                         output;
          record=  "*---------------------------------------------------------;";                         output;
@@ -1497,11 +1516,11 @@ quit;
          record=  "length __varbylab $ 2000;";                                                           output;
          record=  " ";                                                                                   output;
          record=  "   __varbylab='';";                                                                   output;
-      
+
          %do j=1 %to &nvarby;
               %let tmp = &&vby&j;
               %if %length(&&vblabel&j) %then %do;
-                   record=  " __varbylab =strip(__varbylab)||' '||" __vblabel&j ";";                     output;   
+                   record=  " __varbylab =strip(__varbylab)||' '||" __vblabel&j ";";                     output;
               %end;
               %if %length(&&vbdec_&tmp) %then %do;
                    record=  "   __varbylab = trim(left(__varbylab))||' '||&&vbdec_&tmp;";                output;
@@ -1513,21 +1532,21 @@ quit;
          record=  "run;";                                                                                output;
          record=  " ";                                                                                   output;
          run;
-         
+
          proc append base=rrgpgm data=rrgpgmtmp;
          run;
-    
+
       %* end of "if ngrpv=0";
       %end;
- 
+
     %*-------------------------------------------------------------------------;
- 
-    %if &ngrpv>0 and %length(&grps_w_cl)=0 %then %do; 
-      
+
+    %if &ngrpv>0 and %length(&grps_w_cl)=0 %then %do;
+
         %* Case2: no grouping variables have codelist;
         %* create __varbylab (if &varby present) and __grplabel_&&grp&i variables;
 
-       
+
         %local tmp tmp1 tmpdec;
         %let tmp = ;
         %let tmp1=;
@@ -1540,15 +1559,15 @@ quit;
             %*let tmp=&tmp  __vblabel&i;
             %let tmp1=&tmp1  __vblabel&i;
         %end;
-      
+
         data rrgpgmtmp;
         length record $ 2000;
         keep record;
         record=  "*------------------------------------------------------------;";                             output;
         record=  "* CASE: NO GROUPING VARIABLES HAVE CODELIST;";                                               output;
         record=  "*------------------------------------------------------------;";                             output;
-        record=  " ";                                                                                          output;   
-        
+        record=  " ";                                                                                          output;
+
         %if %length(&tmp1) %then %do; length &tmp1 $ 2000; %end;
         %do i=1 %to &ngrpv;
             __grplab&i = quote(trim(left(symget("grplab&i"))));
@@ -1556,7 +1575,7 @@ quit;
         %do j=1 %to &nvarby;
             __vblabel&j = quote(trim(left(symget("vblabel&j"))));
         %end;
-        
+
         record=  " ";                                                                                          output;
 
 
@@ -1564,8 +1583,8 @@ quit;
             %local ttt;
             %let ttt=&&grp&i;
             %if %length(&&grpdec_&ttt)>0 %then %do;
-                %let tmpdec = %sysfunc(tranwrd(&&grp&i &&grpdec_&ttt, %str( ), %str(,))); 
-                
+                %let tmpdec = %sysfunc(tranwrd(&&grp&i &&grpdec_&ttt, %str( ), %str(,)));
+
                  record=  " ";                                                                                                   output;
                  record=  "*-------------------------------------------------------------------------;";                         output;
                  record=  "* ADD DECODES FOR &&grp&i FROM __DATASET TO __ALL; ";                                                 output;
@@ -1579,13 +1598,13 @@ quit;
                  record=  "create table __all as select * from __tmpdec2;  ";                                                    output;
                  record=  "quit;";                                                                                               output;
                  record=  " ";                                                                                                   output;
-            %end;  
-            record=  " ";                                                                                                        output; 
-        %* end of do i=1 to ngrpv;                                                                                               
+            %end;
+            record=  " ";                                                                                                        output;
+        %* end of do i=1 to ngrpv;
         %end;
-        
-        record=  " ";                                                                                                            output; 
-                                                                                                             
+
+        record=  " ";                                                                                                            output;
+
         %if %length(&vbdecodestr) %then %do;
              record=  "*-------------------------------------------------------------------------;";                             output;
              record=  "* ADD DECODES FOR &varby FROM __DATASET TO __ALL; ";                                                      output;
@@ -1601,19 +1620,19 @@ quit;
              record=  " quit;     ";                                                                                             output;
              record=  " ";                                                                                                       output;
         %end;
-        
-    
+
+
         %if %length(&varby) %then %do;
             record=  "*---------------------------------------------------------;";                                              output;
             record=  "* CREATE __VARBYLAB WITH DECRIPTION OF PAGE-BY VARIABLES  ;";                                              output;
         %end;
-    
-        %if %length(&groupby) %then %do;                                                                                        
+
+        %if %length(&groupby) %then %do;
             record=  "*---------------------------------------------------------;";                                              output;
             record=  '* CREATE __grplabel_&grp1... __grplabel_&grpX;';                                                           output;
             record=  "* WITH DISPLAY VALUES OF GROUPING VARIABLES  ;";                                                           output;
         %end;
-        
+
         record=  "*---------------------------------------------------------;";                                                  output;
         record=  " ";                                                                                                            output;
         record=  "data __all;";                                                                                                  output;
@@ -1621,30 +1640,30 @@ quit;
         record=  "set __all;";                                                                                                   output;
         record=  " ";                                                                                                            output;
         record=  "if 0 then do;";                                                                                                output;
-        
+
         %do i=1 %to &ngrpv;
             record=  "   __grplabel_&&grp&i='';";                                                                                output;
             record=  "   __order_&&grp&i =.;";                                                                                   output;
             record=  "   call missing(&&grp&i);";                                                                                output;
         %end;
-        
+
         record=  "end;";                                                                                                         output;
         record=  " ";                                                                                                            output;
         record=  "   __varbylab='';";                                                                                            output;
-        
+
         %do i=1 %to &ngrpv;
              %let tmp = &&grp&i;
-             record=  " __grplabel_&&grp&i =" ||strip(__grplab&i)|| ";";                                                                    output; 
+             record=  " __grplabel_&&grp&i =" ||strip(__grplab&i)|| ";";                                                                    output;
              %if %length(&&grpdec_&tmp) %then %do;
-                record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grpdec_&tmp);";                          output; 
+                record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grpdec_&tmp);";                          output;
              %end;
              %else %do;
-                record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grp&i);";                                output; 
+                record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grp&i);";                                output;
              %end;
-        %end;    
-      
+        %end;
+
         %if %length(&varby) %then %do;
-      
+
             %do j=1 %to &nvarby;
                  %let tmp = &&vby&j;
                  %if %length(&&vblabel&j) %then %do;
@@ -1657,46 +1676,46 @@ quit;
                       record=  "   __varbylab=trim(left(__varbylab))||' '||&&vby&j;";                                            output;
                  %end;
             %end;
-        %* end of varby;    
+        %* end of varby;
         %end;
-                                                                                                                                 
+
         record=  "run;";                                                                                                         output;
         record=  " ";                                                                                                            output;
         run;
-        
+
         proc append base=rrgpgm data=rrgpgmtmp;
         run;
-    
+
     %* end of "if ngrpv>0 and length(grps_w_cl)=0";
     %end;
-  
+
     %*-------------------------------------------------------------------------;
- 
-    %if &ngrpv>0 and %length(&grps_no_cl)=0 %then %do; 
-      
+
+    %if &ngrpv>0 and %length(&grps_no_cl)=0 %then %do;
+
         %* Case3: all grouping variables have codelist;
-      
-        
+
+
         %local tmp tmp1 tmpdec tmp2 vdecodestr;
         %let tmp = ;
         %let tmp1=;
-        
+
         %do i=1 %to &ngrpv;
             %let tmp = &tmp __grplabel_&&grp&i;
             %let tmp1 = &tmp1 __grplab&i;
         %end;
-        
+
         %if %length(&varby) %then %let tmp = &tmp __varbylab;
-        
+
         %do i=1 %to &nvarby;
             %let tmp1=&tmp1  __vblabel&i;
             %let tmp2 = &&vby&i;
             %let vdecodestr=&vdecodestr &&vbdec_&tmp2;
          %end;
-        
-        %if %length(&vdecodestr)>0 %then    %let tmpdec = %sysfunc(tranwrd(&varby &vdecodestr, %str( ), %str(,))); 
-  
-   
+
+        %if %length(&vdecodestr)>0 %then    %let tmpdec = %sysfunc(tranwrd(&varby &vdecodestr, %str( ), %str(,)));
+
+
         data rrgpgmtmp;
         length record $ 2000;
         keep record;
@@ -1704,7 +1723,7 @@ quit;
         record=  "* CASE: ALL GROUPING VARIABLES HAVE CODELIST;";                                                         output;
         record=  "*------------------------------------------------------------;";                                        output;
         record=  " ";                                                                                                     output;
-                                                                             
+
         %if %length(&tmp1) %then %do; length &tmp1 $ 2000; %end;
         %do i=1 %to &ngrpv;
             __grplab&i = quote(trim(left(symget("grplab&i"))));
@@ -1712,7 +1731,7 @@ quit;
         %do j=1 %to &nvarby;
             __vblabel&j = quote(trim(left(symget("vblabel&j"))));
         %end;
-        
+
         %if %length(&vdecodestr)>0 %then %do;
             record=  "*---------------------------------------------------------;";                                        output;
             record=  "* ADD DECODES FOR BY-PAGE VARIABLES FROM __DATASET TO __ALL;";                                       output;
@@ -1726,19 +1745,19 @@ quit;
             record=  "  create table __all as select * from __tmpdec2;  ";                                                 output;
             record=  "quit;";                                                                                              output;
             record=  " ";                                                                                                  output;
-        %end;    
-        
+        %end;
+
         record=  " ";                                                                                                      output;
-   
+
         %do i=1 %to &ngrpv;
             record=  " ";                                                                                                  output;
             record=  "*---------------------------------------------------------------------;";                            output;
             record=  "* GET DECODES FOR &&GRP&I;";                                                                         output;
             record=  "*---------------------------------------------------------------------;";                            output;
-              
+
             %local ttt;
             %let ttt=&&grp&i;
-         
+
             record=  "    proc sort data=__all;";                                                                                       output;
             record=  "      by &&grp&i;";                                                                                               output;
             record=  "    run;";                                                                                                        output;
@@ -1754,22 +1773,22 @@ quit;
             record=  "      if __a;";                                                                                                   output;
             record=  "    run;    ";                                                                                                    output;
             record=  " ";                                                                                                               output;
-        %* end of i=1 to ngrpv;    
+        %* end of i=1 to ngrpv;
         %end;
-    
-    
-    
+
+
+
         %if %length(&varby) %then %do;
             record=  "*---------------------------------------------------------;";                                                     output;
             record=  "* CREATE __VARBYLAB WITH DECRIPTION OF PAGE-BY VARIABLES  ;";                                                     output;
         %end;
-   
+
         %if %length(&groupby) %then %do;
             record=  "*---------------------------------------------------------;";                                                      output;
             record=  '* CREATE __grplabel_&grp1... __grplabel_&grpX;';                                                                   output;
             record=  "* WITH DISPLAY VALUES OF GROUPING VARIABLES  ;";                                                                   output;
         %end;
-        
+
         record=  "*---------------------------------------------------------;";                                                         output;
         record=  " ";                                                                                                                   output;
         record=  "data __all;";                                                                                                         output;
@@ -1777,17 +1796,17 @@ quit;
         record=  "set __all;";                                                                                                          output;
         record=  " ";                                                                                                                   output;
         record=  "if 0 then do;";                                                                                                       output;
-        
+
         %do i=1 %to &ngrpv;
             record=  "   __grplabel_&&grp&i='';";                                                                                       output;
             record=  "   __order_&&grp&i='';";                                                                                          output;
             record=  "   call missing(&&grp&i);";                                                                                       output;
         %end;
-        
+
         record=  "end;";                                                                                                                output;
         record=  " ";                                                                                                                   output;
         record=  "   __varbylab='';";                                                                                                   output;
-        
+
         %do i=1 %to &ngrpv;
             %let tmp = &&grp&i;
             record=  " __grplabel_&&grp&i =" ||strip(__grplab&i)|| ";";                                                                            output;
@@ -1797,10 +1816,10 @@ quit;
             %else %do;
                 record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grp&i);";                                       output;
             %end;
-        %end;    
+        %end;
 
         %if %length(&varby) %then %do;
-      
+
             %do j=1 %to &nvarby;
                %let tmp = &&vby&j;
                %if %length(&&vblabel&j) %then %do;
@@ -1813,19 +1832,19 @@ quit;
                     record=  "   __varbylab=trim(left(__varbylab))||' '||&&vby&j;";                                                      output;
                %end;
             %end;
-            
+
         %* end of length(varby);
         %end;
-        
-    
+
+
         record=  "run;";                                                                                                                 output;
         record=  " ";                                                                                                                    output;
-        run; 
-        
+        run;
+
         proc append base=rrgpgm data=rrgpgmtmp;
-        run; 
-  
-  
+        run;
+
+
         %let groupby=;
         %do i=1 %to &ngrpv;
             %let groupby = &groupby __order_&&grp&i &&grp&i;
@@ -1835,54 +1854,54 @@ quit;
         proc sql noprint;
           update __rrgpgminfo set value="&groupby" where key = "newgroupby";
         quit;
-        
+
     %* end of if ngrpv>0 and length(grps_no_cl)=0;
     %end;
-  
+
     %*-------------------------------------------------------------------------;
-  
-    %if &ngrpv>0 and  %length(&grps_w_cl)>0 and %length(&grps_no_cl)>0 %then %do; 
-    
+
+    %if &ngrpv>0 and  %length(&grps_w_cl)>0 and %length(&grps_no_cl)>0 %then %do;
+
         %* Case4: some grouping variables have codelist other do not;
-      
-          
+
+
         %local tmp tmp1 tmp2 tmp3 tmpdec tmpd;
-        
+
         %let tmp = ;
         %let tmp1=;
         %let tmpdec=;
-        
+
         %do i=1 %to &ngrpv;
             %let tmp = &tmp __grplabel_&&grp&i;
             %let tmp1 = &tmp1 __grplab&i;
         %end;
-        
+
         %if %length(&varby) %then %let tmp = &tmp __varbylab;
-        
+
         %do i=1 %to &nvarby;
             %let tmp1=&tmp1  __vblabel&i;
         %end;
-        
+
         %let tmp3 = %sysfunc(tranwrd(&grps_no_cl,%str( ), %str(,)));
-        
+
         %local vdecodestr tmpd ;
         %do i=1 %to &nvarby;
             %let tmp2 = &&vby&i;
             %let vdecodestr=&vdecodestr &&vbdec_&tmp2;
         %end;
-        
+
         %local vdecodestr2;
         %do i=1 %to %sysfunc(countw(&grps_no_cl, %str( )));
             %let tmpd = %scan(&grps_no_cl, &i, %str( ));
-            %let vdecodestr2=&vdecodestr2 &&grpdec_&tmpd; 
+            %let vdecodestr2=&vdecodestr2 &&grpdec_&tmpd;
         %end;
-        
+
         %if %length(&varby.&&grps_no_cl.&vdecodestr.&vdecodestr2)>0 %then %do;
             %local tmpdec2;
             %let tmpdec2=%sysfunc(compbl(&varby &&grps_no_cl &vdecodestr &vdecodestr2));
-            %let tmpdec = %sysfunc(tranwrd(&tmpdec2, %str( ), %str(,))); 
+            %let tmpdec = %sysfunc(tranwrd(&tmpdec2, %str( ), %str(,)));
         %end;
-     
+
 
         data rrgpgmtmp;
         length record $ 2000;
@@ -1891,163 +1910,163 @@ quit;
         record=  "* CASE: SOME GROUPING VARIABLES HAVE CODELIST, OTHERS DO NOT;";                                    output;
         record=  "*------------------------------------------------------------;";                                   output;
         record=  " ";                                                                                                output;
-        
+
         %if %length(&tmp1) %then %do; length &tmp1 $ 2000; %end;
         %do i=1 %to &ngrpv;
-            __grplab&i = quote(trim(left(symget("grplab&i"))));                                                      
+            __grplab&i = quote(trim(left(symget("grplab&i"))));
         %end;
         %do j=1 %to &nvarby;
-            __vblabel&j = quote(trim(left(symget("vblabel&j"))));                                                     
+            __vblabel&j = quote(trim(left(symget("vblabel&j"))));
         %end;
-        
-        record=  " "; output;                                                                                        output; 
-        
+
+        record=  " "; output;                                                                                        output;
+
         %if %length(&tmpdec)>0 %then %do;
-            record=  " ";                                                                                            output; 
-            record=  "*-------------------------------------------------------------;";                              output; 
-            record=  "* CROSSJOIN __GRPCODES DATASET ;";                                                             output; 
-            record=  "* (CONTAINING ALL COMBOS OF GROUPING VARIABLES WITH CODELIST);";                               output; 
-            record=  "* WITH ALL COMBOS OF GROUPING VARIABLES WITHOUT CODELIST);";                                   output; 
-            record=  "*-------------------------------------------------------------;";                              output; 
-            record=  " ";                                                                                            output; 
-            record=  "proc sql noprint nowarn;";                                                                     output; 
-            record=  "  create table __tmp1g as select distinct &tmpdec from __dataset;";                            output; 
-            record=  "  create table __tmp2g as select * from";                                                      output; 
-            record=  "    __grpcodes cross join __tmp1g;";                                                           output; 
-            record=  "   create table __grpcodes as select * from __tmp2g;";                                         output; 
-            record=  "quit;";                                                                                        output; 
-            record=  " ";                                                                                            output; 
+            record=  " ";                                                                                            output;
+            record=  "*-------------------------------------------------------------;";                              output;
+            record=  "* CROSSJOIN __GRPCODES DATASET ;";                                                             output;
+            record=  "* (CONTAINING ALL COMBOS OF GROUPING VARIABLES WITH CODELIST);";                               output;
+            record=  "* WITH ALL COMBOS OF GROUPING VARIABLES WITHOUT CODELIST);";                                   output;
+            record=  "*-------------------------------------------------------------;";                              output;
+            record=  " ";                                                                                            output;
+            record=  "proc sql noprint nowarn;";                                                                     output;
+            record=  "  create table __tmp1g as select distinct &tmpdec from __dataset;";                            output;
+            record=  "  create table __tmp2g as select * from";                                                      output;
+            record=  "    __grpcodes cross join __tmp1g;";                                                           output;
+            record=  "   create table __grpcodes as select * from __tmp2g;";                                         output;
+            record=  "quit;";                                                                                        output;
+            record=  " ";                                                                                            output;
         %end;
-   
-        %if %length(&vdecodestr) %then %do;                                                                         
-            record=  " ";                                                                                            output; 
-            record=  "*---------------------------------------------------------------------;";                      output; 
-            record=  "* GET DECODES FOR &varby;";                                                                    output; 
-            record=  "*---------------------------------------------------------------------;";                      output; 
-            record=  " ";                                                                                            output; 
-            record=  " proc sort data=__all;";                                                                       output; 
-            record=  "   by &varby;";                                                                                output; 
-            record=  " run;";                                                                                        output; 
-            record=  " ";                                                                                            output; 
-            record=  "    proc sort data=__tmp1g out=__tmp1g2 nodupkey;";                                            output; 
-            record=  "       by &varby;";                                                                            output; 
-            record=  "    run;";                                                                                     output; 
-            record=  " ";                                                                                            output; 
-            record=  "    data __all;";                                                                              output; 
-            record=  "      merge __tmp1g2 (keep = &varby &vdecodestr) __all (in=__a ) ;";                           output; 
-            record=  "      by &varby;";                                                                             output; 
-            record=  "      if __a;";                                                                                output; 
-            record=  "    run;    ";                                                                                 output; 
-            record=  " ";                                                                                            output; 
-        %end;    
-    
+
+        %if %length(&vdecodestr) %then %do;
+            record=  " ";                                                                                            output;
+            record=  "*---------------------------------------------------------------------;";                      output;
+            record=  "* GET DECODES FOR &varby;";                                                                    output;
+            record=  "*---------------------------------------------------------------------;";                      output;
+            record=  " ";                                                                                            output;
+            record=  " proc sort data=__all;";                                                                       output;
+            record=  "   by &varby;";                                                                                output;
+            record=  " run;";                                                                                        output;
+            record=  " ";                                                                                            output;
+            record=  "    proc sort data=__tmp1g out=__tmp1g2 nodupkey;";                                            output;
+            record=  "       by &varby;";                                                                            output;
+            record=  "    run;";                                                                                     output;
+            record=  " ";                                                                                            output;
+            record=  "    data __all;";                                                                              output;
+            record=  "      merge __tmp1g2 (keep = &varby &vdecodestr) __all (in=__a ) ;";                           output;
+            record=  "      by &varby;";                                                                             output;
+            record=  "      if __a;";                                                                                output;
+            record=  "    run;    ";                                                                                 output;
+            record=  " ";                                                                                            output;
+        %end;
+
         %do i=1 %to &ngrpv;
-            record=  " ";                                                                                            output; 
-            record=  "*---------------------------------------------------------------------;";                      output; 
-            record=  "* GET DECODES FOR &&GRP&I;";                                                                   output; 
-            record=  "*---------------------------------------------------------------------;";                      output;     
-            
+            record=  " ";                                                                                            output;
+            record=  "*---------------------------------------------------------------------;";                      output;
+            record=  "* GET DECODES FOR &&GRP&I;";                                                                   output;
+            record=  "*---------------------------------------------------------------------;";                      output;
+
               %local ttt;
               %let ttt=&&grp&i;
-                                                                                                                     
-            record=  "    proc sort data=__all;";                                                                    output; 
-            record=  "      by &&grp&i;";                                                                            output; 
-            record=  "    run;";                                                                                     output; 
-            record=  " ";                                                                                            output; 
-            record=  "    proc sort data=__grpcodes nodupkey out=__tmpgrpcodes (keep=&&grp&i &&grpdec_&ttt __order_&&grp&i);";      output;
-            record=  "      by &&grp&i;";                                                                            output; 
-            record=  "    run;";                                                                                     output; 
-            record=  " ";                                                                                            output; 
-            record=  "    data __all;";                                                                              output; 
-            record=  "      merge __tmpgrpcodes __all (in=__a) ;";                                                   output; 
-            record=  "      by &&grp&i;";                                                                            output; 
-            record=  "      if __a;";                                                                                output; 
-            record=  "    run;    ";                                                                                 output; 
-            record=  " ";                                                                                            output; 
-            
-        %end;
-    
-        record=  " ";                                                                                                output; 
-        
-        %if %length(&varby) %then %do;
-            record=  "*---------------------------------------------------------;";                                  output; 
-            record=  "* CREATE __VARBYLAB WITH DECRIPTION OF PAGE-BY VARIABLES  ;";                                  output; 
-        %end;
-        
-        %if %length(&groupby) %then %do;
-            record=  "*---------------------------------------------------------;";                                  output; 
-            record=  '* CREATE __grplabel_&grp1... __grplabel_&grpX;';                                               output; 
-            record=  "* WITH DISPLAY VALUES OF GROUPING VARIABLES  ;";                                               output; 
-        %end;
-        
-        record=  "*---------------------------------------------------------;";                                    output; 
-        record=  " ";                                                                                              output; 
-        record=  "data __all;";                                                                                    output; 
-        record=  "length &tmp $ 2000;";                                                                            output; 
-        record=  "set __all;";                                                                                     output; 
-        record=  " ";                                                                                              output; 
-        record=  "if 0 then do;";                                                                                  output; 
 
-        %do i=1 %to &ngrpv;                                                                                        
-           record=  "   __grplabel_&&grp&i='';";                                                                   output; 
-           record=  "   __order_&&grp&i='';";                                                                      output; 
-           record=  "   call missing(&&grp&i);";                                                                   output; 
+            record=  "    proc sort data=__all;";                                                                    output;
+            record=  "      by &&grp&i;";                                                                            output;
+            record=  "    run;";                                                                                     output;
+            record=  " ";                                                                                            output;
+            record=  "    proc sort data=__grpcodes nodupkey out=__tmpgrpcodes (keep=&&grp&i &&grpdec_&ttt __order_&&grp&i);";      output;
+            record=  "      by &&grp&i;";                                                                            output;
+            record=  "    run;";                                                                                     output;
+            record=  " ";                                                                                            output;
+            record=  "    data __all;";                                                                              output;
+            record=  "      merge __tmpgrpcodes __all (in=__a) ;";                                                   output;
+            record=  "      by &&grp&i;";                                                                            output;
+            record=  "      if __a;";                                                                                output;
+            record=  "    run;    ";                                                                                 output;
+            record=  " ";                                                                                            output;
+
         %end;
-        
-        record=  "end;";                                                                                           output; 
-        record=  " ";                                                                                              output; 
-        record=  "   __varbylab='';";                                                                              output; 
-        
+
+        record=  " ";                                                                                                output;
+
+        %if %length(&varby) %then %do;
+            record=  "*---------------------------------------------------------;";                                  output;
+            record=  "* CREATE __VARBYLAB WITH DECRIPTION OF PAGE-BY VARIABLES  ;";                                  output;
+        %end;
+
+        %if %length(&groupby) %then %do;
+            record=  "*---------------------------------------------------------;";                                  output;
+            record=  '* CREATE __grplabel_&grp1... __grplabel_&grpX;';                                               output;
+            record=  "* WITH DISPLAY VALUES OF GROUPING VARIABLES  ;";                                               output;
+        %end;
+
+        record=  "*---------------------------------------------------------;";                                    output;
+        record=  " ";                                                                                              output;
+        record=  "data __all;";                                                                                    output;
+        record=  "length &tmp $ 2000;";                                                                            output;
+        record=  "set __all;";                                                                                     output;
+        record=  " ";                                                                                              output;
+        record=  "if 0 then do;";                                                                                  output;
+
+        %do i=1 %to &ngrpv;
+           record=  "   __grplabel_&&grp&i='';";                                                                   output;
+           record=  "   __order_&&grp&i='';";                                                                      output;
+           record=  "   call missing(&&grp&i);";                                                                   output;
+        %end;
+
+        record=  "end;";                                                                                           output;
+        record=  " ";                                                                                              output;
+        record=  "   __varbylab='';";                                                                              output;
+
         %do i=1 %to &ngrpv;
            %let tmp = &&grp&i;
-           record=  " __grplabel_&&grp&i =" ||strip(__grplab&i) ||";";                                                        output; 
+           record=  " __grplabel_&&grp&i =" ||strip(__grplab&i) ||";";                                                        output;
            %if %length(&&grpdec_&tmp) %then %do;
-              record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grpdec_&tmp);";              output; 
+              record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grpdec_&tmp);";              output;
            %end;
            %else %do;
-              record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grp&i);";                    output; 
+              record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grp&i);";                    output;
            %end;
-        %end;    
-  
+        %end;
+
         %if %length(&varby) %then %do;
-          
+
             %do j=1 %to &nvarby;
                  %let tmp = &&vby&j;
                  %if %length(&&vblabel&j) %then %do;
-                      record=  " __varbylab =strip(__varbylab)||' '||"||strip(__vblabel&j)|| ";";                   output; 
+                      record=  " __varbylab =strip(__varbylab)||' '||"||strip(__vblabel&j)|| ";";                   output;
                  %end;
                  %if %length(&&vbdec_&tmp) %then %do;
-                      record=  "   __varbylab = trim(left(__varbylab))||' '||strip(&&vbdec_&tmp);";                 output; 
+                      record=  "   __varbylab = trim(left(__varbylab))||' '||strip(&&vbdec_&tmp);";                 output;
                  %end;
                  %else %do;
-                      record=  "   __varbylab=trim(left(__varbylab))||' '||strip(&&vby&j);";                        output; 
+                      record=  "   __varbylab=trim(left(__varbylab))||' '||strip(&&vby&j);";                        output;
                  %end;
             %end;
-            
+
         %end;
-        
-        record=  "run;";                                                                                            output; 
-        record=  " ";                                                                                               output; 
+
+        record=  "run;";                                                                                            output;
+        record=  " ";                                                                                               output;
         run;
-        
+
         proc append base=rrgpgm data=rrgpgmtmp;
-        run;  
-        
+        run;
+
     %* end of case4;
     %end;
-  
+
     %let groupby=;
     %do i=1 %to &ngrpv;
         %let groupby = &groupby __order_&&grp&i &&grp&i;
     %end;
-  
-  
+
+
     proc sql noprint;
       update __rrgpgminfo set value="&groupby" where key = "newgroupby";
     quit;
-    
+
 %* end of ngrpv>0 or nvarby>0;
-%end; 
+%end;
 
 %**************************************************************;
 %*** IF SOME GROUPING VARIABLES HAD "IN=COLUMNS" SPECIFIED;
@@ -2057,7 +2076,7 @@ quit;
 
 
 %__transposeg(
-  dsin=__ALL, 
+  dsin=__ALL,
   varby=&varby,
   groupby=&groupby,
   trtvar=&trtvar);
@@ -2077,7 +2096,7 @@ quit;
 
 %*****************************************************************;
 %* RETRIEVE MODIFFIED LIST OF GROUPING VARIABLES FROM __PGMINFO;
-%* (IF SOME GROUPING VARS HAD ACROSS=Y); 
+%* (IF SOME GROUPING VARS HAD ACROSS=Y);
 %*****************************************************************;
 
 %local ntrtvar;
@@ -2087,7 +2106,7 @@ proc sql noprint;
     from __rrgpgminfo(where =(key="newgroupby"));
 select value into:ntrtvar separated by ' '
     from __rrgpgminfo(where =(key="newtrt"));
-quit;  
+quit;
 %if &ntrtvar=1 %then %let ntrtvar=&trtvar;
 
 ** todo: if no trtvar due to last step;
@@ -2106,7 +2125,7 @@ quit;
 
 
     %__transposes(
-      dsin=__ALL, 
+      dsin=__ALL,
       varby=&varby,
       groupby=&groupby,
       trtvar=&ntrtvar,
@@ -2118,15 +2137,15 @@ quit;
 
 %local i tmp tmp2 numg;
 %let tmp=0;
-%let numg=%sysfunc(countw(&groupby,%str( ))); 
+%let numg=%sysfunc(countw(&groupby,%str( )));
 %do i=1 %to &numg;
     %let tmp2 = %upcase(%scan(&groupby, &i, %str( )));
     %if %index(&tmp2,%str(__ORDER))=0 and %index(&tmp2,%str(__FORDER))=0 %then %do;
         %let tmp = %eval(&tmp+1);
         %let grp&tmp = &tmp2;
-    %end;  
+    %end;
 %end;
-%let ngrpv=&tmp;  
+%let ngrpv=&tmp;
 
 data rrgpgmtmp;
 length record $ 2000;
@@ -2199,7 +2218,7 @@ record=  "    __nindentlev=__indentlev;";                                       
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run;  
+run;
 
 
 
@@ -2213,14 +2232,14 @@ run;
     record=  "      if __grpid ne ceil(__grpid)  then do;";                                                   output;
     record=  "           __ind = floor(__grpid);";                                                            output;
     record=  "           if __ind=998 then __ind = &ngrpv;";                                                  output;
-    
+
     %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
         record=  "           __indentlev = max(__ind-1,0);";                                                  output;
     %end;
     %else %do;
         record=  "           __indentlev = max(__ind-1+__oldind-&ngrpv,0);";                                  output;
     %end;
-    
+
     record=  "           __sid = -&ngrpv+__ind-1;";                                                           output;
     record=  "           __vtype=cats('GLABEL', __ind);";                                                     output;
     record=  "           __suffix='';";                                                                       output;
@@ -2228,11 +2247,11 @@ run;
     record=  "           if __ind>0 then __col_0=grpl[__ind];";                                               output;
     record=  "       end;";                                                                                   output;
     record=  "       else do;";                                                                               output;
-    
+
     %do i=&ngrpv %to 1 %by -1;
-      
+
         record=  "         if first.&&grp&i  then do;";                                                       output;
-    
+
         %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
            record=  "          if __grpid ne 999 then __nindentlev = __indentlev-&ngrpv+__grpid-1;";          output;
            record=  "          else __nindentlev = __indentlev;";                                             output;
@@ -2240,7 +2259,7 @@ run;
         %else %do;
             record=  "          __nindentlev = __grpid-2+__indentlev-&ngrpv;";                                output;
         %end;
-    
+
         record=  "          __sid = -&ngrpv+&i-1;";                                                           output;
         record=  "          __vtype=CATS('GLABEL',&i);";                                                      output;
         record=  "          if not last.&&grp&i then do;";                                                    output;
@@ -2249,39 +2268,39 @@ run;
         record=  "          end;";                                                                            output;
         record=  "          __col_0=trim(left(__grplabel_&&grp&i));";                                         output;
         record=  "         end;";                                                                             output;
-    %end;   
-    
+    %end;
+
     %if &ngrpv>0 %then %do;
         record=  "                 if __nindentlev ne . then __indentlev = max(0,__nindentlev);";             output;
     %end;
-    
+
     record=  "       end;    ";                                                                               output;
     record=  "    end;";                                                                                      output;
     record=  "    else do;";                                                                                  output;
     record=  "         __indentlev=max(__oldind,0);";                                                         output;
     record=  "    end;";                                                                                      output;
     record=  " ";                                                                                             output;
-    
-    
+
+
     %if &ngrpv>0 %then %do;
         record=  "    if __col_0='' then __col_0 = 'Missing';";                                               output;
     %end;
     %else %do;
         record=  "    if __col_0='' and __vtype ne 'GLABEL0' then __col_0 = 'Missing';";                      output;
     %end;
-    
+
     record=  "    if last.__blockid and __skipline='Y' then __suffix = '~-2n';";                              output;
-  
+
 
     proc append base=rrgpgm data=rrgpgmtmp;
-    run; 
-    
+    run;
+
     %* end of AETABLE ne N;
 
 %end;
 
 %else %do;
-    
+
     %if %upcase(&defreport_statsacross)=Y and &ngrpv>1 %then %do;
         data rrgpgmtmp;
         length record $ 2000;
@@ -2289,158 +2308,158 @@ run;
         record=  "     __col_0 = trim(left(__grplabel_&&grp&ngrpv));";  output;
         run;
         proc append base=rrgpgm data=rrgpgmtmp;
-        run;                                     
+        run;
     %end;
-    
-    
+
+
 %end;
 
 run;
 
- 
+
 
 
 
 data rrgpgmtmp;
 length record $ 2000;
 keep record;
-record=  " ";                                                                                                output; 
-record=  "  output;";                                                                                        output; 
-record=  "  do __i=1 to dim(cols);";                                                                         output; 
-record=  "    cols[__i]='';";                                                                                output; 
-record=  "  end;";                                                                                           output; 
-record=  " ";                                                                                                output; 
+record=  " ";                                                                                                output;
+record=  "  output;";                                                                                        output;
+record=  "  do __i=1 to dim(cols);";                                                                         output;
+record=  "    cols[__i]='';";                                                                                output;
+record=  "  end;";                                                                                           output;
+record=  " ";                                                                                                output;
 
 %if %upcase(&defreport_aetable)=N %then %do;
-   
-  
-    record=  "    * CREATE ROWS FOR DISPLAY OF GROUPING VARIABLES;";                                         output; 
-    record=  "    * ASSIGN CORRECT DISPLAY VALUES TO THESE ROWS ;";                                          output; 
-    
-    %do i=1 %to &nn;                 
-      
-        record=  "      if first.&&grp&i then do;";                                                          output; 
-        
+
+
+    record=  "    * CREATE ROWS FOR DISPLAY OF GROUPING VARIABLES;";                                         output;
+    record=  "    * ASSIGN CORRECT DISPLAY VALUES TO THESE ROWS ;";                                          output;
+
+    %do i=1 %to &nn;
+
+        record=  "      if first.&&grp&i then do;";                                                          output;
+
         %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
-            record=  "     __indentlev=max(&i-1+__oldind-&nn,0);";                                           output; 
-         %end;        
+            record=  "     __indentlev=max(&i-1+__oldind-&nn,0);";                                           output;
+         %end;
          %else %do;
-            record=  "     __indentlev = max(&i-1+__oldind-&ngrpv,0);";                                      output; 
+            record=  "     __indentlev = max(&i-1+__oldind-&ngrpv,0);";                                      output;
         %end;
-          
-        record=  "        __sid = -&ngrpv+&i-1;";                                                            output; 
-        record=  "        __vtype=CATS('GLABEL',&i);";                                                       output; 
-        record=  "        __suffix='';";                                                                     output; 
-        record=  "        __keepn=1;";                                                                       output; 
-        record=  "        __col_0=trim(left(__grplabel_&&grp&i));";                                          output; 
-        record=  "        output;";                                                                          output; 
-        record=  "      end;";                                                                               output; 
+
+        record=  "        __sid = -&ngrpv+&i-1;";                                                            output;
+        record=  "        __vtype=CATS('GLABEL',&i);";                                                       output;
+        record=  "        __suffix='';";                                                                     output;
+        record=  "        __keepn=1;";                                                                       output;
+        record=  "        __col_0=trim(left(__grplabel_&&grp&i));";                                          output;
+        record=  "        output;";                                                                          output;
+        record=  "      end;";                                                                               output;
 
     %end;
-  
-  
+
+
 %end;
 
 
-record=  "  * CREATE ROWS WITH DESCRIPTION OF ANALYSIS VARIABLE;";                                           output; 
-record=  "  if first.__blockid then do;";                                                                    output; 
-record=  "     if __labelline ne 1 then do;";                                                                output; 
-record=  "        __sid=0;";                                                                                 output; 
-record=  "        __suffix='';";                                                                             output; 
+record=  "  * CREATE ROWS WITH DESCRIPTION OF ANALYSIS VARIABLE;";                                           output;
+record=  "  if first.__blockid then do;";                                                                    output;
+record=  "     if __labelline ne 1 then do;";                                                                output;
+record=  "        __sid=0;";                                                                                 output;
+record=  "        __suffix='';";                                                                             output;
 
 %if %upcase(&defreport_statsacross)=Y and &ngrpv>1 %then %do;
-    record=  "        if last.%scan(&groupby,-2, %str( )) then do;";                                         output; 
-    record=  "          __suffix = '~-2n';";                                                                 output; 
-    record=  "          __keepn=0;";                                                                         output; 
-    record=  "        end;;";                                                                                output; 
+    record=  "        if last.%scan(&groupby,-2, %str( )) then do;";                                         output;
+    record=  "          __suffix = '~-2n';";                                                                 output;
+    record=  "          __keepn=0;";                                                                         output;
+    record=  "        end;;";                                                                                output;
 %end;
 %else %do;
-    record=  "        __keepn=1;";                                                                           output; 
+    record=  "        __keepn=1;";                                                                           output;
 %end;
 
-record=  "        __indentlev=max(__oldind,0);";                                                             output; 
-record=  "        __vtype='VLABEL';";                                                                        output; 
-record=  "        __col_0 =dequote(__varlabel);";                                                            output; 
-record=  "        __align = 'L '||repeat('L '," ||'&maxtrt);' ;                                                output; 
-record=  "        if __col_0 ne '' then output;";                                                            output; 
-record=  "     end;";                                                                                        output; 
-record=  "  end;";                                                                                           output; 
-record=  " ";                                                                                                output; 
-record=  "run;";                                                                                             output; 
-record=  " ";                                                                                                output; 
+record=  "        __indentlev=max(__oldind,0);";                                                             output;
+record=  "        __vtype='VLABEL';";                                                                        output;
+record=  "        __col_0 =dequote(__varlabel);";                                                            output;
+record=  "        __align = 'L '||repeat('L '," ||'&maxtrt);' ;                                                output;
+record=  "        if __col_0 ne '' then output;";                                                            output;
+record=  "     end;";                                                                                        output;
+record=  "  end;";                                                                                           output;
+record=  " ";                                                                                                output;
+record=  "run;";                                                                                             output;
+record=  " ";                                                                                                output;
 
-%if &ngrpv=0 and %upcase(&defreport_aetable) ne N %then %do;   
-    record=  " ";                                                                                            output; 
-    record=  "data __all;";                                                                                  output; 
-    record=  "set __all;";                                                                                   output; 
-    record=  "if __vtype='GLABEL0' then delete;";                                                            output; 
-    record=  "run;;";                                                                                        output; 
+%if &ngrpv=0 and %upcase(&defreport_aetable) ne N %then %do;
+    record=  " ";                                                                                            output;
+    record=  "data __all;";                                                                                  output;
+    record=  "set __all;";                                                                                   output;
+    record=  "if __vtype='GLABEL0' then delete;";                                                            output;
+    record=  "run;;";                                                                                        output;
 %end;
 
-record=  "proc sort data=__all;";                                                                            output; 
-record=  "by __ntmprowid __sid;";                                                                            output; 
-record=  "run;";                                                                                             output; 
-record=  " ";                                                                                                output; 
-record=  " ";                                                                                                output; 
-record=  '%local numobsinall;';                                                                              output; 
-record=  " ";                                                                                                output; 
-record=  "data __all;";                                                                                      output; 
-record=  "set __all end=eof;";                                                                               output; 
-record=  "if eof then call symput ('numobsinall', cats(_n_));";                                              output; 
-record=  "__tmprowid=_n_;";                                                                                  output; 
+record=  "proc sort data=__all;";                                                                            output;
+record=  "by __ntmprowid __sid;";                                                                            output;
+record=  "run;";                                                                                             output;
+record=  " ";                                                                                                output;
+record=  " ";                                                                                                output;
+record=  '%local numobsinall;';                                                                              output;
+record=  " ";                                                                                                output;
+record=  "data __all;";                                                                                      output;
+record=  "set __all end=eof;";                                                                               output;
+record=  "if eof then call symput ('numobsinall', cats(_n_));";                                              output;
+record=  "__tmprowid=_n_;";                                                                                  output;
 
 %if %upcase(&defreport_statsacross) ne Y /*or &ngrpv<=1*/ %then %do;
-    record=  "if index(__vtype,'GLABEL')>0 then __suffix='';";                                               output; 
+    record=  "if index(__vtype,'GLABEL')>0 then __suffix='';";                                               output;
 %end;
 
-record=  "drop __ntmprowid;";                                                                                output; 
-record=  "run;";                                                                                             output; 
-record=  " ";                                                                                                output; 
-record=  "data __fall;";                                                                                     output; 
-record=  "length __datatype $ 8;";                                                                           output; 
-record=  "set __all;";                                                                                       output; 
-record=  "__datatype='TBODY';";                                                                              output; 
-record=  "__rowid=_n_;";                                                                                     output; 
-record=  "array cols {*} __col_:;";                                                                          output; 
-record=  "  do __i=1 to dim(cols);";                                                                         output; 
-record=  "     cols[__i]=strip(cols[__i]);";                                                                 output; 
-record=  "  end;  ";                                                                                         output; 
-record=  "__dis=.; _n=.; __rowt=.; __ord=.; __old=.;";                                                       output; 
-record=  "drop __tmprowid  __tby __skipline __rowt: __ord: __label: __grp: ";                                output; 
-record=  '    __dis: _n: __varlabel __i __old:;';                                                            output; 
-record=  "run;";                                                                                             output; 
-record=  " ";                                                                                                output; 
-record=  " ";                                                                                                output; 
-record=  "*----------------------------------------------------------------;";                               output; 
-record=  "  * IF LABEL IS TO SPAN WHOLE TABLE, CREATE __TCOL VARIABLE;";                                     output; 
-record=  "*----------------------------------------------------------------;";                               output; 
-record=  " ";                                                                                                output; 
-record=  "data __fall;";                                                                                     output; 
-record=  "set __fall;";                                                                                      output; 
-record=  "length __tcol __tmptcol $ 2000;";                                                                  output; 
-record=  "retain __tcol;";                                                                                   output; 
-record=  "if 0 then do; __wholerow=''; __tcol=''; __tmptcol=''; end;";                                       output; 
-record=  "__oldwr = lag(__wholerow);";                                                                       output; 
-record=  "__tmptcol = lag(__col_0);";                                                                        output; 
-record=  "if __oldwr = 'Y' then do;";                                                                        output; 
-record=  "  __tcol=strip(__tmptcol);";                                                                       output; 
-record=  "  __fospan=1;";                                                                                    output; 
-record=  "end;";                                                                                             output; 
-record=  "if __wholerow ne 'Y' then output;";                                                                output; 
-record=  "drop __oldwr __tmptcol;";                                                                          output; 
-record=  "run;";                                                                                             output; 
-record=  " ";                                                                                                output; 
-record=  " ";                                                                                                output; 
-                                                                                                             
+record=  "drop __ntmprowid;";                                                                                output;
+record=  "run;";                                                                                             output;
+record=  " ";                                                                                                output;
+record=  "data __fall;";                                                                                     output;
+record=  "length __datatype $ 8;";                                                                           output;
+record=  "set __all;";                                                                                       output;
+record=  "__datatype='TBODY';";                                                                              output;
+record=  "__rowid=_n_;";                                                                                     output;
+record=  "array cols {*} __col_:;";                                                                          output;
+record=  "  do __i=1 to dim(cols);";                                                                         output;
+record=  "     cols[__i]=strip(cols[__i]);";                                                                 output;
+record=  "  end;  ";                                                                                         output;
+record=  "__dis=.; _n=.; __rowt=.; __ord=.; __old=.;";                                                       output;
+record=  "drop __tmprowid  __tby __skipline __rowt: __ord: __label: __grp: ";                                output;
+record=  '    __dis: _n: __varlabel __i __old:;';                                                            output;
+record=  "run;";                                                                                             output;
+record=  " ";                                                                                                output;
+record=  " ";                                                                                                output;
+record=  "*----------------------------------------------------------------;";                               output;
+record=  "  * IF LABEL IS TO SPAN WHOLE TABLE, CREATE __TCOL VARIABLE;";                                     output;
+record=  "*----------------------------------------------------------------;";                               output;
+record=  " ";                                                                                                output;
+record=  "data __fall;";                                                                                     output;
+record=  "set __fall;";                                                                                      output;
+record=  "length __tcol __tmptcol $ 2000;";                                                                  output;
+record=  "retain __tcol;";                                                                                   output;
+record=  "if 0 then do; __wholerow=''; __tcol=''; __tmptcol=''; end;";                                       output;
+record=  "__oldwr = lag(__wholerow);";                                                                       output;
+record=  "__tmptcol = lag(__col_0);";                                                                        output;
+record=  "if __oldwr = 'Y' then do;";                                                                        output;
+record=  "  __tcol=strip(__tmptcol);";                                                                       output;
+record=  "  __fospan=1;";                                                                                    output;
+record=  "end;";                                                                                             output;
+record=  "if __wholerow ne 'Y' then output;";                                                                output;
+record=  "drop __oldwr __tmptcol;";                                                                          output;
+record=  "run;";                                                                                             output;
+record=  " ";                                                                                                output;
+record=  " ";                                                                                                output;
+
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run; 
+run;
 
 
 
 %if %upcase(&defreport_aetable)=EVENTSE %then %do;
-  
+
     data rrgpgmtmp;
     length record $ 2000;
     keep record;
@@ -2466,14 +2485,14 @@ run;
     run;
 
     proc append base=rrgpgm data=rrgpgmtmp;
-    run; 
-  
+    run;
+
 %end;
 
 
 
 %if %upcase(&defreport_aetable)=EVENTS %then %do;
-  
+
     data rrgpgmtmp;
     length record $ 2000;
     keep record;
@@ -2501,7 +2520,7 @@ run;
     run;
 
     proc append base=rrgpgm data=rrgpgmtmp;
-    run; 
+    run;
 
 %end;
 
@@ -2533,12 +2552,12 @@ run;
     record=  '  __align = trim(left(__nalign));';                                                            output;
     record=  '  drop __i __nalign; ';                                                                        output;
     record=  "run;";                                                                                         output;
-    
+
     run;
 
     proc append base=rrgpgm data=rrgpgmtmp;
-    run; 
-    
+    run;
+
 %end;
 
 
@@ -2564,7 +2583,7 @@ record=  " ";                                                                   
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run; 
+run;
 
 data rrgpgmtmp;
 length record $ 2000;
@@ -2612,7 +2631,7 @@ record=  " ";                                                                   
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run; 
+run;
 
 
 %__spanh(dsin=__head);
@@ -2627,7 +2646,7 @@ run;
     record=  "* CREATE EVENT COUNT HEADINGS ;";                                                             output;
     record=  "*--------------------------------------------------------------------;";                      output;
     record=  " ";                                                                                           output;
-    
+
     %if &nvarby>0 %then %do;
         record=  "proc sort data=__head;";                                                                  output;
         record=  "by &varby;";                                                                              output;
@@ -2637,32 +2656,32 @@ run;
 
     record=  "  data __head ;";                                                                             output;
     record=  "  set __head end=eof ;";                                                                      output;
-    
+
     %if &nvarby>0 %then %do;
         record=  "by &varby;";                                                                              output;
     %end;
-    
+
     record=  '  length __ncol_0 %do i=1 %to &maxtrt;  __colevt_&i %end; $ 2000;';                           output;
     record=  "  retain __ncol_0;";                                                                          output;
     record=  '    %do i=1 %to &maxtrt;  ';                                                                  output;
     record=  '    __colevt_&i=__col_&i;';                                                                   output;
     record=  '  %end;';                                                                                     output;
     record=  " ";                                                                                           output;
-    
+
     %if &nvarby=0 %then %do;
         record=  "    if eof then do;";                                                                     output;
         record=  "    __ncol_0=__col_0;";                                                                   output;
         record=  "    __col_0='';";                                                                         output;
         record=  "    output;";                                                                             output;
     %end;
-    
+
     %else %do;
         record=  "      if last.&&vby&nvarby then do;";                                                     output;
         record=  "    __ncol_0=__col_0;";                                                                   output;
         record=  "    __col_0='';";                                                                         output;
         record=  "    output;";                                                                             output;
     %end;
-    
+
     record=  "     __col_0 = __ncol_0;";                                                                    output;
     record=  "     __rowid+1;";                                                                             output;
     record=  '    %do i=1 %to &maxtrt;  ';                                                                  output;
@@ -2688,13 +2707,13 @@ run;
     record=  '  end;';                                                                                      output;
     record=  "  run;";                                                                                      output;
     record=  '  %let maxtrt = %eval(2*&maxtrt);';                                                           output;
-    
+
     run;
-  
+
     proc append base=rrgpgm data=rrgpgmtmp;
-    run; 
-    
-%* end of aetable=events;    
+    run;
+
+%* end of aetable=events;
 %end;
 
 
@@ -2708,7 +2727,7 @@ run;
     record=  "* CREATE EVENT COUNT HEADINGS ;";                                                               output;
     record=  "*--------------------------------------------------------------------;";                        output;
     record=  " ";                                                                                             output;
-    
+
     %if &nvarby>0 %then %do;
         record=  "proc sort data=__head;";                                                                    output;
         record=  "by &varby;";                                                                                output;
@@ -2718,31 +2737,31 @@ run;
 
     record=  "  data __head ;";                                                                               output;
     record=  "  set __head end=eof ;";                                                                        output;
-    
+
     %if &nvarby>0 %then %do;
         record=  "by &varby;";                                                                                output;
     %end;
-    
+
     record=  '  length __ncol_0 %do i=1 %to &maxtrt;  __colevt_&i %end; $ 2000;';                             output;
     record=  "  retain __ncol_0;";                                                                            output;
     record=  '    %do i=1 %to &maxtrt;  ';                                                                    output;
     record=  '    __colevt_&i=__col_&i;';                                                                     output;
     record=  '  %end;';                                                                                       output;
     record=  " ";                                                                                             output;
-    
+
     %if &nvarby=0 %then %do;
         record=  "    if eof then do;";                                                                       output;
         record=  "    __ncol_0=__col_0;";                                                                     output;
         record=  "    __col_0='';";                                                                           output;
         record=  "    output;";                                                                               output;
     %end;
-    %else %do;                                                                                                
+    %else %do;
         record=  "      if last.&&vby&nvarby then do;";                                                       output;
         record=  "    __ncol_0=__col_0;";                                                                     output;
         record=  "    __col_0='';";                                                                           output;
         record=  "    output;";                                                                               output;
     %end;
-    
+
     record=  "     __col_0 = __ncol_0;";                                                                      output;
     record=  "     __rowid+1;";                                                                               output;
     record=  '    %do i=1 %to &maxtrt;  ';                                                                    output;
@@ -2768,12 +2787,12 @@ run;
     record=  '  end;';                                                                                        output;
     record=  "  run;";                                                                                        output;
     record=  '  %let maxtrt = %eval(2*&maxtrt);';                                                             output;
-    
+
     run;
-  
+
     proc append base=rrgpgm data=rrgpgmtmp;
-    run; 
-  
+    run;
+
 %* end of aetable=eventses;
 %end;
 
@@ -2784,7 +2803,7 @@ run;
 proc sql noprint;
   select splitrow into:splitrow separated by ' '
     from __varinfo(where=(type='TRT'));
-quit;    
+quit;
 
 %if %length(&splitrow) %then %do;
 
@@ -2854,12 +2873,12 @@ quit;
     record=  "  end;";                                                                                              output;
     record=  "  run;";                                                                                              output;
     record=  " ";                                                                                                   output;
-    run;                                                                                                           
-    
+    run;
+
     proc append base=rrgpgm data=rrgpgmtmp;
-  run; 
-  
-%* end of length(splitrow);  
+  run;
+
+%* end of length(splitrow);
 %end;
 
 data rrgpgmtmp;
@@ -2896,7 +2915,7 @@ record=  " ";                                                                   
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run; 
+run;
 
 
 
@@ -2912,12 +2931,12 @@ keep record;
 *set __repinfo;
 
 %if &nvarby>0 %then %do;
-  
-    %let varby=%sysfunc(compbl(&varby)); 
-    
+
+    %let varby=%sysfunc(compbl(&varby));
+
     %local tmp;
     %let tmp=%sysfunc(tranwrd(&varby,%str( ), %str(,)));
-    
+
     record=  " ";                                                                                                 output;
     record=  "*--------------------------------------------------------;";                                        output;
     record=  "* ADD <PAGE BY> VARIABLE LABEL TO HEADER RECORDS;";                                                 output;
@@ -3027,11 +3046,11 @@ record=  " ";                                                                   
 record=  " ";                                                                                                          output;
 record= '%dotab:';                                                                                                     output;
 record=  " ";                                                                                                          output;
-                                                                                                                      
+
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run; 
+run;
 
 
 
@@ -3044,14 +3063,14 @@ length record $ 2000;
 keep record;
 record=  " ";                                                                                                          output;
 record=  "data &rrguri;";                                                                                              output;
-record=  "  set __report __fall ;";                                                                                    output;
+record=  "  set rrgreport __fall ;";                                                                                    output;
 record=  "run;";                                                                                                       output;
 record=  " ";                                                                                                          output;
 record=  " ";                                                                                                          output;
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run; 
+run;
 
 **** PUT REQUESTED GROUPING VARIABLES IN COLUMNS;
 
@@ -3061,12 +3080,12 @@ proc sql noprint;
   select count(*) into: isincol separated by ' '
   from __varinfo (where=(type='GROUP' and upcase(incolumn)='Y'));
   quit;
-  
+
 
 %if &isincol>0 %then %do;
 
   %__rrg_unindent(indentlev=%eval(&isincol-1));
-  
+
 %end;
 
 
@@ -3076,9 +3095,9 @@ proc sql noprint;
 
 
 %if &defreport_statsincolumn=Y %then %do;
- 
+
   %__rrg_unindentv;
-  
+
 %end;
 
 
@@ -3116,11 +3135,13 @@ record=  '%mend;';                                                              
 record=  " ";                                                                                                                                     output;
 record=  " ";                                                                                                                                     output;
 record=  '%rrg;';                                                                                                                                 output;
+record=  'sasfile work.__dataset close;   '  ;                                                                                                          output;
+record=  "run;";                                                                                                                                  output;
 
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;
-run; 
+run;
 
 
 
@@ -3137,20 +3158,15 @@ run;
 
 data _null_;
   set rrgpgm;
- 
+
   file "&__workdir./rrgpgm.sas"  lrecl=1000;
 
   put record  ;
-  
+
 run;
 
 
-data _null_;
-  set rrgpgm;
-   file "c:/tmp/&rrguri..sas"  lrecl=1000;
-  put record  ;
-  
-run;
+
 
 
 %if &rrg_debug>0 %then %do;
@@ -3158,9 +3174,9 @@ data __timer;
   set __timer end=eof;
 	length task $ 100;
 	output;
-		if eof then do; 
+		if eof then do;
 		  task = "ANALYSING RRG MACROS STARTED";
-		  dt=datetime(); 
+		  dt=datetime();
 		  output;
 		end;
 run;
@@ -3172,9 +3188,9 @@ data __timer;
   set __timer end=eof;
 	length task $ 100;
 	output;
-		if eof then do; 
+		if eof then do;
 		  task = "MACRO EXECUTION FINISHED";
-		  dt=datetime(); 
+		  dt=datetime();
 		  output;
 		end;
 run;

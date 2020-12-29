@@ -13,7 +13,7 @@
     note: this.xxx below refers to macro parameter xxx of this macro; __repinfo.xxx refers to variable xxx in __repinfo dataset                                 
   called in RRG_GENERATE and RRG_GENLIST
  
-  creates dataset __REPORT, 
+  creates dataset rrgREPORT, 
   seting __datatype   = 'RINFO',  __rowid, __varbygrp to MISSING (numeric), 
    and variables
     __fontsize, __bookmarks_rtf, __bookmarks_pdf, __sfoot_fs, __indentsize, __orient, __filename,
@@ -76,10 +76,15 @@
 
 %macro makestring(name);
     %local name;
-    &name=tranwrd(strip(&name),'"',"#dbquot");
-    &name=tranwrd(strip(&name),"'","#squot");
-    &name=tranwrd(strip(&name),'(',"#lpar");
-    &name=tranwrd(strip(&name),')',"#rpar");
+    *&name=tranwrd(strip(&name),'"',"#dbquot ");
+    *&name=tranwrd(strip(&name),"'","#squot ");
+    *&name=tranwrd(strip(&name),'(',"#lpar");
+    *&name=tranwrd(strip(&name),')',"#rpar");
+    &name=tranwrd(strip(&name),'"',"/#0034 ");
+    &name=tranwrd(strip(&name),"'","/#0039 ");
+    &name=tranwrd(strip(&name),'(',"/#0040");
+    &name=tranwrd(strip(&name),')',"#/0041");
+
     record=  "__"|| "&name="||'"'|| strip(&name)||'";';  output;
 %mend;  
 
@@ -91,7 +96,7 @@ keep record;
 set __repinfo;
 
 record= " "; output;
-record=   "data __report;"; output;
+record=   "data rrgreport;"; output;
 record=   " length __datatype __fontsize __dest __sfoot_fs $ 8 __footnot1-__footnot14 __title1-__title6"; output;
 record=   "        __bookmarks_rtf __bookmarks_pdf __filename __nodatamsg __watermark"; output;
 record=   "        __sprops  "; output;

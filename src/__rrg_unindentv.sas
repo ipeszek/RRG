@@ -85,7 +85,7 @@ record = " ";output;
 record = '%if &nmt>0 %then %do;';output;
 record = " ";output;
 record =  '  %local rename1 rename2 j i ;';output;
-record =  '  %let rename2 = ' "&rename2 ;";output;
+record =  '  %let rename2 = '|| "&rename2 ;";output;
 record =  '  %let rename1 =  ;';output;
 record =  '  %do i=0 %to &nmt;';output;
 record =  '    %let j = %eval(&i+1);';output;

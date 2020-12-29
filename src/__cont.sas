@@ -742,7 +742,6 @@ record="   length __col $ 2000;";output;
 record="         length __decfmt $ 20;";output;
 record="         __decfmt = '12.'; ";output;
 record="         if __basedec>0 then __decfmt = cats(__decfmt, __basedec);";output;
-record="         put __basedec=;";output;
   
 record=" ";output;
 
@@ -753,18 +752,21 @@ record="  *--------------------------------------------------------------;";outp
 record="  * CREATE DISPLAY OF STATISTICS (FORMAT);";output;
 record="  *--------------------------------------------------------------;";output;
 
-
+record="     __sign='';";output;
 record="     if __name='PROBT' then do;";output;
-record="       __val2=round(__val, 0.000000001);";output;
-record="       __col = put(__val2, &pvfmt);";output;
+record="       if __val ne . then do;"; output;
+record="         __val2=round(__val, 0.000000001);";output;
+record="         __col = put(__val2, &pvfmt);";output;
+record="       end;"; output;
+record="       else __col='';"; output;
 record="     end;";output;
-record="     else do;";output;
-record="        __sign='';";output;
-record="        if .<__val<0 then __sign='-';";output;
-
-record="       __val2 = round(__val, 10**(-1*__basedec));";output;
-record="       __col = compress(putn(__val2, __decfmt));";output;
-
+record="     else do;"; output;
+record="        if not missing(__val) then do;"; output;
+record="          if __val<0 then __sign='-';"; output;
+record="           __val2 = round(__val, 10**(-1*__basedec));";output;
+record="           __col = compress(putn(__val2, __decfmt));";output;
+record="        end;";output;
+record="        else __col='';"; output;
 record="     end;";output;
 
 %if %length(&condfmt) %then %do;
@@ -802,9 +804,10 @@ record=" ";     output;
 record="  if first.__order and last.__order then do;";output;
 record="    __ncol =upcase(__name);";output;
 record="    __col =tranwrd(strip(__ncol), strip(upcase(__name)), strip(__col));";output;
-record="    if compress(__col, '.,(): ')='' then __col='';     ";output;
+record="    if compress(__col, '.,(): ')='' then __col='';     ";   output;
+record="    if __name in ('STD', 'STDERR') and __col='' then  __col='-';"; output;
 record="    __tmpalign = cats('"|| "&align"|| "');";   output;
-record="    output;";output;
+record="    output;";   output;
 record="  end;";output;
 
 record="  else do;";output;
@@ -814,6 +817,8 @@ record="       __ncol =tranwrd(strip(__ncol), '$'||strip(upcase(__name))||'$', s
 record="       if last.__order then do;";output;
 
 record="          if compress(__ncol, '.,(): ')='' then __ncol='';     ";output;
+record="          if __name in ('STD', 'STDERR') then __ncol=tranwrd(__ncol,'( )','(-)');"; output;
+
 record="          __col=strip(__ncol);";output;
 
 record="    __tmpalign = cats('"|| "&align"|| "');"; output;
@@ -821,112 +826,16 @@ record="          output;";output;
 record="       end;";output;
 record="  end;";output;
 
-record=" ";output;
+record="run;";output;
 
-record=" ";output;
+record="                                               ";output;
 record="  data __contstat2;";output;
 record="  set __contstat2;";output;
 record="     __col = tranwrd(strip(__col),'(.','(NA');";output;
 record="  run;"; output;
 
-/*
-%if %length(&maxdec) %then %do;
-    record="     if   __basedec>&maxdec then __basedec = &maxdec;";output;
-%end;
-record="         length __decfmt $ 20;";output;
-record="         __decfmt = '12.'; ";output;
-record="         if __basedec>0 then __decfmt = cats(__decfmt, __basedec);";output;
-record="         put __basedec=;";output;
-  
-record=" ";output;
-
-record=" ";output;
-record="  *--------------------------------------------------------------;";output;
-record="  * CREATE DISPLAY OF STATISTICS (FORMAT);";output;
-record="  *--------------------------------------------------------------;";output;
-
-
-record="     if __name='PROBT' then do;";output;
-record="       __val2=round(__val, 0.000000001);";output;
-record="       __col = put(__val2, &pvfmt);";output;
-record="     end;";output;
-record="     else do;";output;
-record="        __sign='';";output;
-record="        if .<__val<0 then __sign='-';";output;
-
-record="       __val2 = round(__val, 10**(-1*__basedec));";output;
-record="       __col = compress(putn(__val2, __decfmt));";output;
-
-record="     end;";output;
-
-%if %length(&condfmt) %then %do;
-   %__condfmt(condfmt=%nrbquote(&condfmt));
-%end;
-
-record=" ";output;
-
-%if %upcase(&showneg0)=Y %then %do;
-  record="    if compress(__col,'0.')='' and __sign='-' and __col ne '' then __col='-'||strip(__col);";output;
-%end;
-%else %do;
-  record="    if compress(__col, '-0.')='' then __col = tranwrd(__col,'-','');";output;
-%end;
-
-
-record="     drop   __sign;";output;
-record="     run;";output;
-record=" ";output;
-
-record=" ";output;
-record="  *--------------------------------------------------------------;";output;
-record="  * PUT STATISTICS ON THE SAME LINE, IF NEEDED;";output;
-record="  *--------------------------------------------------------------;";output;
-record=" ";output;
-record="  proc sort data=__contstat2;";output;
-record="    by &by &trtvars __tby &groupvars __order __sid ;";output;
-record="  run;";output;
-record=" ";output;
-
-record=" ";output;
-record="  data __contstat2;";output;
-record="  set __contstat2;";output;
-record="  by &by &trtvars __tby &groupvars __order __sid ;";output;
-record="  length __ncol $ 2000 __tmpalign $ 8;";output;
-record="     retain __ncol;";output;
-record=" ";     output;
-record="  if first.__order and last.__order then do;";output;
-record="    __ncol =upcase(__name);";output;
-record="    __col =tranwrd(strip(__ncol), strip(upcase(__name)), strip(__col));";output;
-record="    if compress(__col, '.,(): ')='' then __col='';     ";output;
-record="    __tmpalign = cats('"|| "&align"|| "');";   output;
-record="    output;";output;
-record="  end;";output;
-
-record="  else do;";output;
-record="    if first.__order then __ncol =__dispname;";output;
-
-record="       __ncol =tranwrd(strip(__ncol), '$'||strip(upcase(__name))||'$', strip(__col));";output;
-record="       if last.__order then do;";output;
-
-record="          if compress(__ncol, '.,(): ')='' then __ncol='';     ";output;
-record="          __col=strip(__ncol);";output;
-
-record="    __tmpalign = cats('"|| "&align"|| "');"; output;
-record="          output;";output;
-record="       end;";output;
-record="  end;";output;
-
-record="run; ";output;
-
-record=" ";output;
-record="  data __contstat2;";output;
-record="  set __contstat2;";output;
-record="     __col = tranwrd(strip(__col),'(.','(NA');";output;
-record="  run;";output;
-record=" ";output;
 run;
-*/
-run;
+
 proc append data=rrgpgmtmp base=rrgpgm;
 run;
 
@@ -1029,8 +938,9 @@ run;
             record="  *-------------------------------------------------------------;";output;
             record=" ";output;
             
-            record="  data __dataset;";output;
-            record="  set __dataset;";output;
+            record="  data __datasetp;";output;
+            record="  set __dataset(where=("|| strip(symget("defreport_tabwhere"))|| " and "|| strip(symget("where")) || " &pooledstr));";output;
+           
             %if %length(&decvar)=0 %then %do;
                 record="  __decvar=&basedec;";output;
                 record="  if missing(__decvar) then __decvar=0;";output;
@@ -1038,13 +948,6 @@ run;
             %else %do;
                record="  if missing(&decvar) then &decvar=0;";output;
             %end;
-            
-            record="  run;";output;
-            
-            record=" ";output;
-            
-            record="  data __datasetp;";output;
-            record="  set __dataset(where=("|| strip(symget("defreport_tabwhere"))|| " and "|| strip(symget("where")) || " &pooledstr));";output;
            
             record="  run;";output;
             record=" ";output;
@@ -1420,7 +1323,7 @@ record="  __vtype='CONT';";output;
 record=   '__grpid=999;';output;
 record="    __skipline=cats('"|| "&skipline"|| "');";output;
 record="  do __i = 1 to dim(cols);";output;
-record="    if index(cats(cols[__i]),'-')=1 and compress(cols[__i], '-0.')='' then ";output;
+record="    if index(cats(cols[__i]),'-')=1 and compress(cols[__i], '-0.')='' and length(cols[__i])>=2 then ";output;
 record="      cols[__i] = substr(cats(cols[__i]),2);";output;
 record="      if upcase(__fname) in( 'N','NMISS')  and cols[__i]='' then cols[__i]='0';";output;
 record="  end;";output;

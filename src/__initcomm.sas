@@ -206,7 +206,11 @@ run;
 
 %__verifyuri(&rrguri);
 
-
+data rrgpgm ;
+  length record $ 2000;
+  keep record;
+  record='';
+run;
 
 
 %mend;

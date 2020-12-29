@@ -127,6 +127,18 @@ run;
 
 %if &rrgfinalize_done=0 %then %do;
 
+%if &rrg_debug>0 %then %do;
+data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "GENERATING PDF AND/OR RTF OUTPUT STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+%end;
   data _null_;
     set rrgfinalize;
     call execute(cats('%nrstr(',record,')'));
@@ -314,6 +326,7 @@ run;
 
 %end; 
 
+sasfile work.rrgpgm close;
 
     
 %mend;

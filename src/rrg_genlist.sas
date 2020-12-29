@@ -287,6 +287,11 @@ run;
 
 
 
+sasfile work.rrgpgm.data open;
+run;
+
+
+
 data rrgpgmtmp;
   length record $ 2000;
   keep record;
@@ -644,7 +649,7 @@ if eof then do;
     record= "run;";  output;
     record=" ";  output;
     record= "data &rrguri;";  output;
-    record= "set __report &rrguri ;";  output;
+    record= "set rrgreport &rrguri ;";  output;
     record= "run;";  output;
     record=" ";   output;
     

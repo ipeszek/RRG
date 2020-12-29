@@ -12,6 +12,9 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
   
+13Nov2020 changed __cont and __cntssimple to avoid warning about operation on missing values;
+                  missing shown as blank except for SD/SE where it shows as "-"
+  
 08Oct2020 if rrg_debug is set to 1 prior to invoking rrg-init, additional info is printed/created. In particular, dataset __execution
   is created in rrgpgmpath folder with execution statistics.   
   

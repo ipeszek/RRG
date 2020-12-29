@@ -362,7 +362,9 @@ run;
 * APPLY TEMPLATE: KEEP ONLY MODALITIES FROM TEMPLATE;
 *-----------------------------------------------------------------------;
 
-
+proc sql noprint;
+  select trim(left(decode)) into:decode from __catv;
+quit;
 
 
 %__applycodesds(
@@ -388,6 +390,7 @@ warn_on_nomatch = &warn_on_nomatch,
 
 proc append data=rrgpgmtmp base=rrgpgm;
 run;
+
 
 %*-----------------------------------------------------------------;
 %* APPLY FREQUENCY-BASED SORTING;

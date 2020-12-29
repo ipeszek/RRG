@@ -298,7 +298,9 @@ if _n_=1 then do;
         record="  __grpid=999;"; output;
         record="  do __i=1 to dim(cnt);"; output;
         record="    if cntnmiss[__i]=. then cntnmiss[__i]=0;"; output;
-        record="    cnt[__i]=cntpop[__i]-cntnmiss[__i];"; output;
+        record="    if n(cntpop[__i],cntnmiss[__i])=2 then cnt[__i]=cntpop[__i]-cntnmiss[__i];"; output;
+        record="    else cnt[__i]=0;"; output;
+
         record="    col[__i]=compress(put(cnt[__i],12.));"; output;
         record="  end;"; output;
         record=" ";   output;
@@ -316,7 +318,9 @@ if _n_=1 then do;
             record="    do __i=1 to dim(cnt);"; output;
             record="      if cntnmiss[__i]=. then cntnmiss[__i]=0;"; output;
             record="      cnt[__i]=cntnmiss[__i];"; output;
-            record="      col[__i]=compress(put(cnt[__i],12.));"; output;
+            record="      if not missing(cnt[__i]) then col[__i]=compress(put(cnt[__i],12.));"; output;
+            record="       else col[__i]='0';"; output;
+
             record="    end;"; output;
             record="    __total=1;"; output;
             record="    output;"; output;

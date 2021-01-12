@@ -12,6 +12,12 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
   
+09Jan2021: 
+fixed issue with cell borders when page splits into multiple pages
+fixed issue with extra space before superscript in pdf
+added support for subscript (syntax is ~{sub x}  
+Up to 14 footnotes are supported
+  
 13Nov2020 changed __cont and __cntssimple to avoid warning about operation on missing values;
                   missing shown as blank except for SD/SE where it shows as "-"
   

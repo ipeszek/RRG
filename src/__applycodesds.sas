@@ -45,217 +45,211 @@ remove=
 
     
 %if %sysfunc(exist(&codelistds._exec)) %then %do; 
-  %if %length(&decode) %then %do;
-  proc sql noprint;
-    select distinct &decode into:missdec separated by ' ' 
-     from &codelistds._exec(where=(missing(&var)));
-  quit;   
-  %end;  
-  
-  %if &missorder=999999 %then %do;
-  proc sql noprint;
-  select distinct __order into:missorder separated by ' '
-    from &codelistds._exec(where=(missing(&var)));
-  quit;  
-  %end;
+    %if %length(&decode) %then %do;
+        proc sql noprint;
+          select distinct &decode into:missdec separated by ' ' 
+           from &codelistds._exec(where=(missing(&var)));
+        quit;   
+    %end;  
+    
+    %if &missorder=999999 %then %do;
+        proc sql noprint;
+        select distinct __order into:missorder separated by ' '
+          from &codelistds._exec(where=(missing(&var)));
+        quit;  
+    %end;
 %end;
-/*%if %length(&missorder)=0 %then %let missorder=999999;*/
 
 %if %length(%nrbquote(&missdec))=0 %then %let missdec=Missing;
 
 
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-put;
-length __missdec $ 2000;
-__missdec = quote(symget("missdec"));
+
+record=" "; output;
+record=" "; output;
+length __missdec $ %eval(%length(&missdec)+2);
+__missdec = dequote(symget("missdec"));
+__missdec=quote(strip(__missdec));
 
 %if &codes=1 or &codesds=1  %then %do; 
 
-put @1 "*----------------------------------------------------------------;";
-put @1 "* TAKE ONLY COUNTS FOR MODALITIES NOT IN DATASET FROM codelist  ;";
-put @1 "*----------------------------------------------------------------;";
-put ;
-put @1 "data &codelistds;";
-put @1 "  set &countds;";
-put @1 "  if 0 then __total=.;";
-put @1 "  if __trtid<0 and __total ne 1;";
-put @1 "  keep &by __tby &groupvars __order &var __grpid &decode ;";
-put @1 "run;";
-put;
+    record= "*----------------------------------------------------------------;";      output;
+    record= "* TAKE ONLY COUNTS FOR MODALITIES NOT IN DATASET FROM codelist  ;";       output;
+    record= "*----------------------------------------------------------------;";      output;
+    record=" ";                                                                        output;
+    record= "data &codelistds;";                                                       output;
+    record= "  set &countds;";                                                         output;
+    record= "  if 0 then __total=.;";                                                  output;
+    record= "  if __trtid<0 and __total ne 1;";                                        output;
+    record= "  keep &by __tby &groupvars __order &var __grpid &decode ;";              output;
+    record= "run;";                                                                    output;
+    record=" ";                                                                        output;
+                                                                                       
+    %if %length(&by.&groupvars)>0 and &codes ne 1  %then %do;                         
 
-  %if %length(&by.&groupvars)>0 and &codes ne 1  %then %do; 
-  
-
-put @1 "*------------------------------------------------------;";
-put @1 "* MERGE COUNTS DATASET WITH 'GROUP TEMPLATE' DATASET   ;";
-put @1 "* KEEPING ONLY GROUPING VARIABLES VALUES FROM TEMPLATE ;";
-put @1 "*------------------------------------------------------;";
-put;
-
-
-put @1 "proc sort data=&grptemplateds;";
-put @1 "  by &by &groupvars;";
-put @1 "run;";
-put;  
-put @1 "proc sort data=&dsin;";
-put @1 "  by &by &groupvars;";
-put @1 "run;";
-put;  
-put @1 "data &dsin;";
-put @1 "  merge &dsin &grptemplateds (in=__a keep = &by &groupvars);";
-put @1 "  by &by &groupvars;";
-put @1 "  if not __a then do;";
-%if &warn_on_nomatch=1 %then %do;
-put @1 "    put 'WAR' 'NING: deleting the following group ;'";
-put @1 "'    as not found in codelist :' &tmpgrp;";
-%end;
-put @1 "    delete;";
-put @1 "  end;  ";
-put @1 "run;";
-put ; 
-  %end;
-put @1 "*------------------------------------------------------;";
-put @1 "* MERGE COUNTS DATASET WITH CODELIST DATASET           ;";
-put @1 "* KEEPING ONLY ANALYSIS VARIABLE VALUES FROM TEMPLATE  ;";
-put @1 "*------------------------------------------------------;";
-put;
-
-put @1 "data &codelistds;";
-put @1 "set &codelistds;";
-put @1 "if missing(&var) then __order=&missorder; ";
-put @1 "run;";
-put;
-
-put @1 "proc sort data=&codelistds nodupkey;";
-put @1 "  by &by __tby &groupvars __order  &var __grpid &decode ;";
-put @1 "run;";
-put;
-put @1 "proc sort data=&dsin;";
-put @1 "  by &by __tby &groupvars   __order &var __grpid &decode ;";
-put @1 "run;";
-put ;
-
-put @1 "data &dsin;";
-put @1 "  merge &dsin &codelistds (in=__a);";
-put @1 "  by &by __tby &groupvars   __order &var __grpid &decode ;";
-put @1 "  if 0 then do;";
-put @1 "    __total=1;";
-put @1 "    __missing=0;";
-put @1 "  end;";
-
-put @1 "** KEEP ONLY REQUESTED MODLAITIES;";
-put @1 "**  and MISSIGN MODALITY AND TOTAL IF REQUESTED;";
-put @1 "if not __a and __total ne 1 and __missing ne 1 then do;";
-    %if &warn_on_nomatch=1 %then %do;
-put @1 "   put 'WAR' 'NING: deleting the following modality ;'";
-put @1 "'     as not found in codelist :' &tmpgrp &var.=;";
-     %end; 
-put @1 "   delete;";
-put @1 "end;  ";
-%if %length(&remove)>0 %then %do;
-length remove $ 2000;
-remove = strip(symget("remove"));
-put @1 "if __total ne 1  then do;";
-put @1 "   if &var  in ( " remove " ) then delete;";
-put @1 "end;  ";
-%end;
-
-put @1 "run;";
-put ;
-%end;
-%else %do;
-put @1 "proc sort data=&dsin;";
-put @1 "  by &by __tby &groupvars   __order &var __grpid &decode ;";
-put @1 "run;";
-put ;
-
-%end;
-
-put;
-put @1 "*-----------------------------------------------------------------;";
-put @1 "* CREATE DISPLAY OF ANALYSIS VARIABLE;";
-put @1 "*-----------------------------------------------------------------;";
-put ;
-put @1 "data &dsin;";
-put @1 "  length __col_0 $ 2000;";
-put @1 "  set &dsin;";
-put @1 "  by &by __tby &groupvars   __order &var __grpid &decode ;";
-put ;
-put @1 '  array __col{*} $ 2000 __col_1 -__col_&maxtrt;';
-put @1 '  array __cnt{*} __cnt_1 -__cnt_&maxtrt;';
-put @1 '  array __colevt{*} $ 2000 __colevt_1 -__colevt_&maxtrt;';
-put ;
-put @1 "  if 0 then do;";
-put @1 "    __total=0;";
-put @1 "    __missing=0;";
-put @1 "    do __i =1 to dim(__col);";
-put @1 "      __cnt[__i]=0;";
-put @1 "      __colevt[__i]='';";
-put @1 "    end;";
-put @1 "   end;";
-put ;
-put;
-put @1 "  __rowtotal=0;";
-put @1 "  do __i =1 to dim(__col);";
-put @1 "    if __col[__i]='' then __col[__i]='0';";
-put @1 "    if __cnt[__i]=.  then __cnt[__i]=0;";
-put @1 "    if __colevt[__i]='' then __colevt[__i]='0';";
-put @1 "     __rowtotal=__rowtotal+__cnt[__i];";
-put @1 "  end;";
-put ;
-put @1 "  if __missing ne 1 and __total ne 1 then do;";
-put @1 "    __col_0 = cats(&var);";
-put ;
-/*
-%if &showmiss ne A %then %do;
-*/
-%if %index(&aetable, EVENTS)>0 or &showmiss ne A %then %do;
-put @1 "    %* THIS CLEARS 0-COUNT ROWS FOR MISSING MODALITY: ;";
-put @1 "    if missing(&var) and __rowtotal=0 then delete;";
-%end;
-
-put @1 "    if __grpid=999 and  missing(&var) and __col_0 = '' ";
-put @1 "       and not first.__grpid then do;";
-put @1 "    * __GRPID = 999 CORRESPONDS TO COUNT OF &VAR;";
-put @1 "     __col_0 = cats('" "&missdec" "');";
-put @1 "     __order = &missorder;";
-put @1 "    end;";
-put @1 "    else do;";
-%if %length(&fmt) %then %do;
-put @1 "       __col_0=put(&var, &fmt);";
-%end;
-%if %length(&decode) %then %do;
-put @1 "       __col_0=&decode;";
-%end;
-put @1 "    end;";
-put @1 "  end;";
-put @1 "  else if __missing=1 then do;";
-put @1 "    __order = &missorder;";
-%if &showmiss ne A %then %do;
-put @1 "    if missing(&var) and __rowtotal=0 then delete;";
-%end;
-%if %length(&decode) %then %do;
-put @1 "    __col_0=&decode;";
-put @1 "    if missing(&var) then __col_0 =" __missdec ";";
-%end;
-put @1 "    if __col_0='' then __col_0='" "&missdec"  "';";
-put @1 "  end;";  
-put @1 "__col__0=''; __cnt__0=.; __pct__0=.; __colevt__0='';";
-put @1 "if __fordelete=1 then delete;";
-put @1 "drop __col__: __cnt__: __pct__: __colevt__:;  ";
-
-put @1 "run;";
-put;
-/*
-put @1 "proc print data = &dsin;";
-put "title 'final data from applycodesds';";
-put "run;";
-*/
+        record= "*------------------------------------------------------;";            output;
+        record= "* MERGE COUNTS DATASET WITH 'GROUP TEMPLATE' DATASET   ;";            output;
+        record= "* KEEPING ONLY GROUPING VARIABLES VALUES FROM TEMPLATE ;";            output;
+        record= "*------------------------------------------------------;";            output;
+        record=" ";                                                                    output;
+                                                                                       
+                                                                                      
+        record= "proc sort data=&grptemplateds;";                                      output;
+        record= "  by &by &groupvars;";                                                output;
+        record= "run;";                                                                output;
+        record=" ";                                                                    output;
+        record= "proc sort data=&dsin;";                                               output;
+        record= "  by &by &groupvars;";                                                output;
+        record= "run;";                                                                output;
+        record=" ";                                                                    output;
+        record= "data &dsin;";                                                         output;
+        record= "  merge &dsin &grptemplateds (in=__a keep = &by &groupvars);";        output;
+        record= "  by &by &groupvars;";                                                output;
+        record= "  if not __a then do;";                                               output;
+        %if &warn_on_nomatch=1 %then %do;                                              
+            record= "    put 'WAR' 'NING: deleting the following group ;'";            output;
+            record= "'    as not found in codelist :' &tmpgrp;";                       output;
+        %end;                                                                          
+        record= "    delete;";                                                         output;
+        record= "  end;  ";                                                            output;
+        record= "run;";                                                                output;
+        record=" " ;                                                                   output;
+    %end;                                                                              
+    record= "*------------------------------------------------------;";                output;
+    record= "* MERGE COUNTS DATASET WITH CODELIST DATASET           ;";                output;
+    record= "* KEEPING ONLY ANALYSIS VARIABLE VALUES FROM TEMPLATE  ;";                output;
+    record= "*------------------------------------------------------;";                output;
+    record=" ";                                                                        output;
+                                                                                       
+    record= "data &codelistds;";                                                       output;
+    record= "set &codelistds;";                                                        output;
+    record= "if missing(&var) then __order=&missorder; ";                              output;
+    record= "run;";                                                                    output;
+    record=" ";                                                                        output;
+                                                                                       
+    record= "proc sort data=&codelistds nodupkey;";                                    output;
+    record= "  by &by __tby &groupvars __order  &var __grpid &decode ;";               output;
+    record= "run;";                                                                    output;
+    record=" ";                                                                        output;
+    record= "proc sort data=&dsin;";                                                   output;
+    record= "  by &by __tby &groupvars   __order &var __grpid &decode ;";              output;
+    record= "run;";                                                                    output;
+    record=" ";                                                                        output;
+    record= "data &dsin;";                                                             output;
+    record= "  merge &dsin &codelistds (in=__a);";                                     output;
+    record= "  by &by __tby &groupvars   __order &var __grpid &decode ;";              output;
+    record= "  if 0 then do;";                                                         output;
+    record= "    __total=1;";                                                          output;
+    record= "    __missing=0;";                                                        output;
+    record= "  end;";                                                                  output;
+    record= "** KEEP ONLY REQUESTED MODLAITIES;";                                      output;
+    record= "**  and MISSIGN MODALITY AND TOTAL IF REQUESTED;";                        output;
+    record= "if not __a and __total ne 1 and __missing ne 1 then do;";                 output;
+    %if &warn_on_nomatch=1 %then %do;                                                  
+          record= "   put 'WAR' 'NING: deleting the following modality ;'";            output;
+          record= "put '     as not found in codelist : ' &tmpgrp &var.=;";            output;
+    %end;                                                                              
+    record= "   delete;";                                                              output;
+    record= "end;  ";                                                                  output;
+    %if %length(&remove)>0 %then %do;                                                  
+        length remove $ %length(&remove);                                              
+        remove = strip(symget("remove"));                                              
+        record= "if __total ne 1  then do;";                                           output;
+        record= "   if &var  in ( "||strip(remove)||" ) then delete;";                 output;
+        record= "end;  ";                                                              output;
+    %end;                                                                             
+                                                                                       
+    record= "run;";                                                                    
+    record=" " ;                                                                       output;
+%end;                                                                                 
+%else %do;                                                                             
+    record= "proc sort data=&dsin;";                                                   output;
+    record= "  by &by __tby &groupvars   __order &var __grpid &decode ;";              output;
+    record= "run;";                                                                    output;
+    record=" " ;                                                                       output;
+%end;                                                                              
+                                                                                       
+record=" ";                                                                            output;
+record= "*-----------------------------------------------------------------;";         output;
+record= "* CREATE DISPLAY OF ANALYSIS VARIABLE;";                                      output;
+record= "*-----------------------------------------------------------------;";         output;
+record= " " ;                                                                          output;
+record= "data &dsin;";                                                                 output;
+record= "  length __col_0 $ 2000;";                                                    output;
+record= "  set &dsin;";                                                                output;
+record= "  by &by __tby &groupvars   __order &var __grpid &decode ;";                  output;
+record=" ";                                                                            output;
+record= '  array __col{*} $ 2000 __col_1 -__col_&maxtrt;';                             output;
+record= '  array __cnt{*} __cnt_1 -__cnt_&maxtrt;';                                    output;
+record= '  array __colevt{*} $ 2000 __colevt_1 -__colevt_&maxtrt;';                    output;
+record=" " ;                                                                           output;
+record= "  if 0 then do;";                                                             output;
+record= "    __total=0;";                                                              output;
+record= "    __missing=0;";                                                            output;
+record= "    __fordelete=.;";                                                          output;
+record= "    do __i =1 to dim(__col);";                                                output;
+record= "      __cnt[__i]=0;";                                                         output;
+record= "      __colevt[__i]='';";                                                     output;
+record= "    end;";                                                                    output;
+record= "   end;";                                                                     output;
+record=" " ;                                                                           output;
+record=" ";                                                                            output;
+record= "  __rowtotal=0;";                                                             output;
+record= "  do __i =1 to dim(__col);";                                                  output;
+record= "    if __col[__i]='' then __col[__i]='0';";                                   output;
+record= "    if __cnt[__i]=.  then __cnt[__i]=0;";                                     output;
+record= "    if __colevt[__i]='' then __colevt[__i]='0';";                             output;
+record= "     __rowtotal=__rowtotal+__cnt[__i];";                                      output;
+record= "  end;";                                                                      output;
+record=" " ;                                                                           output;
+record= "  if __missing ne 1 and __total ne 1 then do;";                               output;
+record= "    __col_0 = cats(&var);";                                                   output;
+record=" " ;                                                                           output;
+%if %index(&aetable, EVENTS)>0 or &showmiss ne A %then %do;                            
+    record= "    %* THIS CLEARS 0-COUNT ROWS FOR MISSING MODALITY: ;";                 output;
+    record= "    if missing(&var) and __rowtotal=0 then delete;";                      output;
+%end;                                                                                  
+                                                                                     
+record= "    if __grpid=999 and  missing(&var) and __col_0 = '' ";                     output;
+record= "       and not first.__grpid then do;";                                       output;
+record= "    * __GRPID = 999 CORRESPONDS TO COUNT OF &VAR;";                           output;
+record= "     __col_0 = cats('"||"&missdec"||"');";                                    output;
+record= "     __order = &missorder;";                                                  output;
+record= "    end;";                                                                    output;
+record= "    else do;";                                                                output;
+%if %length(&fmt) %then %do;                                                           
+    record= "       __col_0=put(&var, &fmt);";                                         output;
+%end;                                                                                 
+%if %length(&decode) %then %do;                                                        
+    record= "       __col_0=&decode;";                                                 output;
+%end;                                                                                  
+record= "    end;";                                                                    output;
+record= "  end;";                                                                      output;
+record= "  else if __missing=1 then do;";                                              output;
+record= "    __order = &missorder;";                                                   output;
+%if &showmiss ne A %then %do;                                                          
+    record= "    if missing(&var) and __rowtotal=0 then delete;";                      output;
+%end;                                                                                  
+%if %length(&decode) %then %do;                                                        
+    record= "    __col_0=&decode;";                                                    output;
+    record= "    if missing(&var) then __col_0 =" ||strip(__missdec)|| ";";            output;
+%end;                                                                                  
+record= "    if __col_0='' then __col_0="||strip(__missdec)|| ";";                     output;
+record= "  end;";                                                                      output;
+record= "__col__0=''; __cnt__0=.; __pct__0=.; __colevt__0='';";                        output;
+record= "if __fordelete=1 then delete;";                                               output;
+record= "drop __col__: __cnt__: __pct__: __colevt__:;  ";                              output;
+                                                                                      
+record= "run;";                                                                        output;
+record=" ";                                                                            output;
 
 run;
+
+
+
 
 %mend;
 

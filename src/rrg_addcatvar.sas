@@ -45,6 +45,7 @@ subjid=,
 showgroupcnt=N,
 showemptygroups=N,
 pct4missing=,
+pct4total=n,
 pctfmt=%nrbquote(__rrgp1d.),
 preloadfmt=,
 showmissing=y,
@@ -67,7 +68,7 @@ noshow0cntvals=)/store;
        delimiter ordervar showgroupcnt showemptygroups showmissing pctfmt 
        overallstats sortcolumn preloadfmt labelline pct4missing totalgrp
        totalwhere  subjid misspos misstext denomgrp keepwithnext templatewhere
-       desc remove DENOMINClTRT show0cnt noshow0cntvals;
+       desc remove DENOMINClTRT show0cnt noshow0cntvals pct4total;
 
 %PUT STARTING RRG_ADDCATVAR USING VARIABLE &NAME;
 
@@ -207,6 +208,7 @@ keepwithnext=&keepwithnext,
 pctfmt=%nrbquote(&pctfmt),
 showgroupcnt = %nrbquote(&showgroupcnt),
 pct4missing = %nrbquote(&pct4missing),
+pct4total = %nrbquote(&pct4total),
 showemptygroups = %nrbquote(&showemptygroups),
 showmissing = %nrbquote(&showmissing),
 preloadfmt = %nrbquote(&preloadfmt),
@@ -221,15 +223,10 @@ noshow0cntvals=%nrbquote(&noshow0cntvals)
 );
 
 
-data __timer;
-	set __timer end=eof;
-	output;
-	if eof then do;
-		task = "Finished analysing &name";
-		time=time();
-		output;
-	end;
-run;	
+
+
+
+
  
 %put RRG_ADDCATVAR USING VARIABLE &NAME COMPLETED SUCESSULLY;
 

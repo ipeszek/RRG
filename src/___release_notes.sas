@@ -11,7 +11,61 @@
   TODO:
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
+  
+09Jan2021: 
+fixed issue with cell borders when page splits into multiple pages
+fixed issue with extra space before superscript in pdf
+added support for subscript (syntax is ~{sub x}  
+Up to 14 footnotes are supported
+  
+13Nov2020 changed __cont and __cntssimple to avoid warning about operation on missing values;
+                  missing shown as blank except for SD/SE where it shows as "-"
+  
+08Oct2020 if rrg_debug is set to 1 prior to invoking rrg-init, additional info is printed/created. In particular, dataset __execution
+  is created in rrgpgmpath folder with execution statistics.   
+  
+01Oct2020 rewrote to improve performance (generated program stored in dataset and written to file at the end, and many other performance improvements)
+          removed metadata and gentxt functionality
+          updated no-data functionality to create report with titles, headers and footnotes  
+  
+31Aug2020 Removed java2sas modules
 
+18Aug2020: changed location of generated program to work directory (later it is copied to specified &rrgoutpath);
+
+12Aug2020 modified listing module so if there is no data, the headers and footnotes are displayed.
+          if it is desired not to show headers and footnotes (as before this realese)
+          then user can delete all records from &rrguri, except where __datatype='RINFO', in rrg_codeafterlist  
+          modified table module so if there is no data, the footnotes are displayed. 
+          Adding header is not possible in such case because the headers are generated from of input dataset
+
+09Jul2020
+  RRG_ANOVA: removed untangling of interaction terms 
+
+16Jun2020
+   RRG_ADDVAR: added showneg0 parameter 
+    (to show "-" if rounded value of stat =0 but is negative).
+    Usage: specify showneg0=y in rrg_addvar.
+    To apply to all tables in a project, add a line
+    showneg0   Y 
+    in section D3 of configuration file
+    
+  RRG_ANOVA, RRG_BINOMEX: fixed bug: parameter print_stats was referred to but not specified 
+        as rrg_anova/rrg_binomex parameter
+        
+  made handling of missing stats consistent (if n=0, other stats are shown as blanks)   
+
+27May2020
+  RRG_ADDVAR: condfmt applied only to stats specified in condfmt
+  stats=. replaced with blank
+  (.) in stats replaced with (NA)
+  added maxdec parameter (max number of decimals for continous stats)
+  added pvfmt parameter (format to print p-vals from ttest)
+  ALL: fixed __warning about __fordelete 
+  ALL: fixed warning about "variable already exists" in proc sql
+  ALL:  removed unnecessary proc sql printouts
+  categorical plug-ins: fixed bug which resulted in error when stat models was used with MINPCT or MINCNT in event-like reports
+  RRG_ANOVA: fixed bug when pairwise stats were printed in wrong columns
+  RRG_BINOMEX: added print_stats parameter
 
 --------------------------------------------------------------------------------------  
   11Nov2015

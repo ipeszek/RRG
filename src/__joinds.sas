@@ -47,58 +47,56 @@ Notes:
 
 %if %upcase(&type) = MERGE %then %do;
 
-  %*-----------------------------------------------------------;
-  %* sort and merge two datasets;
-  %*-----------------------------------------------------------;
+    %*-----------------------------------------------------------;
+    %* sort and merge two datasets;
+    %*-----------------------------------------------------------;
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-put @1 "proc sort data=&data1 out=__d1 ;";
-put @1 "  by &by;";
-put @1 "run;";
 
-put @1 "proc sort data=&data2 out=__d2;";
-put @1 "  by &by;";
-put @1 "run;";
-  
-put @1 "data &dataout;";
-put @1 "    merge __d1(in=__a) __d2 (in=__b);";
-put @1 "by  &by;";
+    record = " ";output;
+    record =  "proc sort data=&data1 out=__d1 ;";output;
+    record =  "  by &by;";output;
+    record =  "run;";output;
+
+    record =  "proc sort data=&data2 out=__d2;";output;
+    record =  "  by &by;";output;
+    record =  "run;";output;
+      
+    record =  "data &dataout;";output;
+    record =  "    merge __d1(in=__a) __d2 (in=__b);";output;
+    record =  "by  &by;";output;
+
     %*---------------------------------------------------------;
     %* if INNER join, keep only records from both datasets;
     %*---------------------------------------------------------;
-  
+
     %if %upcase(&mergetype)=INNER %then %do;
-put @1 "if __a and __b;";
+        record =  "if __a and __b;";output;
     %end;
     %else %if %upcase(&mergetype)=%str(LEFT) %then %do;
-put @1 "if __a ;";
+        record =  "if __a ;";output;
     %end;
     %else %if %upcase(&mergetype)=%str(RIGHT) %then %do;
-put @1 "if __b;";
+        record =  "if __b;";output;
     %end;
 
-put @1 "run;";
-
-  
+    record =  "run;";output;
 %end;
 
 %else %do;
 
-  %*-----------------------------------------------------------;
-  %* set two datasets;
-  %*-----------------------------------------------------------;
+    %*-----------------------------------------------------------;
+    %* set two datasets;
+    %*-----------------------------------------------------------;
 
-put @1 "data &dataout;";
-put @1 "  set __d1 __d2;";
+    record =  "data &dataout;";output;
+    record =  "  set __d1 __d2;";output;
     %if %length(&by) %then %do;
-put @1 "  by &by;";
+        record =  "  by &by;";output;
     %end;
-put @1 "run;";
+    record =  "run;";output;
   
 %end;
-run;
+
 
 %mend ;
 

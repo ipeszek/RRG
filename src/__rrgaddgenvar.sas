@@ -4,6 +4,11 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
+ 
+ * 2002-05-26 added maxdec parameter (max number of decimals for continous stats)
+ *    TODO: handle ordervar same as other parms
+ *    2020-06-16 added showneg0 parameter, see __cont for functionality 
+ 
  */
 
 %macro __rrgaddgenvar(
@@ -67,6 +72,7 @@ showmissing=Y,
 show0cnt=,
 noshow0cntvals=,
 pct4missing=,
+pct4total=,
 parms=,
 autospan=,
 preloadfmt=,
@@ -84,7 +90,9 @@ pvalfmt=,
 notcondition=,
 desc=,
 condfmt=,
-condfmtstats=)/store;
+condfmtstats=,
+maxdec=,
+showneg0=)/store;
 
 %local where popwhere cond name decode label labelline suffix stat countwhat 
        totaltext totalpos skipline indent denom denomwhere  popgrp fmt
@@ -95,7 +103,8 @@ condfmtstats=)/store;
        splitrow preloadfmt pct4missing keepwithnext sdfmt decinfmt totalgrp
        totalwhere across incolumn colhead subjid misspos misstext delmods
        templatewhere show0cnt wholerow notcondition desc popsplit labelvar
-       condfmt condfmtstats slfmt pvalfmt DENOMINClTRT noshow0cntvals;
+       condfmt condfmtstats slfmt pvalfmt DENOMINClTRT noshow0cntvals pct4total
+       maxdec showneg0;
 
 
 
@@ -128,13 +137,13 @@ data __tmp;
 length name fmt  decode align countwhat ordervar type statds page basedec $ 20 
        delimiter nline  showmissing showgroupcnt showemptygroups wholerow
        autospan splitrow pct4missing keepwithnext across incolumn skipline show0cnt 
-       notcondition desc popsplit DENOMINClTRT $ 1
+       notcondition desc popsplit DENOMINClTRT pct4total $ 1
        cond where popwhere label suffix stat codelist codelistds denomwhere  
        denom worst totaltext events templateds sortcolumn freqsort mincnt 
        minpct popgrp newvalue values newlabel model statsetid cutoffcolumn 
        parms ovstat totalgrp totalwhere colhead delmods labelvar condfmt pvalfmt condfmtstats 
        noshow0cntvals $ 2000 pctfmt  preloadfmt decinfmt 
-       sdfmt subjid $ 40;
+       sdfmt subjid maxdec showneg0 $ 40;
   events='';
   delmods = (trim(left(symget("delmods"))));  
   desc = (trim(left(symget("desc")))); 
@@ -156,15 +165,27 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   splitrow=dequote(trim(left(symget("splitrow"))));
   cond=trim(left(symget("cond")));
   name=trim(left(symget("name")));
+
   where=cats("(",trim(left(symget("where"))),")");
+  where=tranwrd(where, '"',"'");
   if compress(where, '()')='' then where='';
+
   popwhere=cats("(",trim(left(symget("popwhere"))),")");
+  popwhere=tranwrd(popwhere, '"',"'");
   if compress(popwhere, '()')='' then popwhere='';
+
   totalwhere=cats("(",trim(left(symget("totalwhere"))),")");
+  totalwhere=tranwrd(totalwhere, '"',"'");
   if compress(totalwhere, '()')='' then totalwhere='';
+
   denomwhere=cats("(",trim(left(symget("denomwhere"))),")");
+  denomwhere=tranwrd(denomwhere, '"',"'");
+
   if compress(denomwhere, '()')='' then denomwhere='';
+
   templatewhere=cats("(",trim(left(symget("templatewhere"))),")");
+  templatewhere=tranwrd(templatewhere, '"',"'");
+
   if compress(templatewhere, '()')='' then templatewhere='';
     
   
@@ -209,6 +230,7 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   showgroupcnt = upcase(trim(left(symget("showgroupcnt"))));
   showemptygroups = upcase(trim(left(symget("showemptygroups"))));
   pct4missing = upcase(trim(left(symget("pct4missing"))));
+  pct4total = upcase(trim(left(symget("pct4total"))));
   keepwithnext = upcase(trim(left(symget("keepwithnext"))));
   showmissing = upcase(trim(left(symget("showmissing"))));
   autospan = upcase(trim(left(symget("autospan"))));
@@ -226,6 +248,8 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   condfmtstats=upcase(trim(left(symget("condfmtstats"))));
 
   noshow0cntvals=upcase(trim(left(symget("noshow0cntvals"))));
+  maxdec = upcase(trim(left(symget("maxdec"))));
+  showneg0 = upcase(trim(left(symget("showneg0"))));
   output;
 run;
 
@@ -239,9 +263,8 @@ data &outds;
 set &outds __tmp;
 run;
 
-/*
-proc print data=&outds;
-  title 'outds in __rrgaddgenvar';
-run;
-*/
+
+  
+
+
 %mend;

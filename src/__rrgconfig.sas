@@ -11,7 +11,7 @@
 
 
 data _null_;
-  file "&__workdir.&__dirdel.rrgconfig.ini" lrecl=1000;
+file "&__workdir.&__dirdel.rrgconfig.ini" lrecl=1000;
   
 put "[A1]";
 put "#STAT LABELS";
@@ -87,9 +87,9 @@ put "papersize   LETTER";
 put "fontsize    10";
 put "font        TIMESROMAN";
 put "margins     1in 1in 1in 1in";
-put "systitle_l  TGRD//PROTOCOL: AFX01_202";
-put "systitle_r  DRAFT   _DATE_//_PAGE_";
-put "systitle_m";
+put "shead_l  TGRD//PROTOCOL: AFX01_202";
+put "shead_r  DRAFT   _DATE_//_PAGE_";
+put "shead_m";
 put "sfoot_l     _PGMNAME_ (_USERID_  SAS Win 9.1.3)   ";
 put "sfoot_m";
 put "sfoot_r       ";
@@ -164,6 +164,7 @@ put "super_rs    3";
 put "[D1]";
 put "# DEFAULTS FOR RRG_ADDCOND AND RRG_ADDCATVAR";
 put "pct4missing   Y";
+put "pct4missing   N";
 
 put "[D2]";
 put "# DEFAULTS FOR RRG_ADDTRT";
@@ -173,6 +174,7 @@ put "[D3]";
 put "# DEFAULTS FOR RRG_ADDVAR";
 put "stats           n MEAN+SD Median MIN+MAX";
 put "ALIGN           D";
+put "showneg0        N";
 
 put "[D4]";
 put "# DEFAULTS FOR RRG_defreport";
@@ -181,9 +183,9 @@ put "indentsize      2";
 put "warnonnomatch   N  ";
 put "nodatamsg       No data";
 put "dest            APP";
-put "java2sas        N";
 put "savercd         N";
 put "gentxt          N";
+
 
 run;
 

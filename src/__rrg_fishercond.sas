@@ -84,7 +84,7 @@ run;
 proc sql noprint;
   select max(__trtid) into:maxtrt separated by ''
   from __trt0;
-run;
+quit;
 
 PROC PRINT DATA=__bincntds;
   TITLE '__bincntds';

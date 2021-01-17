@@ -18,7 +18,7 @@
  */
  
  /*
-10Sep2020 rrg_init PROGRAM FLOW
+10Sep2020 rrg_init PROGRAM FLOW IDENTICAL TO RRG_INIT
 Note: this.xxx refers to macro parameter xxx of this macro
 
 1. calls %__initcomm
@@ -28,7 +28,7 @@ Note: this.xxx refers to macro parameter xxx of this macro
   
 3. initializes  __varinfo dataset
     
-4. creates formats from __rrgconfig ds section A1:, A2 (__rrgfmt ds)
+4. creates formats from __rrgconfig ds
     creates rrgheader ds from E1 section of __rrgconfig ds 
 
     make substitutions for 
@@ -38,13 +38,13 @@ Note: this.xxx refers to macro parameter xxx of this macro
       _PGMNAME_ (rrguri from __rrgconfig), 
       _PURPOSE_  (from this.purpose) 
       
-      If there is no [E1] section then creates __rrgheader ds with rudimentary "header", which includes 
+      If there is no [E1] section then creates rrgheader ds with rudimentary "header", which includes 
       &rrguri (typically , this.uri, unless redevined in config file, 
       creator (&sysuserid), date (date of program run), and this.purpose
   
  5.  initializes __rrginlibs ds
  
- ds used:__rrgxml (if exists), __rrgconfig   
+ds used:__rrgxml (if exists), __rrgconfig   
  ds created:  , rrgheader (with pgm header) , __rrgxml (if not exists) WITH OUTNAME ONLY, 
                        __rrgfmt (for cntlin)
  ds updated:  ,  __rrgxml (updated with OUTNAME if it was created in initcomm from TOC file), 
@@ -54,9 +54,12 @@ Note: this.xxx refers to macro parameter xxx of this macro
 */  
    
 
-%macro RRG_init (URI=, purpose=, outname=)/store;
+%macro RRG_initlist (URI=, purpose=, outname=)/store;
 
-
+proc datasets memtype=data nolist nowarn;
+  delete __:;
+run;
+quit; 
 
 %local uri purpose outname;
 %global rrguri __dirdel;
@@ -137,16 +140,17 @@ run;
 proc append base=__rrgfmt data=__rrgtmpfmt2;
 run;
 
-
-
 proc format cntlin=__rrgfmt;
 run;
 
 
 *** DETERMINE IF HEADER TEMPLATE IS PROVIDED IN CONFIGURATION FILE;
+%local ise1;
+%let ise1=0;
 
 data rrgheader;
-set __rrgconfig(where=(type='[E1]'));
+
+set __rrgconfig(where=(type='[E1]')) end=eof;
 length sdate $ 9 uri rrguri $ 200 record $ 2000;
 
 sdate_ = date();
@@ -154,20 +158,15 @@ sdate = put(sdate_, date9.);
 RRGURI = upcase(cats(symget("rrguri")));
 URI = upcase(cats(symget("uri")));
 
-record = tranwrd(cats(record), "_URI_", cats(uri)); 
-record = tranwrd(cats(record), "_USERID_", cats("&sysuserid"));
-record = tranwrd(cats(record), "_DATE_", cats(sdate));
-record = tranwrd(cats(record), "_PGMNAME_", cats(rrguri));
-record = tranwrd(cats(record), "_PURPOSE_", cats(symget('purpose')));
-output;
+record = tranwrd(cats(record), "_URI_", cats(uri)); output;
+record = tranwrd(cats(record), "_USERID_", cats("&sysuserid"));output;
+record = tranwrd(cats(record), "_DATE_", cats(sdate));output;
+record = tranwrd(cats(record), "_PGMNAME_", cats(rrguri));output;
+record = tranwrd(cats(record), "_PURPOSE_", cats(symget('purpose')));output;
+if eof then call symput("ise1", put(_n_, best.));
 run;
 
-%local ise1;
-%let ise1=0;
 
-proc sql noprint;
-  select count(*) into:ise1 separated by ' ' from rrgheader;
-quit;
 
 %if &ise1=0 %then %do;
 
@@ -197,8 +196,6 @@ data __rrginlibs;
   if 0;
 run;
 */
-
-
 
 %put FINISFED RRG_INIT;
 

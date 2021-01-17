@@ -64,14 +64,7 @@ DENOMINClTRT=%upcase(&DENOMINClTRT)
 );
 
 
-data __timer;
-	set __timer end=eof;
-	output;
-	if eof then do;
-		task = "Finished analysing condition";
-		time=time(); output;
-	end;
-run;	
+
 
 %put RRG_ADDCOND USING WHERE: &WHERE COMPLETED SUCESSULLY;
 

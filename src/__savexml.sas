@@ -10,17 +10,27 @@
 
 %local dsid rc varnum1 varnum2 varnumfo firstonly fospan ;
 %local data  reptype out  i maxtrt;  
-
+%let varnum1=0;
+%let varnum2=0;
 %let dsid = %sysfunc(open(&data));
 %let varnum1= %sysfunc(varnum(&dsid, __varbygrp));
 %let varnum2= %sysfunc(varnum(&dsid, __varbylab));
 %let varnumfo= %sysfunc(varnum(&dsid, __gcols));
 %let fospan= %sysfunc(varnum(&dsid, __fospan));
 %let rc = %sysfunc(close(&dsid));
-
-
-
-
+%if %symexist(rrg_debug)=0 %then %let rrg_debug=0;
+%if &rrg_debug>0 %then %do;
+  data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "SAVE XML STARTED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+%end;
 %local numfo i;
 %let numfo=0;
  
@@ -48,7 +58,7 @@ options missing='';
 data _null_;
   set &data;
   
-  
+  if 0 then __col_0='';
   array cols{*} $ 2000 __col_:;
     n = dim(cols)-1;
     call symput("maxtrt", cats(n));
@@ -87,6 +97,14 @@ run;
  
 %mend;
 
+%macro __printvarn(var=, name=);
+    %local name %nrbquote(&var) ;
+   %if &name= %then %let name=&var;
+    
+    put "    <&name.>"  &var best. "</&name>";
+ 
+%mend;
+
 %macro __checkic(var);
   %local var ;
      do __i=1 to length(&var);
@@ -112,6 +130,10 @@ data _null_;
     if 0 then do;
       __varbylab='';
       __tcol='';
+         %do i=0 %to &maxtrt;
+          __col_&i='';
+        %end;
+      
     end;
     array cols{*} __col_0 - __col_&maxtrt;
     if __datatype ne 'RINFO' then do;
@@ -125,6 +147,7 @@ data _null_;
 
     end;
     else do;
+     
       %__checkic(__sprops);
       %__checkic(__nodatamsg);
       %__checkic(__title1);
@@ -133,14 +156,10 @@ data _null_;
       %__checkic(__title4);
       %__checkic(__title5);
       %__checkic(__title6);
-      %__checkic(__footnot1);
-      %__checkic(__footnot2);
-      %__checkic(__footnot3);
-      %__checkic(__footnot4);
-      %__checkic(__footnot5);
-      %__checkic(__footnot6);
-      %__checkic(__footnot7);
-      %__checkic(__footnot8);
+      %do i=1 %to 14;
+         %__checkic(__footnot&i);
+      %end;
+      
       %__checkic(__shead_l);
       %__checkic(__shead_m);
       %__checkic(__shead_r);
@@ -153,32 +172,41 @@ run;
 
 %end;
   
-    
+  
   data _null_;
     set &data end = eof;
+      drop tmp:;
+      if 0 then do;
+        __dist2next='';
+        __indentsize='';
+        __orient='';
+        __breakokat='';
+        __pgmname='';
+      end;
       
     file "&out" Lrecl=32000;
+    length __layouttype $ 8;
   
-    tmp=index(upcase(__filename), '$_DATE_$');
-    if tmp>1 then do;
-      __filename=substr(__filename,1,tmp-1)||put(date(), yymmdd10.)||substr(__filename, tmp+8);
+    tmpx=index(upcase(__filename), '$_DATE_$');
+    if tmpx>1 then do;
+      __filename=substr(__filename,1,tmpx-1)||put(date(), yymmdd10.)||substr(__filename, tmpx+8);
     end;
-    if tmp=1 then do;
-      __filename=put(date(), yymmdd10.)||substr(__filename, tmp+8);
+    if tmpx=1 then do;
+      __filename=put(date(), yymmdd10.)||substr(__filename, tmpx+8);
     end;
     
     __align = upcase(__align);
     __stretch = upcase (__stretch);
     if __datatype='TBODY' then do;
-    %do i=1 %to &numfo;
-       if __first_&&fo&i ne 1 then __col_&&fo&i='';
-    %end;
-    %if &fospan>0 %then %do;
-      if __fospan ne 1 then __tcol='';
-    %end;
-    %if &varnum1>0 %then %do;
-      __varbylab='';
-    %end;
+        %do i=1 %to &numfo;
+           if __first_&&fo&i ne 1 then __col_&&fo&i='';
+        %end;
+        %if &fospan>0 %then %do;
+          if __fospan ne 1 then __tcol='';
+        %end;
+        %if &varnum1>0 %then %do;
+          __varbylab='';
+        %end;
 
     end;
     if _n_=1 then do;
@@ -191,10 +219,10 @@ run;
     %__printvarl(var=__align);
     %__printvarl(var=__dist2next);
     %__printvarl(var=__suffix);
-    %__printvarl(var=__indentlev);
-    %__printvarl(var=__next_indentlev);
-    %__printvarl(var=__keepn);
-    %__printvarl(var=__rowid);
+    %__printvarn(var=__indentlev);  **num;
+    %__printvarn(var=__next_indentlev); ***num;
+    %__printvarn(var=__keepn); ***num;
+    %__printvarn(var=__rowid); *** num;
     %__printvarl(var=__cellfonts);
     %__printvarl(var=__cellborders);
     %__printvarl(var=__topborderstyle);
@@ -203,7 +231,7 @@ run;
     
     
     %if &varnum1>0 %then %do;
-    %__printvarl(var=__varbygrp);
+    %__printvarn(var=__varbygrp); ***num;
     %end;
     %if &varnum2>0 %then %do;
     %__printvarl(var=__varbylab);
@@ -246,14 +274,10 @@ run;
       %__printvarl(var=__title4);
       %__printvarl(var=__title5);
       %__printvarl(var=__title6);
-      %__printvar(var=__footnot1);
-      %__printvar(var=__footnot2);
-      %__printvar(var=__footnot3);
-      %__printvar(var=__footnot4);
-      %__printvar(var=__footnot5);
-      %__printvar(var=__footnot6);
-      %__printvar(var=__footnot7);
-      %__printvar(var=__footnot8);
+      %do i=1 %to 14;
+         %__printvarl(var=__footnot&i);
+      %end;
+      
       %__printvarl(var=__shead_l);
       %__printvarl(var=__shead_m);
       %__printvarl(var=__shead_r);
@@ -267,7 +291,6 @@ run;
       %__printvarl(var=__stretch);
       %__printvarl(var=__font);
       %__printvarl(var=__margins);
-      %__printvarl(var=__papersize);
       %__printvar(var=__lastcheadid);
       %__printvar(var=__gcols);
       %__printvar(var=__sfoot_fs); 
@@ -276,13 +299,26 @@ run;
         %__printvar(var=__bookmarks_pdf); 
       end;  
       if __bookmarks_rtf ne '' then do;
-      %__printvar(var=__bookmarks_rtf); 
-    end;
+        %__printvar(var=__bookmarks_rtf); 
+      end;
     end;
     put "  </&data.>";
     if eof then do;
       put "</TABLE>";
     end;  
   run;
+  
+  %if &rrg_debug>0 %then %do;
+  data __timer;
+  set __timer end=eof;
+	length task $ 100;
+	output;
+		if eof then do; 
+		  task = "SAVE XML FINISHED";
+		  dt=datetime(); 
+		  output;
+		end;
+run;
+%end;
 
 %mend;

@@ -29,14 +29,7 @@ type=LABEL,
 wholerow=&wholerow,
 outds=__varinfo);
 
-data __timer;
-	set __timer end=eof;
-	output;
-	if eof then do;
-		task = "Finished analysing label";
-		time=time();output;
-	end;
-run;	
+
 
 %put RRG_ADDLABEL USING LABEL &LABEL COMPLETED SUCESSULLY;
 

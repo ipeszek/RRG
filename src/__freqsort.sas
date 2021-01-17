@@ -51,39 +51,39 @@ proc sql noprint;
 select count(*) into:numsortvars from __sortinfo;
 %local i;
 %do i=1 %to  &numsortvars;
-  %local sortvar&i sortvalue&i;
-  select sortcolumn into:sortvalue&i separated by ' '
-    from __sortinfo(where=(__id=&i));
-  select name into:sortvar&i separated by ' '  
-  from __sortinfo(where=(__id=&i));
+    %local sortvar&i sortvalue&i;
+    select sortcolumn, name into
+    :sortvalue&i separated by ' ',    :sortvar&i separated by ' '  
+      from __sortinfo(where=(__id=&i));
+
 %end;
 quit;
 
 %do i=1 %to  &numsortvars;
-  %local tmpsortcolumn;
-  
-  data __tokenize;
-    if 0;
-  run;
-      
-  %__tokenize(&&sortvalue&i);
+    %local tmpsortcolumn;
+    
+    data __tokenize;
+      if 0;
+    run;
+        
+    %__tokenize(&&sortvalue&i);
 
-  data __tokends&i;
-    set __tokends;
-    length __name&i $ 20 __sortval&i $ 2000;
-    __sortvar&i=_n_;
-    __name&i = "&&sortvar&i";
-    __sortval&i = nstring;
-    drop nstring;
-  run;
-  
-  %if &i>1 %then %do;
-    proc sql noprint;
-      create table tmp as select * from __tokends1
-       cross join __tokends&i;
-    create table __tokends1 as select * from __tmp;
-    quit;
-  %end;
+    data __tokends&i;
+      set __tokends;
+      length __name&i $ 20 __sortval&i $ 2000;
+      __sortvar&i=_n_;
+      __name&i = "&&sortvar&i";
+      __sortval&i = nstring;
+      drop nstring;
+    run;
+    
+    %if &i>1 %then %do;
+        proc sql noprint nowarn;
+          create table tmp as select * from __tokends1
+           cross join __tokends&i;
+        create table __tokends1 as select * from __tmp;
+        quit;
+    %end;
 
 %end;
 
@@ -99,54 +99,14 @@ data __tokends1;
   __id = _n_;
   __cond = "if "||cats(__name1,'=')||trim(left(__sortval1));
   %do i=2 %to &numsortvars;
-  __cond = trim(left(__cond))||' and '||
-      cats(__name&i,'=')||trim(left(__sortval&i));
+      __cond = trim(left(__cond))||' and '||
+          cats(__name&i,'=')||trim(left(__sortval&i));
   %end;
   __cond = trim(left(__cond))||' then __id ='||cats(__id)||';';
   if eof then call symput("numsortc", cats(__id));
 run;
 
-    
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-set __tokends1 end =eof;
-put;
-put;
-if _n_=1 then do;
-  put @1 "*---------------------------------------------------------------;";
-  put @1 "* DETERMINE COLUMN NUMBER OF COLUMN TO SORT BY;";
-  put @1 "*---------------------------------------------------------------;";
-  put;    
-  put @1 "data __sortinfo;";
-  put @1 "set __trt;";
-end;
-put @1 __cond;
-if eof then do;
-  put @1 "run;";
-  put;
-  put @1 "proc sort data=__sortinfo(where=(__id>0));";
-  put @1 "by __id;";
-  put @1 "run;";
-end;
-run;
 
-
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put @1 '%local sortcolumn;';
-put @1 "proc sql noprint;";
-put @1 "   select 'descending '||cats('__cnt_',__trtid) into: sortcolumn separated by ' ' ";
-put @1 "     from __sortinfo;";
-put @1 "quit;";
-put;
-
-put;
-put @1 '%if %length(&sortcolumn)=0 %then %do;';
-put @1 '   %let sortcolumn = descending __cnt_1;';
-put @1 '%end;';
-put;
-put;
-run;
 
 %* determine values of modalities to sort by;
 %local sortmods;
@@ -154,221 +114,270 @@ proc sql noprint;
   select sortcolumn into:sortmods separated by ' '
   from __VARINFO(where=(upcase(cats(name))=upcase(cats("&analvar"))));
 quit;
-
-
     
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+set __tokends1 end =eof;
+record = " ";output;
+record = " ";output;
+if _n_=1 then do;
+    record =  "*---------------------------------------------------------------;";output;
+    record =  "* DETERMINE COLUMN NUMBER OF COLUMN TO SORT BY;";output;
+    record =  "*---------------------------------------------------------------;";output;
+    record = " ";    output;
+    record =  "data __sortinfo;";output;
+    record =  "set __trt;";output;
+end;
+record =  strip(__cond);output;
+if eof then do;
+    record =  "run;";output;
+    record = " ";output;
+    record =  "proc sort data=__sortinfo(where=(__id>0));";output;
+    record =  "by __id;";output;
+    record =  "run;";output;
+    record =  '%local sortcolumn;';output;
+    record =  "proc sql noprint;";output;
+    record = "   select 'descending '||cats('__cnt_',__trtid) into: sortcolumn separated by ' ' "; output;
+    record =  "     from __sortinfo;";output;
+    record =  "quit;";output;
+    record = " ";output;
+    record = " ";output;
+    record =  '%if %length(&sortcolumn)=0 %then %do;';output;
+    record =  '   %let sortcolumn = descending __cnt_1;';output;
+    record =  '%end;';output;
+    record = " ";output;
+    record = " ";output;
 
-%if %upcase(&ordervar)=__ORDER and %upcase(&Statsacross) ne Y
- and %length(&sortmods)=0 %then %do;
- 
-  data _null_;
-  file "&rrgpgmpath./&rrguri..sas" mod;
-  put;
-  put @1 "*-----------------------------------------------------------------;";
-  put @1 "* APPLY FREQUENCY-BASED SORTING TO &var;";
-  put @1 "*-----------------------------------------------------------------;";
-  put;
-  put @1 "proc sort data=&dsin;";
-  put @1 "by &by __tby &groupvars " ' &sortcolumn ' "&var;";
-  put @1 "run;";
-  put;
-  put @1 "  data &dsin;";
-  put @1 "  set &dsin;";
-  put @1 "  by &by __tby &groupvars " ' &sortcolumn ' "&var;";
-  put @1 "  if not missing(&var) then &ordervar=_n_;";
-  put @1 "  * MISSING MODALITY  GOES LAST;";
-  put @1 "  run;";
-  put;
-  run;
-%end;
+    %if %upcase(&ordervar)=__ORDER and %upcase(&defreport_statsacross) ne Y
+     and %length(&sortmods)=0 %then %do;
+     
+        record = " ";output;
+        record =  "*-----------------------------------------------------------------;";output;
+        record =  "* APPLY FREQUENCY-BASED SORTING TO &var;";output;
+        record =  "*-----------------------------------------------------------------;";output;
+        record = " ";output;
+        record =  "proc sort data=&dsin;";output;
+        record =  "by &by __tby &groupvars " ||' &sortcolumn '|| "&var;";output;
+        record =  "run;";output;
+        record = " ";output;
+        record =  "  data &dsin;";output;
+        record =  "  set &dsin;";output;
+        record =  "  by &by __tby &groupvars "|| ' &sortcolumn '|| "&var;";output;
+        record =  "  if not missing(&var) then &ordervar=_n_;";output;
+        record =  "  * MISSING MODALITY  GOES LAST;";output;
+        record =  "  run;";output;
+        record = " ";output;
+      
+
+    %end;
+end;
+run;
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
+
 %if %upcase(&ordervar) ne __ORDER or %length(&sortmods)>0  %then %do;
-  %if %upcase(&Statsacross) ne Y and %length(&sortmods)=0  %then %do;
   
-    data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    put;
-    put @1 "*-----------------------------------------------------------------;";
-    put @1 "* APPLY FREQUENCY-BASED SORTING TO &var;";
-    put @1 "*-----------------------------------------------------------------;";
-    put;
-    put @1 "    proc sort data=&dsin  out=__tmp;";
-    put @1 "      by &by __tby &groupvars  &var " '&sortcolumn ' ";";
-    put @1 "    run;";
-    put;
-    put @1 "    data __tmp;";
-    put @1 "    set __tmp;";
-    put @1 "    by &by __tby &groupvars  &var " '&sortcolumn ' ";";
-    put @1 "      if first.&var;";
-    put @1 "    run;";
-    put;
-    put @1 "    proc sort data=__tmp;  ";
-    put @1 "    by &by __tby &groupvars   " '&sortcolumn ' "&var;";
-    put @1 "    run;";
-    put;
-    put @1 "    data __tmp;";
-    put @1 "    set __tmp;";
-    put @1 "    by &by __tby &groupvars   "  '&sortcolumn ' "&var;";
-    put @1 "    if not missing(&var) then &ordervar=_n_;";
-    put @1 "    * MISSING MODALITY  GOES LAST;";
-    put @1 "    keep &by __tby &groupvars  &var &ordervar;";
-    put @1 "    run;";
-    
-    put @1 "    proc sort data=__tmp;";
-    put @1 "      by &by __tby &groupvars  &var ;";
-    put @1 "    run;";
-      
-    put @1 "    proc sort data=&dsin;";
-    put @1 "      by &by __tby &groupvars  &var ;";
-    put @1 "  run;";
-      
-    put @1 "    data &dsin;";
-    put @1 "      merge &dsin __tmp;";
-    put @1 "      by &by __tby &groupvars  &var ;";
-    put @1 "    run;";   
-    run;
-  %end;
-    
-  %else %do;
-   
-    data __tokenize;
-      if 0;
-    run;
-    
-    %local cntsortmods;
+    %if %upcase(&defreport_statsacross) ne Y and %length(&sortmods)=0  %then %do;
+  
         
-    %if %upcase(&sortmods)=_TOTAL_ %then %do;
-      %let cntsortmods=1;
+        data rrgpgmtmp;
+        length record $ 2000;
+        keep record;
+        record = " ";output;
+        record =  "*-----------------------------------------------------------------;";output;
+        record =  "* APPLY FREQUENCY-BASED SORTING TO &var;";output;
+        record =  "*-----------------------------------------------------------------;";output;
+        record = " ";output;
+        record =  "    proc sort data=&dsin  out=__tmp;";output;
+        record =  "      by &by __tby &groupvars  &var "|| '&sortcolumn '|| ";";output;
+        record =  "    run;";output;
+        record = " ";output;
+        record =  "    data __tmp;";output;
+        record =  "    set __tmp;";output;
+        record =  "    by &by __tby &groupvars  &var "|| '&sortcolumn ' ||";";output;
+        record =  "      if first.&var;";output;
+        record =  "    run;";output;
+        record = " ";output;
+        record =  "    proc sort data=__tmp;  ";output;
+        record =  "    by &by __tby &groupvars   "|| '&sortcolumn '|| "&var;";output;
+        record =  "    run;";output;
+        record = " ";output;
+        record =  "    data __tmp;";output;
+        record =  "    set __tmp;";output;
+        record =  "    by &by __tby &groupvars   " || '&sortcolumn '|| "&var;";output;
+        record =  "    if not missing(&var) then &ordervar=_n_;";output;
+        record =  "    * MISSING MODALITY  GOES LAST;";output;
+        record =  "    keep &by __tby &groupvars  &var &ordervar;";output;
+        record =  "    run;";output;
+        
+        record =  "    proc sort data=__tmp;";output;
+        record =  "      by &by __tby &groupvars  &var ;";output;
+        record =  "    run;";output;
+          
+        record =  "    proc sort data=&dsin;";output;
+        record =  "      by &by __tby &groupvars  &var ;";output;
+        record =  "  run;";output;
+          
+        record =  "    data &dsin;";output;
+        record =  "      merge &dsin __tmp;";output;
+        record =  "      by &by __tby &groupvars  &var ;";output;
+        record =  "    run;";   output;
+        run;
+      
+        proc append data=rrgpgmtmp base=rrgpgm;
+        run;
+      
     %end;
     
     %else %do;
-    %__tokenize(&sortmods);
-      
-    
-    %let cntsortmods=0;
-    proc sql noprint;
-      select count(*) into:cntsortmods from __tokends;
-    quit;
-      
-    %do i=1 %to &cntsortmods;
-      %local sortmod&i;
-    %end;
-    
-    data __tokends;
-      set __tokends;
-      call symput  (cats("sortmod", _n_), trim(nstring));
-    run;
-    
-    %end;
-    
-    
-    
- 
-    
-    data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    put;
-    put @1 "*-----------------------------------------------------------------;";
-    put @1 "* APPLY FREQUENCY-BASED SORTING TO &VAR;";
-    put @1 "*-----------------------------------------------------------------;";
-    put;
-    put;
-    put @1 "data &dsin;";
-    put @1 "set &dsin;";
-    put @1 "__tmporder_&var=1;";
-    put @1 "run;";
-    put;
-    %local tmpsort;
-    %do k = 1 %to &numsortc;
-      put;
-      put @1 '%local sortcolumntmp;';
-      put @1 '%let sortcolumntmp = %scan(&sortcolumn,' " %eval(2*&k)," '%str( ));';
-        %local sortstr j descstr;  
-        %let sortstr=;
-        %let descstr=;
-      
-      %do i=1 %to &cntsortmods;
-        %if %upcase(&sortmods) ne _TOTAL_ %then %do;
-        put @1 "    proc sort data=&dsin(where=(&analvar=%qtrim(&&sortmod&i.)))";
+   
+        data __tokenize;
+          if 0;
+        run;
+        
+        %local cntsortmods;
+            
+        %if %upcase(&sortmods)=_TOTAL_ %then %do;
+            %let cntsortmods=1;
         %end;
+        
         %else %do;
-        put @1 "    proc sort data=&dsin(where=(__total=1))";
-        %end;
-        put @1 "      nodupkey out=__tmp;";
-        put @1 "      by &by __tby &groupvars &tmpsort &sortstr   &var;";
-        put @1 "    run;";
-        put;
-        
-  
-        put @1 "   data __tmp;";
-        put @1 "    set __tmp;";
-        put @1 "    __order_&var._&i=" '&sortcolumntmp;';
-        put @1 "    keep  &by __tby &groupvars  &tmpsort &sortstr &var __order_&var._&i ;";
-        put @1 "    run;";
-        put;
-        
-        %let descstr=&descstr descending __order_&var._&i;
-        
-        %if &i=&cntsortmods %then %do;
-          put @1 "   proc sort data=__tmp;";
-          put @1 "      by  &by __tby &groupvars &tmpsort &descstr  &var;";
-          put @1 "   run;";
-          put;
-          put @1 "   data __tmp;";
-          put @1 "   set __tmp;";
-          put @1 "    by  &by __tby &groupvars &tmpsort &descstr &var;";
-          put @1 "    retain __tmporder&k;";
-          put @1 "    if _n_=1 then __tmporder&k=0;";
-          put @1 "    if first.__order_&var._&i then __tmporder&k+1;";
-          put @1 "  run;";
-          put;
-        %end;
-        
-        put @1 "    proc sort data=__tmp;";
-        put @1 "      by &by __tby &groupvars  &sortstr &tmpsort &var;";
-        put @1 "    run;";
+            %__tokenize(&sortmods);
           
-        put @1 "    proc sort data=&dsin;";
-        put @1 "      by &by __tby &groupvars  &sortstr &tmpsort &var ;";
-        put @1 "  run;";
+        
+            %let cntsortmods=0;
+            proc sql noprint;
+              select count(*) into:cntsortmods from __tokends;
+            quit;
           
-        put @1 "    data &dsin;";
-        put @1 "      merge &dsin __tmp;";
-        put @1 "      by &by __tby &groupvars &sortstr &tmpsort &var ;";
-        put @1 "    run;";   
-        PUT;
-        %let sortstr=&sortstr __order_&var._&i;
-      %end; %* end do i=1 to cntsortmods;
-      put @1 "data &dsin;";
-      put @1 "set &dsin;";
-      put @1 "drop __order_&var._:;";
-      put @1 "run;";
-      %let tmpsort = &tmpsort __tmporder&k ;
-    %end;  %* end do k = 1 to countw(numsortc);
+            %do i=1 %to &cntsortmods;
+                %local sortmod&i;
+            %end;
+            
+            data __tokends;
+              set __tokends;
+              call symput  (cats("sortmod", _n_), trim(nstring));
+            run;
+        
+        %end;
+     
+        data rrgpgmtmp;
+        length record $ 2000;
+        keep record;
 
-    put @1 "data &dsin;";
-    put @1 "set &dsin;";
-    put @1 "__order_&var=__tmporder&numsortc;";
-    put @1 "drop __tmporder:;";
-    put @1 "run;";
-    run;  
-  %end; %* Statsacross;    
-  %local ngb gb cgb i tmp;
-  proc sql noprint;
-   select value into:gb separated by ' ' from __rrgpgminfo
-    (where =(key = "newgroupby"));
-  quit;
-  %let cgb = %sysfunc(countw(&gb, %str( )));
-  %let ngb=;
-  %do i=1 %to &cgb;
-        %let tmp = %scan(&gb,&i, %str( ));
-        %if %upcase(&tmp)=%upcase(&var) %then 
-            %let ngb = &ngb &ordervar;
-         %let ngb = &ngb &tmp;
-  %end; 
-    
-  proc sql noprint;
-  update __rrgpgminfo set value="&ngb" where key = "newgroupby";
-  quit;
+        record = " ";output;
+        record =  "*-----------------------------------------------------------------;";output;
+        record =  "* APPLY FREQUENCY-BASED SORTING TO &VAR;";output;
+        record =  "*-----------------------------------------------------------------;";output;
+        record = " ";output;
+        record = " ";output;
+        record =  "data &dsin;";output;
+        record =  "set &dsin;";output;
+        record =  "__tmporder_&var=1;";output;
+        record =  "run;";output;
+        record = " ";output;
+        %local tmpsort;
+        %do k = 1 %to &numsortc;
+            record = " ";output;
+            record =  '%local sortcolumntmp;';output;
+            record =  '%let sortcolumntmp = %scan(&sortcolumn,'|| " %eval(2*&k),"|| '%str( ));';output;
+            %local sortstr j descstr;  
+            %let sortstr=;
+            %let descstr=;
+          
+            %do i=1 %to &cntsortmods;
+                %if %upcase(&sortmods) ne _TOTAL_ %then %do;
+                    record =  "    proc sort data=&dsin(where=(&analvar=%qtrim(&&sortmod&i.)))";output;
+                %end;
+                %else %do;
+                    record =  "    proc sort data=&dsin(where=(__total=1))";output;
+                %end;
+                record =  "      nodupkey out=__tmp;";output;
+                record =  "      by &by __tby &groupvars &tmpsort &sortstr   &var;";output;
+                record =  "    run;";output;
+                record = " ";output;
+                
+        
+                record =  "   data __tmp;";output;
+                record =  "    set __tmp;";output;
+                record =  "    __order_&var._&i="|| '&sortcolumntmp;';output;
+                record =  "    keep  &by __tby &groupvars  &tmpsort &sortstr &var __order_&var._&i ;";output;
+                record =  "    run;";output;
+                record = " ";output;
+            
+                %let descstr=&descstr descending __order_&var._&i;
+            
+                %if &i=&cntsortmods %then %do;
+                    record =  "   proc sort data=__tmp;";output;
+                    record =  "      by  &by __tby &groupvars &tmpsort &descstr  &var;";output;
+                    record =  "   run;";output;
+                    record = " ";output;
+                    record =  "   data __tmp;";output;
+                    record =  "   set __tmp;";output;
+                    record =  "    by  &by __tby &groupvars &tmpsort &descstr &var;";output;
+                    record =  "    retain __tmporder&k;";output;
+                    record =  "    if _n_=1 then __tmporder&k=0;";output;
+                    record =  "    if first.__order_&var._&i then __tmporder&k+1;";output;
+                    record =  "  run;";output;
+                    record = " ";output;
+                %end;
+            
+                record =  "    proc sort data=__tmp;";output;
+                record =  "      by &by __tby &groupvars  &sortstr &tmpsort &var;";output;
+                record =  "    run;";output;
+                  
+                record =  "    proc sort data=&dsin;";output;
+                record =  "      by &by __tby &groupvars  &sortstr &tmpsort &var ;";output;
+                record =  "  run;";output;
+                  
+                record =  "    data &dsin;";output;
+                record =  "      merge &dsin __tmp;";output;
+                record =  "      by &by __tby &groupvars &sortstr &tmpsort &var ;";output;
+                record =  "    run;";   output;
+                record = " ";output;
+            
+                %let sortstr=&sortstr __order_&var._&i;
+            %end; %* end do i=1 to cntsortmods;
+          
+            record =  "data &dsin;";output;
+            record =  "set &dsin;";output;
+            record =  "drop __order_&var._:;";output;
+            record =  "run;";output;
+            %let tmpsort = &tmpsort __tmporder&k ;
+        %end;  %* end do k = 1 to countw(numsortc);
+
+        record =  "data &dsin;";output;
+        record =  "set &dsin;";output;
+        record =  "__order_&var=__tmporder&numsortc;";output;
+        record =  "drop __tmporder:;";output;
+        record =  "run;";output;
+        run;  
+        
+        proc append data=rrgpgmtmp base=rrgpgm;
+        run;
+    %end; %* Statsacross;    
+  
+  
+    %local ngb gb cgb i tmp;
+    proc sql noprint;
+       select value into:gb separated by ' ' from __rrgpgminfo
+        (where =(key = "newgroupby"));
+    quit;
+    %let cgb = %sysfunc(countw(&gb, %str( )));
+    %let ngb=;
+    %do i=1 %to &cgb;
+          %let tmp = %scan(&gb,&i, %str( ));
+          %if %upcase(&tmp)=%upcase(&var) %then 
+              %let ngb = &ngb &ordervar;
+           %let ngb = &ngb &tmp;
+    %end; 
+        
+    proc sql noprint;
+      update __rrgpgminfo set value="&ngb" where key = "newgroupby";
+    quit;
     
 %end;%* not __order;
 

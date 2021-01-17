@@ -5,675 +5,226 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
+ 
+ 
+ /* PROGRAM FLOW:
+    10Aug2020     
+    
+    note: this.xxx below refers to macro parameter xxx of this macro; __repinfo.xxx refers to variable xxx in __repinfo dataset                                 
+  called in RRG_GENERATE and RRG_GENLIST
+ 
+  creates dataset rrgREPORT, 
+  seting __datatype   = 'RINFO',  __rowid, __varbygrp to MISSING (numeric), 
+   and variables
+    __fontsize, __bookmarks_rtf, __bookmarks_pdf, __sfoot_fs, __indentsize, __orient, __filename,
+    __nodatamsg, __stretch, __colwidths, __dist2next,  __rtype, __gcols, __lastcheadid, __extralines,
+    __margins=, __papersize, __outformat, __watermark, __font, __stretch, __sprops, __colhead1
+    __title1 - __title6, __footnot1 - __footnot14,
+    __shead_l, __shead_r, __shead_m, __sfoot_l, __sfoot_m, __sfoot_r
+    to corresponding variables from __REPINFO DS
+    
+    in __shead_l, __shead_r, __shead_m, __sfoot_l, __sfoot_m, __sfoot_r,__colhead1, replace
+     "#rpar" with ")", "#squot" with "'" , "#lpar" with "("
+    
+    __breakokat is set to &BREAKOKAT 
+      for listings, &BREAKOKAT is created in RRG_GENLIST and is the list of number of columns 
+         with DEFCOL.BREAKOKAT=Y (case insensitive)
+      for tables, &BREAKOKAT is created ???? 
+    __dest is set to RTF, RTF PDF or PDF according to __REPINFO.OUTFORMAT variable
+    __filename is set to __filename or - if &java2sas=Y - to __filename_j
+    __path is set to &RRGOUTPATH if provided, or to &RRGOUTPATHLAZY otherwise 
+        (RRGOUTPATH is defined in init file, and RRGOUTPATHlazy is it's copy)
+   
+    __version is set to value created by macro %__VERSION
+    
+    (also __systile is set to __shead_l)
+    
+    if __REPINFO.__COLWIDTHS is null then set  set to __colwidths to "LW"
+    
+    if __repinfo.__COLWIDTHS consist of a single word then : 
+     for listings: if THIS.NUMCOL>0 then set __colwidths to this word repeated THIS.NUMCOL number of times
+     for tables:  set __colwidths  to this word repated  &MAXTRT number of times
+     
+    if __repinfo.__COLWIDTHS consist of 2 or more words then : 
+     for listings: set __colwidths to __REPINFO.__COLWIDTH followed by the last word in __REPINFO.__COLWIDTHS
+      repated as many times as needed until THIS.NUMCOL  is reached 
+     for tables: set __colwidths to __REPINFO.__COLWIDTH followed by the last word in __REPINFO.__COLWIDTHS
+      repated as many times as needed until &MAXTRT is reached
+         
+    if __stretch is null then set it to "Y" 
+     extend variable __stretch adding it's last word at the end as many times as  THIS.NUMCOL (for listings)
+      or as  &MAXTRT  (for tables)
+      
+     if this macro is invoked in rrg_genlist (for listings) then THIS.NUMCOL is set to NUMCOL macro parameter defined in rrg_genlist
+        as number of times RRG_DEFCOL is called
+     if this macro is invoked in rrg_generate (for tables) then THIS.NUMCOL null
+                                     
+     if this macro is invoked in rrg_genlist (for listings) then &MAXTRT us not used  
+     if this macro is invoked in rrg_generate (for tables) then &MAXTRT is generated in ???
+     
+     
+     ds used: __repinfo
+     ds created: rrgpgmtmp
+     ds updated: this.outds
 
-%macro __makerepinfo (outds=, numcol=, islist=N)/store;
+ */
+ 
+
+%macro __makerepinfo (numcol=, islist=N)/store;
+
+%local  numcol islist;
+
+%macro makestring(name);
+    %local name;
+    *&name=tranwrd(strip(&name),'"',"#dbquot ");
+    *&name=tranwrd(strip(&name),"'","#squot ");
+    *&name=tranwrd(strip(&name),'(',"#lpar");
+    *&name=tranwrd(strip(&name),')',"#rpar");
+    &name=tranwrd(strip(&name),'"',"/#0034 ");
+    &name=tranwrd(strip(&name),"'","/#0039 ");
+    &name=tranwrd(strip(&name),'(',"/#0040 ");
+    &name=tranwrd(strip(&name),')',"#/0041 ");
+
+    record=  "__"|| "&name="||'"'|| strip(&name)||'";';  output;
+%mend;  
 
   
-%local outds numcol islist;
-  
 
-data _null_;
-file "&rrgpgmpath./&outds" mod ;
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
 set __repinfo;
-put;
-put @1 '%macro __metadata;';
-put @1 '%local __fontsize __indentsize __orient __dest  __nodatamsg';
-put @1 '       __title1 __title2 __title3 __title4 __title5 __title6';
-put @1 '       __footnot1 __footnot2 __footnot3 __footnot4';
-put @1 '       __footnot5 __footnot6 __footnot7 __footnot8 __outformat';   
-put @1 '       __shead_l __shead_r __shead_m __papersize __watermark ';
-put @1 '       __sfoot_l __sfoot_r __sfoot_m __sprops __sfoot_fs __gcols __rtype';
-put @1 '       __colwidths __extralines __stretch i __font __margins __lastcheadid __dist2next';
-put @1 '       __bookmarks_rtf __bookmarks_pdf ;';
-put;
-/*put @1 '%global rrgoutpath;';*/
-put;
+
+record= " "; output;
+record=   "data rrgreport;"; output;
+record=   " length __datatype __fontsize __dest __sfoot_fs $ 8 __footnot1-__footnot14 __title1-__title6"; output;
+record=   "        __bookmarks_rtf __bookmarks_pdf __filename __nodatamsg __watermark"; output;
+record=   "        __sprops  "; output;
+record=   "        __shead_r __shead_m __shead_l "; output;
+record=   "        __sfoot_r __sfoot_m __sfoot_l __stretch __colwidths __rtype __gcols $ 2000;"; output;
+record= " ";  output;
+record=   "   __datatype   = 'RINFO';"; output;
+record=   "   __rowid      = .;"; output;
+record=   "   __varbygrp   = .;"; output;
+
+
 %if &islist=Y %then %do;
-put;
-put @1 '%local breakokat;';
-put @1 '%let breakokat = ' "&breakokat ;";
-put;
+  record=   '__fontsize="' ||strip(fontsize)|| '";';output;
 %end;
 
-put @1 '%let __fontsize=' fontsize ";";
-put @1 '%let __bookmarks_rtf=%str(' bookmarks_rtf ");";
-put @1 '%let __bookmarks_pdf=%str(' bookmarks_pdf ");";
-
-
-put @1 '%let __sfoot_fs=' sfoot_fs ";";
-put @1 '%let __indentsize=' indentsize ";";
-/*put @1 '%let __breakokat=' breakokat ";";*/
-put @1 '%let __orient=' orient ";";
+record=   '__fontsize="' ||strip(fontsize)|| '";';output;
+record=   '__bookmarks_rtf="' ||strip(bookmark_rtf) || '";'; output;
+record=   '__bookmarks_pdf="' ||strip(bookmark_pdf) || '";'; output;
+record=   '__sfoot_fs="' ||strip( sfoot_fs)|| '";'; output;
 if index (upcase(outformat),'RTF')=0 then do;
-  if index (upcase(outformat),'PDF')>0 then do;
-    put @1 '%let __dest=PDF;'; 
-  end;
-  else do;
-    put @1 '%let __dest=RTF PDF;';  	
-  end;
+    if index (upcase(outformat),'PDF')>0 then do;
+       record=   '__dest="PDF";'; output;
+    end;
+    else do;
+        record=   '__dest="RTF PDF";'; output; 	
+    end;
 end;
 else do;
-  if index (upcase(outformat),'PDF')>0 then do;
-    put @1 '%let __dest=RTF PDF;';
-  end;
-  else do;
-    put @1 '%let __dest=RTF;';
-  end;  
+    if index (upcase(outformat),'PDF')>0 then do;
+        record=   '__dest="RTF PDF";'; output;
+    end;
+    else do;
+        record=   '__dest="RTF";'; output;
+    end;  
 end;  
 
-put @1 '%let __filename=' filename ";";
-put @1 '%let __nodatamsg=' nodatamsg ";";
+record=   '__filename="' ||strip(filename) ||'";'; output;
 
-length __tmpw  $ 2000;
-
-__xx= countw(title1, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title1, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __title1 = %str(&__title1.)%str(' __tmpw");";
-end;  
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title1, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __title1 = %str(&__title1.)%str(' __tmpw");";
-  
-
-__xx= countw(title2, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title2, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __title2 = %str(&__title2.)%str(' __tmpw");";
-end;  
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title2, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __title2 = %str(&__title2.)%str(' __tmpw");";
+%makestring(nodatamsg);
 
 
-__xx= countw(title3, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
 
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title3, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __title3 = %str(&__title3.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title3, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __title3 = %str(&__title3.)%str(' __tmpw");";
-  
+%makestring(title1);
+%makestring(title2);
+%makestring(title3);
+%makestring(title4);
+%makestring(title5);
+%makestring(title6);
 
-__xx= countw(title4, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
+%do jj=1 %to 14;
+  %makestring(footnot&jj);
+%end;
 
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title4, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __title4 = %str(&__title4.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title4, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __title4 = %str(&__title4.)%str(' __tmpw");";
-  
-
-__xx= countw(title5, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title5, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __title5 = %str(&__title5.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title5, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __title5 = %str(&__title5.)%str(' __tmpw");";
-  
-
-__xx= countw(title6, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title6, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __title6 = %str(&__title6.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(title6, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __title6 = %str(&__title6.)%str(' __tmpw");";
-  
-
-__xx= countw(shead_l, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(shead_l, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __shead_l = %str(&__shead_l.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(shead_l, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __shead_l = %str(&__shead_l.)%str(' __tmpw");";
-  
-
-__xx= countw(shead_m, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(shead_m, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __shead_m = %str(&__shead_m.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(shead_m, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __shead_m = %str(&__shead_m.)%str(' __tmpw");";
-  
-
-__xx= countw(shead_r, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(shead_r, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __shead_r = %str(&__shead_r.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(shead_r, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __shead_r = %str(&__shead_r.)%str(' __tmpw");";
-  
-
-__xx= countw(sfoot_r, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_r, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __sfoot_r = %str(&__sfoot_r.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_r, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __sfoot_r = %str(&__sfoot_r.)%str(' __tmpw");";
-  
-
-__xx= countw(sfoot_m, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_m, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __sfoot_m = %str(&__sfoot_m.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_m, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __sfoot_m = %str(&__sfoot_m.)%str(' __tmpw");";
-  
-
-__xx= countw(sfoot_l, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_l, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __sfoot_l = %str(&__sfoot_l.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(sfoot_l, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __sfoot_l = %str(&__sfoot_l.)%str(' __tmpw");";
-  
-
-__xx= countw(footnot1, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot1, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __footnot1 = %str(&__footnot1.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot1, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __footnot1 = %str(&__footnot1.)%str(' __tmpw");";
-  
-
-__xx= countw(footnot2, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot2, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __footnot2 = %str(&__footnot2.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot2, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __footnot2 = %str(&__footnot2.)%str(' __tmpw");";
-  
-
-__xx= countw(footnot3, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot3, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __footnot3 = %str(&__footnot3.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot3, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __footnot3 = %str(&__footnot3.)%str(' __tmpw");";
-
-
-__xx= countw(footnot4, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot4, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __footnot4 = %str(&__footnot4.)%str(' __tmpw");";
-end;
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot4, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __footnot4 = %str(&__footnot4.)%str(' __tmpw");";
-
-
-__xx= countw(footnot5, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot5, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __footnot5= %str(&__footnot5.)%str(' __tmpw");";
-end;  
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot5, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __footnot5= %str(&__footnot5.)%str(' __tmpw");";
-  
-
-__xx= countw(footnot6, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot6, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __footnot6= %str(&__footnot6.)%str(' __tmpw");";
-end;  
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot6, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __footnot6= %str(&__footnot6.)%str(' __tmpw");";
-  
-
-__xx= countw(footnot7, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot7, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __footnot7= %str(&__footnot7.)%str(' __tmpw");";
-end;  
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot7, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __footnot7= %str(&__footnot7.)%str(' __tmpw");";
-  
-
-__xx= countw(footnot8, ' ');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
-
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot8, 10*(__i-1)+__j,' '));
-  end;
-  put @1 '%let __footnot8= %str(&__footnot8.)%str(' __tmpw");";
-end;  
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||' '||strip(scan(footnot8, 10*__yy+__j,' '));
-  end;
-  put @1 '%let __footnot8= %str(&__footnot8.)%str(' __tmpw");";
+%makestring(nodatamsg);
+%makestring(shead_l); 
+%makestring(shead_r); 
+%makestring(shead_m );
+%makestring(sfoot_r );
+%makestring(sfoot_l );
+%makestring(sfoot_m );
+%makestring(sprops);
  
-%* assembe sprops;
-put @1 '%let __sprops= &__sprops. xx=xx;';
-__xx= countw(sprops, ',');
-__yy = floor(__xx/10);
-__yy2 = __xx-10*__yy;
-__tmpw='';
 
-do __i = 1 to __yy;
-  __tmpw='';
-  do __j =1 to 10;
-    __tmpw = strip(__tmpw)||','||strip(scan(sprops, 10*(__i-1)+__j,','));
-  end;
-  put @1 '%let __sprops= %str(&__sprops.)%str(' __tmpw");";
-end;  
-  __tmpw='';
-  do __j=1 to __yy2;
-    __tmpw = strip(__tmpw)||','||strip(scan(sprops, 10*__yy+__j,','));
-  end;
-  put @1 '%let __sprops= %str(&__sprops.)%str(' __tmpw");";
-  
+
+record=   '__stretch="'  ||strip(stretch)|| '";'; output;
+record=   '__path = "'||"&rrgoutpath"||'";'; output;
+record=   '__colwidths="' ||strip(colwidths)|| '";'; output;
+/*record=   '__dist2next="' ||strip(dist2next)|| '";'; output;*/
+record=   '__rtype="' ||strip(rtype)|| '";'; output;
+record=   '__gcols="' ||strip(gcols)|| '";'; output;
+record=   '__lastcheadid="' ||strip(lastcheadid)|| '";'; output;
+record=   '__extralines="' ||strip(extralines)|| '";'; output;
+record=   '__margins="' ||strip(margins)|| '";'; output;
+record=   '__papersize="' ||strip(papersize)||'";'; output;
+record=   '__outformat="' ||strip(outformat)||'";'; output;
+record=   '__watermark="' ||strip(watermark)||'";'; output;
+record=   '__font="'|| strip(font)|| '";'; output;
 
 
 
-
-put @1 '%let __stretch='  stretch ";";
-
-put @1 '%local __path;';
-put @1 '%if %length(&rrgoutpath)=0 %then';
-put @1 '  %let __path=' "&rrgoutpathlazy;";
-put @1 '%else %let __path = &rrgoutpath;';
-put @1 '%let __colwidths=' colwidths ";";
-put @1 '%let __dist2next=' dist2next ";";
-put @1 '%let __rtype=' rtype ";";
-put @1 '%let __gcols=' gcols ";";
-put @1 '%let __lastcheadid=' lastcheadid ";";
-put @1 '%let __extralines=' extralines ";";
-put @1 '%let __margins=' margins ";";
-put @1 '%let __papersize=' papersize";";
-put @1 '%let __outformat=' outformat";";
-put @1 '%let __watermark=' watermark";";
-put @1 '%let __font=' font ";";
+record= " "; output;
 
 
-
-put;
-put @1 "data __report;";
-put @1 " length __datatype $ 8 __footnot1 __footnot2 __footnot3 __footnot4 ";
-put @1 "        __footnot5 __footnot6 __footnot7 __footnot8 __bookmarks_rtf __bookmarks_pdf";
-put @1 "        __sprops __title1 __title2 __title3 __systitle ";
-put @1 "        __shead_r __shead_m __shead_l __dist2next __breakokat";
-put @1 "        __sfoot_r __sfoot_m __sfoot_l __stretch __colwidths __rtype __gcols $ 2000;";
-put;
-put @1 "   __datatype   = 'RINFO';";
-put @1 "   __rowid      = .;";
-put @1 "   __varbygrp   = .;";
-put @1 "   __sprops     = trim(left(symget('__sprops')));";
-put @1 "   __fontsize   = trim(left(symget('__fontsize')));";
-put @1 "   __bookmarks_pdf   = trim(left(symget('__bookmarks_pdf')));";
-put @1 "   __bookmarks_rtf   = trim(left(symget('__bookmarks_rtf')));";
-
-put @1 "   __papersize  = trim(left(symget('__papersize')));";
-put @1 "   __watermark  = trim(left(symget('__watermark')));";
-put @1 "   __indentsize = trim(left(symget('__indentsize')));";
-put @1 "   __orient     = trim(left(symget('__orient')));";
-put @1 "   __breakokat  = trim(left(symget('breakokat')));";
-put @1 "   __dest       = trim(left(symget('__dest')));";
-put @1 "   __filename   = trim(left(symget('__filename')));";
-%if &java2sas=Y %then %do;
-put @1 "   __filename   = strip(__filename)||'_j';";
-%end;
-
-put @1 "  __nodatamsg   = trim(left(symget('__nodatamsg')));";
-put @1 "  __title1      = trim(left(symget('__title1')));";
-put @1 "  __title2      = trim(left(symget('__title2')));";
-put @1 "  __title3      = trim(left(symget('__title3')));";
-put @1 "  __title4      = trim(left(symget('__title4')));";
-put @1 "  __title5      = trim(left(symget('__title5')));";
-put @1 "  __title6      = trim(left(symget('__title6')));";
-put @1 "  __footnot1    = trim(symget('__footnot1'));";
-put @1 "  __footnot2    = trim(symget('__footnot2'));";
-put @1 "  __footnot3    = trim(symget('__footnot3'));";
-put @1 "  __footnot4    = trim(symget('__footnot4'));";
-put @1 "  __footnot5    = trim(symget('__footnot5'));";
-put @1 "  __footnot6    = trim(symget('__footnot6'));";
-put @1 "  __footnot7    = trim(symget('__footnot7'));";
-put @1 "  __footnot8    = trim(symget('__footnot8'));";
-put @1 "  __path        = trim(left(symget('__path')));";
-put @1 "  __systitle    = trim(left(symget('__shead_l')));";
-put @1 "  __shead_l     = trim(left(symget('__shead_l')));";
-put @1 "  __shead_m     = trim(left(symget('__shead_m')));";
-put @1 "  __shead_r     = trim(left(symget('__shead_r')));";
-put @1 "  __sfoot_l     = trim(left(symget('__sfoot_l')));";
-put @1 "  __sfoot_m     = trim(left(symget('__sfoot_m')));";
-put @1 "  __sfoot_r     = trim(left(symget('__sfoot_r')));";
-put @1 "  __colwidths   = trim(left(symget('__colwidths')));";
-put @1 "  __sfoot_fs    = trim(left(symget('__sfoot_fs')));";
-put @1 " __extralines   = trim(left(symget('__extralines')));";
-put @1 " __stretch      = trim(left(symget('__stretch')));";
-put @1 " __font         = trim(left(symget('__font')));";
-put @1 " __margins      = trim(left(symget('__margins')));";
-put @1 " __outformat    = trim(left(symget('__outformat')));";
-put @1 ' __version      = "' "%__version" '";';
-/*put @1 "    __lastcheadid = 0;";*/
-put @1 " __lastcheadid  = trim(left(symget('__lastcheadid')));";
-put @1 " __rtype        = trim(left(symget('__rtype')));";
-put @1 " __gcols        = trim(left(symget('__gcols')));";
-put @1 " __dist2next    = trim(left(symget('__dist2next')));";
-put;
-put @1 "__i=0;";
-put @1 "if __colwidths='' then __colwidths='LW';";
-put @1 "if countw(__colwidths,' ')=1 then do;";
+record= " "; output;
+record=   "__i=0;"; output;
+record=   "if __colwidths='' then __colwidths='LW';"; output;
+record=   "if countw(__colwidths,' ')=1 then do;"; output;
 %if %length(&numcol)=0 %then %do;
-put @1 '   __colwidths = compbl(__colwidths)||repeat(" NH", &maxtrt-1);';
+    record=   '   __colwidths = compbl(__colwidths)||repeat(" NH", &maxtrt-1);'; output;
 %end;
 %else %do;
-put @1 "   __colwidths = compbl(__colwidths)||repeat(' NH', &numcol-1);";
+    record=   "   __colwidths = compbl(__colwidths)||repeat(' NH', &numcol-1);"; output;
 %end;
-put @1 "end;  ";
+record=   "end;  "; output;
 %if %length(&numcol)=0 %then %do;
-put @1 'else if countw(__colwidths," ")<&maxtrt+1 then do;';
-put @1 '   __colwidths = compbl(__colwidths)||repeat(" "||scan(__colwidths,-1," "), &maxtrt-countw(__colwidths," "));';
+    record=   'else if countw(__colwidths," ")<&maxtrt+1 then do;'; output;
+    record=   '   __colwidths = compbl(__colwidths)||repeat(" "||scan(__colwidths,-1," "), &maxtrt-countw(__colwidths," "));'; output;
 %end;
 %else %do;
-put @1 "else if countw(__colwidths,' ')<&numcol+1 then do;";
-put @1 "   __colwidths = compbl(__colwidths)||repeat(' '||scan(__colwidths,-1,' '), &numcol-countw(__colwidths,' '));";
+    record=   "else if countw(__colwidths,' ')<&numcol+1 then do;"; output;
+    record=   "   __colwidths = compbl(__colwidths)||repeat(' '||scan(__colwidths,-1,' '), &numcol-countw(__colwidths,' '));"; output;
 %end;
-put @1 "end;";
-put 'put __colwidths=;';
+record=   "end;"; output;
 
-put @1 "if __stretch='' then __stretch='Y';";
+record=   "if __stretch='' then __stretch='Y';"; output;
 %if %length(&numcol)=0 %then %do;
-put @1 'if countw(__stretch," ")<&maxtrt+1 then do;';
-put @1 '   __stretch = compbl(__stretch)||repeat(" "||scan(__stretch,-1," "), &maxtrt-countw(__stretch," "));';
+    record=   'if countw(__stretch," ")<&maxtrt+1 then do;'; output;
+    record=   '   __stretch = compbl(__stretch)||repeat(" "||scan(__stretch,-1," "), &maxtrt-countw(__stretch," "));'; output;
 %end;
 %else %do;
-put @1 "if countw(__stretch,' ')<&numcol+1 then do;";
-put @1 "   __stretch = compbl(__stretch)||repeat(' '||scan(__stretch,-1,' '), &numcol-countw(__stretch,' '));";
+    record=   "if countw(__stretch,' ')<&numcol+1 then do;"; output;
+    record=   "   __stretch = compbl(__stretch)||repeat(' '||scan(__stretch,-1,' '), &numcol-countw(__stretch,' '));"; output;
 
 %end;
-put @1 "end;";
+record=   "end;"; output;
+record= " "; output;
 
-put;
-put @1 'w1 = strip("' "'" '");';
-put @1 'w2 = strip("' "#squot" '");';
-put @1 '__colhead1   = tranwrd(strip(__colhead1),     strip(w2),  strip(w1));';
-put @1 '__title1     = tranwrd(strip(__title1),     strip(w2),  strip(w1));';
-put @1 '__title2     = tranwrd(strip(__title2),     strip(w2),  strip(w1));';
-put @1 '__title3     = tranwrd(strip(__title3),     strip(w2),  strip(w1));';
-put @1 '__title4     = tranwrd(strip(__title4),     strip(w2),  strip(w1));';
-put @1 '__title5     = tranwrd(strip(__title5),     strip(w2),  strip(w1));';
-put @1 '__title6     = tranwrd(strip(__title6),     strip(w2),  strip(w1));';
-put @1 '__footnot1   = tranwrd(strip(__footnot1),   strip(w2),  strip(w1));';
-put @1 '__footnot2   = tranwrd(strip(__footnot2),   strip(w2),  strip(w1));';
-put @1 '__footnot3   = tranwrd(strip(__footnot3),   strip(w2),  strip(w1));';
-put @1 '__footnot4   = tranwrd(strip(__footnot4),   strip(w2),  strip(w1));';
-put @1 '__footnot5   = tranwrd(strip(__footnot5),   strip(w2),  strip(w1));';
-put @1 '__footnot6   = tranwrd(strip(__footnot6),   strip(w2),  strip(w1));';
-put @1 '__footnot7   = tranwrd(strip(__footnot7),   strip(w2),  strip(w1));';
-put @1 '__footnot8   = tranwrd(strip(__footnot8),   strip(w2),  strip(w1));';
-put @1 '__colhead1   = tranwrd(strip(__colhead1),   strip(w2),  strip(w1));';
-put @1 '__sfoot_r    = tranwrd(strip(__sfoot_r),    strip(w2),  strip(w1));';
-put @1 '__sfoot_m    = tranwrd(strip(__sfoot_m),    strip(w2),  strip(w1));';
-put @1 '__sfoot_l    = tranwrd(strip(__sfoot_l),    strip(w2),  strip(w1));';
-put @1 '__shead_l    = tranwrd(strip(__shead_l),    strip(w2),  strip(w1));';
-put @1 '__shead_m    = tranwrd(strip(__shead_m),    strip(w2),  strip(w1));';
-put @1 '__shead_r    = tranwrd(strip(__shead_r),    strip(w2),  strip(w1));';
-put;
-put @1 'w1 = strip("' "(" '");';
-put @1 'w2 = strip("' "#lpar" '");';
-put @1 '__colhead1   = tranwrd(strip(__colhead1),     strip(w2),  strip(w1));';
-put @1 '__title1     = tranwrd(strip(__title1),     strip(w2),  strip(w1));';
-put @1 '__title2     = tranwrd(strip(__title2),     strip(w2),  strip(w1));';
-put @1 '__title3     = tranwrd(strip(__title3),     strip(w2),  strip(w1));';
-put @1 '__title4     = tranwrd(strip(__title4),     strip(w2),  strip(w1));';
-put @1 '__title5     = tranwrd(strip(__title5),     strip(w2),  strip(w1));';
-put @1 '__title6     = tranwrd(strip(__title6),     strip(w2),  strip(w1));';
-put @1 '__footnot1   = tranwrd(strip(__footnot1),   strip(w2),  strip(w1));';
-put @1 '__footnot2   = tranwrd(strip(__footnot2),   strip(w2),  strip(w1));';
-put @1 '__footnot3   = tranwrd(strip(__footnot3),   strip(w2),  strip(w1));';
-put @1 '__footnot4   = tranwrd(strip(__footnot4),   strip(w2),  strip(w1));';
-put @1 '__footnot5   = tranwrd(strip(__footnot5),   strip(w2),  strip(w1));';
-put @1 '__footnot6   = tranwrd(strip(__footnot6),   strip(w2),  strip(w1));';
-put @1 '__footnot7   = tranwrd(strip(__footnot7),   strip(w2),  strip(w1));';
-put @1 '__footnot8   = tranwrd(strip(__footnot8),   strip(w2),  strip(w1));';
-put @1 '__colhead1   = tranwrd(strip(__colhead1),   strip(w2),  strip(w1));';
-put @1 '__sfoot_r    = tranwrd(strip(__sfoot_r),    strip(w2),  strip(w1));';
-put @1 '__sfoot_m    = tranwrd(strip(__sfoot_m),    strip(w2),  strip(w1));';
-put @1 '__sfoot_l    = tranwrd(strip(__sfoot_l),    strip(w2),  strip(w1));';
-put @1 '__shead_l    = tranwrd(strip(__shead_l),    strip(w2),  strip(w1));';
-put @1 '__shead_m    = tranwrd(strip(__shead_m),    strip(w2),  strip(w1));';
-put @1 '__sheade_r   = tranwrd(strip(__shead_r),    strip(w2),  strip(w1));';
-put;
-put @1 'w1 = strip("' ")" '");';
-put @1 'w2 = strip("' "#rpar" '");';
-put @1 '__title1     = tranwrd(strip(__title1),     strip(w2),  strip(w1));';
-put @1 '__title2     = tranwrd(strip(__title2),     strip(w2),  strip(w1));';
-put @1 '__title3     = tranwrd(strip(__title3),     strip(w2),  strip(w1));';
-put @1 '__title4     = tranwrd(strip(__title4),     strip(w2),  strip(w1));';
-put @1 '__title5     = tranwrd(strip(__title5),     strip(w2),  strip(w1));';
-put @1 '__title6     = tranwrd(strip(__title6),     strip(w2),  strip(w1));';
-put @1 '__footnot1   = tranwrd(strip(__footnot1),   strip(w2),  strip(w1));';
-put @1 '__footnot2   = tranwrd(strip(__footnot2),   strip(w2),  strip(w1));';
-put @1 '__footnot3   = tranwrd(strip(__footnot3),   strip(w2),  strip(w1));';
-put @1 '__footnot4   = tranwrd(strip(__footnot4),   strip(w2),  strip(w1));';
-put @1 '__footnot5   = tranwrd(strip(__footnot5),   strip(w2),  strip(w1));';
-put @1 '__footnot6   = tranwrd(strip(__footnot6),   strip(w2),  strip(w1));';
-put @1 '__footnot7   = tranwrd(strip(__footnot7),   strip(w2),  strip(w1));';
-put @1 '__footnot8   = tranwrd(strip(__footnot8),   strip(w2),  strip(w1));';
-put @1 '__colhead1   = tranwrd(strip(__colhead1),   strip(w2),  strip(w1));';
-put @1 '__sfoot_r    = tranwrd(strip(__sfoot_r),    strip(w2),  strip(w1));';
-put @1 '__sfoot_m    = tranwrd(strip(__sfoot_m),    strip(w2),  strip(w1));';
-put @1 '__sfoot_l    = tranwrd(strip(__sfoot_l),    strip(w2),  strip(w1));';
-put @1 '__shead_l    = tranwrd(strip(__shead_l),    strip(w2),  strip(w1));';
-put @1 '__shead_m    = tranwrd(strip(__shead_m),    strip(w2),  strip(w1));';
-put @1 '__shead_r    = tranwrd(strip(__shead_r),    strip(w2),  strip(w1));';
-/*
-put @1 '__rtype      = "";';
-put @1 '__gcols      = "";';
-put @1 '__dist2next  = "";';
-*/
-put;
-put "drop w1 w2 __i;";
 
-put @1 "run;";
-put;
-put @1 '%mend;';
-put;
-put @1 '%__metadata;';
-put;
+
+
+
+record=   "run;"; output;
+record= " "; output;
+
+run;
+
+
+proc append data=rrgpgmtmp base=rrgpgm;
 run;
 
 

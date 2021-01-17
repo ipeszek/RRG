@@ -19,110 +19,113 @@
 
 %let datain = %unquote(&datain);
 
-data _null_;
-  length __wh $ 2000;
-  __wh = strip(symget("where"));
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;  
-put @1 "data &dataout;";
-put @1 "if 0;";
-put @1 "run;";
-put;
-put @1 "data __out; if 0; run;";
 
 %local i j numgroups tmp;
 %let numgroups = %sysfunc(countw(&group, %str( )));
 %do i=1 %to &numgroups;
-  %local grp&i;
-  %let grp&i = %scan(&group, &i, %str( ));
-  %let j = %eval(&numgroups-&i+1);
-  %local ngrp&j;
-  %let ngrp&j =  &tmp &&grp&i; 
-  %let tmp = &tmp &&grp&i;
+    %local grp&i;
+    %let grp&i = %scan(&group, &i, %str( ));
+    %let j = %eval(&numgroups-&i+1);
+    %local ngrp&j;
+    %let ngrp&j =  &tmp &&grp&i; 
+    %let tmp = &tmp &&grp&i;
 %end;
      
 %if %upcase(&desc)=Y %then %let desc=descending;
 %else %let desc= ;    
+
+
+
+
+
+
+record = " ";  output;
+record =  "data &dataout;"; output;
+record =  "if 0;"; output;
+record =  "run;"; output;
+record = " "; output;
+record =  "data __out; if 0; run;"; output;
+
      
 %do i=1 %to &numgroups;
-put;
-put;  
-put;  
-put @1 "*-------------------------------------------------------------------;";
-put @1 "* TAKE THE MAXIMUM &VAR;";
-put @1 "*-------------------------------------------------------------------;";
-put;
-put @1 "proc sort data=&datain nodupkey;";
-put @1 "  by &trtvar &&ngrp&i  &unit &desc &var;";
-put @1 "run;";
-put;
-put @1 "data &datain;";
-put @1 "  set &datain;";
-put @1 "  by &trtvar &&ngrp&i &unit &desc &var;";
-put @1 "  if last.%scan(&unit,-1, %str( ));";
-put @1 "run;";
-put;
-put;
+    record = " "; output;
+    record = " ";   output;
+    record = " ";   output;
+    record =  "*-------------------------------------------------------------------;"; output;
+    record =  "* TAKE THE MAXIMUM &VAR;"; output;
+    record =  "*-------------------------------------------------------------------;"; output;
+    record = " "; output;
+    record =  "proc sort data=&datain nodupkey;"; output;
+    record =  "  by &trtvar &&ngrp&i  &unit &desc &var;"; output;
+    record =  "run;"; output;
+    record = " "; output;
+    record =  "data &datain;"; output;
+    record =  "  set &datain;"; output;
+    record =  "  by &trtvar &&ngrp&i &unit &desc &var;"; output;
+    record =  "  if last.%scan(&unit,-1, %str( ));"; output;
+    record =  "run;"; output;
+    record = " "; output;
+    record = " "; output;
 
-%if &total=N %then %do;
-put @1 "*-------------------------------------------------------------------;";
-put @1 "* COUNT NUMBER OF DISTINCT &UNIT IN EACH ";
-put @1 "*   &trtvar &&ngrp&i &var COMBINATION;";
-put @1 "*-------------------------------------------------------------------;";
-put;
-   %local j;
-   %let j = %eval(&numgroups-&i+1);
-   %if &j = &numgroups %then %let j=999;
-   %local tmp1 tmp2;
-   %let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar &&ngrp&i  &var)), 
-      %str( ), %str(,)));
-   %let tmp2 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar &&ngrp&i &unit &var)),
-        %str( ), %str(,)));
-%end;
-%else %do;
-put @1 "*-------------------------------------------------------------------;";
-put @1 "* COUNT NUMBER OF DISTINCT &UNIT IN EACH ";
-put @1 "*   &trtvar &&ngrp&i  COMBINATION;";
-put @1 "*-------------------------------------------------------------------;";
-put;
-   %local j;
-   %let j = %eval(&numgroups-&i+1);
-   %if &j = &numgroups %then %let j=999;
-   %local tmp1 tmp2;
-   %let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar &&ngrp&i  )), 
-      %str( ), %str(,)));
-   %let tmp2 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar &&ngrp&i &unit )),
-        %str( ), %str(,)));
-%end;
+    %if &total=N %then %do;
+        record =  "*-------------------------------------------------------------------;"; output;
+        record =  "* COUNT NUMBER OF DISTINCT &UNIT IN EACH "; output;
+        record =  "*   &trtvar &&ngrp&i &var COMBINATION;"; output;
+        record =  "*-------------------------------------------------------------------;"; output;
+        record = " "; output;
+           %local j;
+           %let j = %eval(&numgroups-&i+1);
+           %if &j = &numgroups %then %let j=999;
+           %local tmp1 tmp2;
+           %let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar &&ngrp&i  &var)), 
+              %str( ), %str(,)));
+           %let tmp2 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar &&ngrp&i &unit &var)),
+                %str( ), %str(,)));
+    %end;
+    %else %do;
+        record =  "*-------------------------------------------------------------------;"; output;
+        record =  "* COUNT NUMBER OF DISTINCT &UNIT IN EACH "; output;
+        record =  "*   &trtvar &&ngrp&i  COMBINATION;"; output;
+        record =  "*-------------------------------------------------------------------;"; output;
+        record = " "; output;
+           %local j;
+           %let j = %eval(&numgroups-&i+1);
+           %if &j = &numgroups %then %let j=999;
+           %local tmp1 tmp2;
+           %let tmp1 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar &&ngrp&i  )), 
+              %str( ), %str(,)));
+           %let tmp2 = %sysfunc(tranwrd(%sysfunc(compbl(&trtvar &&ngrp&i &unit )),
+                %str( ), %str(,)));
+     %end;
       
-put @1 "proc sql noprint;";
-put @1 "    create table __out as";
-put @1 "    select &tmp1,";
-put @1 "      count(*) as &cnt, &j as __grpid from ";
-put @1 "    (select distinct ";
-put @1 "      &tmp2";
-%if %length(&where) %then %do;
-put @1 "    from  &datain (where=";
-put @5 __wh;
-put "  ))";
-%end;
-%else %do;
-put @1 "    from  &datain)";
-%end;
-put @1 "    group by &tmp1";
-put @1 "    order by &tmp1;";
-put @1 "quit;";
-put;
-put @1 "data &dataout;";
-put @1 "  set &dataout __out;";
-put @1 "run;";
-put;
+      record =  "proc sql noprint;"; output;
+      record =  "    create table __out as"; output;
+      record =  "    select &tmp1,"; output;
+      record =  "      count(*) as &cnt, &j as __grpid from "; output;
+      record =  "    (select distinct "; output;
+      record =  "      &tmp2"; output;
+      %if %length(&where) %then %do;
+          record =  "    from  &datain (where=("; output;
+          record =  strip(symget("where")); output;
+          record = "  )))"; output;
+      %end;
+      %else %do;
+          record =  "    from  &datain)"; output;
+      %end;
+      record =  "    group by &tmp1"; output;
+      record =  "    order by &tmp1;"; output;
+      record =  "quit;"; output;
+      record = " "; output;
+      record =  "data &dataout;"; output;
+      record =  "  set &dataout __out;"; output;
+      record =  "run;"; output;
+      record = " "; output;
 %end;
 
-put @1 "proc sql noprint;";
-put @1 "  drop table __out;";
-put @1 "quit;";
-put;
-run;
+record =  "proc sql noprint;"; output;
+record =  "  drop table __out;"; output;
+record =  "quit;"; output;
+record = " "; output;
+
 %mend;
 ;

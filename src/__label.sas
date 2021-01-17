@@ -52,12 +52,26 @@ run;
 *  AND WHETHER TO PRINT  SKIPLINE AFTEWARDS;
 
 proc sql noprint;
+select 
+   indent                 ,
+   upcase(skipline)       ,
+   dequote(label)         ,
+   wholerow               ,
+   upcase(keepwithnext)   
+into
+  :indent                 separated by ' ' ,
+  :skipline               separated by ' ' ,
+  :lbl                    separated by ' ' ,
+  :wholerow               separated by ' ' ,
+  :keepwithnext           separated by ' '    from __labeld1;  
+/*
   select indent            into:indent   separated by ' ' from __labeld1;
   select upcase(skipline)  into:skipline separated by ' ' from __labeld1;
   select dequote(label)    into:lbl      separated by ' ' from __labeld1;
   select wholerow          into:wholerow separated by ' ' from __labeld1;
   select upcase(keepwithnext)
          into:keepwithnext separated by ' ' from __labeld1;
+         */
 quit;
 
 %local ngrpv;
@@ -66,84 +80,92 @@ quit;
   %let ngrpv = %sysfunc(countw(&groupvars, %str( )));
 %end;
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-length label1 $ 20000;
-%*__label = symget("lbl");
-%* symget did not want to work here...;
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+length label1 $ 2000;
 set __labeld1;
 label1 = quote(cats(dequote(label)));
-put @1 "*-------------------------------------------------------------;";
-put @1 "*  CREATE ROW WITH DISPLAY OF " LABEL1;
-put @1 "*-------------------------------------------------------------;";
-put;
-put;
-put @1 "data &outds;";
-put @1 "  length __col_0 __align $ 2000 __suffix  __vtype $ 20;";
-put @1 "  __col_0 = " label1  ";";
-put @1 "  __indentlev=&indent+&ngrpv;"; ** 2009-07-08;
-put @1 "  __suffix='';";
+record =  "*-------------------------------------------------------------;"; output;
+record =  "*  CREATE ROW WITH DISPLAY OF " ||strip(LABEL1)||";"; output;
+record =  "*-------------------------------------------------------------;"; output;
+record = " "; output;
+record = " "; output;
+record =  "data &outds;"; output;
+record =  "  length __col_0 __align $ 2000 __suffix  __vtype $ 20;"; output;
+record =  "  __col_0 = " ||strip(label1) || ";"; output;
+record =  "  __indentlev=&indent+&ngrpv;"; ; output;
+record =  "  __suffix='';"; output;
 %local tmp;
 %if &skipline=Y %then %do;
-put @1 "  __suffix='~-2n';";
+    record =  "  __suffix='~-2n';"; output;
 %end;
-put @1 "  __tmprowid=1;";
-put @1 "  __blockid=&varid;";
+record =  "  __tmprowid=1;"; output;
+record =  "  __blockid=&varid;"; output;
 %if &keepwithnext=Y %then %do;
-  put @1 "  __keepn=1;";
+    record =  "  __keepn=1;"; output;
 %end;
 %else %do;
-  put @1 "  __keepn=0;";
+    record =  "  __keepn=0;"; output;
 %end;
-put @1 "  __align = 'L '||repeat('L '," '&maxtrt);' ;
-put @1 "  __tby=1;";
-put @1 "  __labelline=0;";
-put @1 "  __vtype='LABEL';";
-put @1 "  __order=1;";
-put @1 "  __grpid=999;";
-put @1 "  __skipline=strip('" "&skipline" "');";
-put @1 "  __wholerow=strip('" "&wholerow" "');";
-put @1 "run;";
-put;
+record =  "  __align = 'L '||repeat('L ',"|| '&maxtrt);' ; output;
+record =  "  __tby=1;"; output;
+record =  "  __labelline=0;"; output;
+record =  "  __vtype='LABEL';"; output;
+record =  "  __order=1;"; output;
+record =  "  __grpid=999;"; output;
+record =  "  __skipline=strip('"|| "&skipline"|| "');"; output;
+record =  "  __wholerow=strip('"|| "&wholerow"|| "');"; output;
+record =  "run;"; output;
+record = " "; output;
 
 
 %if %length(&by.&groupvars) %then %do;
 
-* IF GROUPING VARIABLES ARE SPECIFIED, CREATE LABEL RECORD FOR EACH
-   COMBINATION OF GROUPING VARABLES IN &DSIN;
-put @1 "*----------------------------------------------------------------;";   
-put @1 "* CREATE LABEL RECORD FOR EACH COMBINATION OF GROUPING VARABLES;";
-put @1 "*----------------------------------------------------------------;";
-put;   
-put @1 "data __labeld1;";
-put @1 "if 0;";
-put @1 "run;";
-put;
-%local tmp;
-%let tmp =  %sysfunc(tranwrd(%sysfunc(compbl(__tby &by &groupvars)) ,
-   %str( ),%str(,)));
-put @1 "proc sql noprint;";
-put @1 "create table __labeld1 as select distinct ";
-put @1 "   &tmp";
-put @1 "   from &dsin";
-put @1 "   order by __tby;";
-put @1 "   quit;";
-put;
-put @1 "   proc sort data=&outds;";
-put @1 "   by __tby;";
-put @1 "   run;";
-put;
-put @1 "   data &outds;";
-put @1 "   merge __labeld1 &outds;";
-put @1 "   by __tby;";
-put @1 "   __grpid=999;";
-put @1 "   run;";
-put;
-put @1 "proc sql noprint;";
-put @1 "drop table __labeld1;";
-put @1 "quit;";
-put;
-run;
+    * IF GROUPING VARIABLES ARE SPECIFIED, CREATE LABEL RECORD FOR EACH
+       COMBINATION OF GROUPING VARABLES IN &DSIN;
+    record =  "*----------------------------------------------------------------;";    output;
+    record =  "* CREATE LABEL RECORD FOR EACH COMBINATION OF GROUPING VARABLES;"; output;
+    record =  "*----------------------------------------------------------------;"; output;
+    record = " ";    output;
+    record =  "data __labeld1;"; output;
+    record =  "if 0;"; output;
+    record =  "run;"; output;
+    record = " "; output;
+    %local tmp;
+    %let tmp =  %sysfunc(tranwrd(%sysfunc(compbl(__tby &by &groupvars)) ,
+       %str( ),%str(,)));
+    record =  "proc sql noprint;"; output;
+    record =  "create table __labeld1 as select distinct "; output;
+    record =  "   &tmp"; output;
+    record =  "   from &dsin"; output;
+    record =  "   order by __tby;"; output;
+    record =  "   quit;"; output;
+    record = " "; output;
+    record =  "   proc sort data=&outds;"; output;
+    record =  "   by __tby;"; output;
+    record =  "   run;"; output;
+    record = " "; output;
+    record =  "   data &outds;"; output;
+    record =  "   merge __labeld1 &outds;"; output;
+    record =  "   by __tby;"; output;
+    record =  "   __grpid=999;"; output;
+    record =  "   run;"; output;
+    record = " "; output;
+    record =  "proc sql noprint;"; output;
+    record =  "drop table __labeld1;"; output;
+    record =  "quit;"; output;
+    record = " "; output;
+
 %end;
+
+run;
+
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
+
 %mend;
 

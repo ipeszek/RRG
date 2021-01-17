@@ -162,15 +162,7 @@ ordervar=&ordervar
 
 
 
-data __timer;
-	set __timer end=eof;
-	output;
-	if eof then do;
-		task = "Finished analysing &name";
-		time=time();
-		 output;
-	end;
-run;	
+
 
 %put RRG_ADDGROUP USING VARIABLE &NAME COMPLETED SUCESSULLY;
 

@@ -29,6 +29,38 @@ totorder=)/store;
 
 
 proc sql noprint;
+  
+select
+  trim(left(decode))                                  ,
+  trim(left(name))                                    ,
+  trim(left(fmt))                                     ,
+  trim(left(denom))                                   ,
+  trim(left(denomwhere))                              ,
+  upcase(trim(left(denomincltrt)))                    ,
+  trim(left(stat))                                    ,
+  trim(left(countwhat))                               ,
+  trim(left(pctfmt))                                  ,
+  dequote(trim(left(totaltext)))                      ,
+  dequote(trim(left(totalpos)))                       ,
+  dequote(trim(left(totalwhere)))       
+  
+into
+  :decode                                             separated by ' ' ,
+  :var                                                separated by ' ' ,
+  :fmt                                                separated by ' ' ,
+  :denomvars                                          separated by ' ' ,
+  :denomwhere                                         separated by ' ' ,
+  :denomincltrt                                       separated by ' ' ,
+  :allstat                                            separated by ' ' ,
+  :countwhat                                          separated by ' ' ,
+  :pctfmt                                             separated by ' ' ,
+  :totaltext                                          separated by ' ' ,
+  :totalpos                                           separated by ' ' ,
+  :totalwhere                                         separated by ' ' 
+
+from &vinfods;  
+  
+  /*
   select trim(left(decode))     into:decode     separated by ' ' from &vinfods;
   select trim(left(name))       into:var        separated by ' ' from &vinfods;
   select trim(left(fmt))        into:fmt        separated by ' ' from &vinfods;
@@ -46,14 +78,12 @@ proc sql noprint;
 
   select dequote(trim(left(totalwhere)))  into:totalwhere   separated by ' ' 
     from &vinfods;  
+    */
 quit;
 
 %if %upcase(&countwhat) ne MAX and %length(&totaltext)>0 %then %do;
-
-%put &WAR.&NING.: TOTAL in event-like tables can only be requested if COUNTWHAT=MAX. Request for TOTAL was ignored.;
-%let totaltext=;
-
-
+    %put &WAR.&NING.: TOTAL in event-like tables can only be requested if COUNTWHAT=MAX. Request for TOTAL was ignored.;
+    %let totaltext=;
 %end;
 
 
@@ -79,40 +109,74 @@ quit;
 %end;
 
 
-
-
+%local simplestats simpleorder;
 data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
+  length __allstat __fname __name __modelname __simple __simpord $ 2000;
+  __allstat = upcase(trim(left(symget("stat"))));
+  __overall=0;
+  __simple='';
+  do __i =1 to countw(__allstat, ' ');
+    __fname = scan(__allstat,__i,' ');
+    if index(__fname,'.')>0 then do;
+      __modelname = scan(__fname, 1, '.');
+      __name =  scan(__fname, 2, '.');
+      __model=1;
+    end;
+    else do;
+      __name = __fname;
+      __model=0;
+      __simple = trim(left(__simple))||' '||trim(left(__name));
+      __simpord= trim(left(__simpord))||' '||cats(__i);
+    end;
+    __sorder=__i;
+    outrecord=" "; output;
+  end;
+  call symput('simplestats', cats(__simple));
+  call symput('simpleorder', cats(__simpord));
+
+run;
+
+%local statf;
+%let statf=%str($__rrgbl.);
+%if %sysfunc(countw(&simplestats, %str( )))>1 %then %do;
+    %let statf = %str($__rrgsf.);
+%end;
+
+
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+record=" "; output;
 
 %if %length(&totaltext) %then %do;
-  put @1 "data __datasetco ;";
-  put @1 "set &ds4var;";
-  put @1 "run;";
-  put;
+    record="data __datasetco ;"; output;
+    record="set &ds4var;";output;
+    record="run;";output;
+    record=" "; output;
 %end;
 
 
 %if %index(&aetable, EVENTS)>0  %then %do;
-  put @1 "data __datasetce ;";
-  put @1 "set &ds4var;";
-  put @1 "run;";
-  put;
+    record="data __datasetce ;"; output;
+    record="set &ds4var;"; output;
+    record="run;"; output;
+    record=" "; output;
 
-  %if %length(&totaltext) %then %do;
-    put @1 "data __datasetceo ;";
-    put @1 "set &ds4var;";
-    put @1 "run;";
-    put;
-  %end;
+    %if %length(&totaltext) %then %do;
+        record="data __datasetceo ;"; output;
+        record="set &ds4var;"; output;
+        record="run;"; output;
+        record=" "; output;
+    %end;
 %end;
 
     
-put @1 "*--------------------------------------------------------------------;";
-put @1 "* CALCULATE COUNT OF SUBJECTS;";
-put @1 "*--------------------------------------------------------------------;";
-put;
-run;
+record="*--------------------------------------------------------------------;"; output;
+record="* CALCULATE COUNT OF SUBJECTS;"; output;
+record="*--------------------------------------------------------------------;"; output;
+record=" "; output;
+
 
 %if %upcase(&countwhat)=MAX %then %do;
 
@@ -131,38 +195,37 @@ run;
 
     %if %length(&totaltext) %then %do;
     
-      data _null_;
-      file "&rrgpgmpath./&rrguri..sas" mod;
-      put;    
-      put @1 "*--------------------------------------------------------------------;";
-      put @1 "* CALCULATE COUNT OF SUBJECTS for &totaltext;";
-      put @1 "*--------------------------------------------------------------------;";
-      put;
-      run;    
-      
-     %__getcntaew(
-             datain = __datasetco ,
-             where = (&totalwhere),
-             total = Y,
-               unit =  &unit, 
-              group = __tby &groupvars , 
-                var = __order &var &decode,
-               desc = &desc,
-             trtvar = &by __trtid &trtvars ,
-                cnt = __cnt, 
-            dataout = &outds.2b);
-          
-        data _null_;
-        file "&rrgpgmpath./&rrguri..sas" mod;
-        put;
+       
+        record=" "; output;    
+        record="*--------------------------------------------------------------------;";output;
+        record="* CALCULATE COUNT OF SUBJECTS for &totaltext;";output;
+        record="*--------------------------------------------------------------------;";output;
+        record=" "; output;
         
-        put @1 "data &outds.2;";
-        put @1 "set &outds.2 &outds.2b (in=__inb);";
-        put @1 "if __inb then do;";
-        put @1 "  __total=1;";
-        put @1 "  &decode = cats('" "&totaltext" "');";
-        put @1 "end;";
-      run;    
+        
+       %__getcntaew(
+               datain = __datasetco ,
+               where = (&totalwhere),
+               total = Y,
+                 unit =  &unit, 
+                group = __tby &groupvars , 
+                  var = __order &var &decode,
+                 desc = &desc,
+               trtvar = &by __trtid &trtvars ,
+                  cnt = __cnt, 
+              dataout = &outds.2b);
+          
+         
+          record=" "; output;
+          
+          record="data &outds.2;";output;
+          record="set &outds.2 &outds.2b (in=__inb);";output;
+          record="if __inb then do;";output;
+          record="  __total=1;";output;
+          record="  &decode = cats('"|| strip("&totaltext")|| "');";output;
+          record="end;";output;
+        
+    
     
     %end;      
 %end;
@@ -181,45 +244,44 @@ run;
 
 %end;
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-put @1 '%local dsid rc numobs;';
-put @1 '%let dsid = %sysfunc(open(' "&outds.2));";
-put @1 '%let numobs = %sysfunc(attrn(&dsid, NOBS));';
-put @1 '%let rc = %sysfunc(close(&dsid));';
-put;
-put @1 '%if &numobs=0 %then %goto '  "exca&varid.;";
-put;
-put;
-put @1 "*-------------------------------------------------;";
-put @1 "* TRANSPOSE DATA SET WITH COUNTS OF SUBJECTS;";
-put @1 "*-------------------------------------------------;";
-put;
-put @1 "proc sort data=&outds.2;";
-put @1 "  by &by __tby &groupvars __order   &var __grpid &decode &sortmod;";
-put @1 "run;";
-put;  
-put @1 "proc transpose data=&outds.2 out=__catcnt4 prefix=__cnt_;";
-put @1 "  by &by __tby &groupvars __order   &var __grpid &decode &sortmod;";
-put @1 "  id __trtid;";
-put @1 "  var __cnt;";
-put @1 "run;";
-put;
-put; 
-run; 
+
+record=" "; output;
+record=   '%local dsid rc numobs;'; output;
+record=   '%let dsid = %sysfunc(open(' || "&outds.2));" ; output;
+record=   '%let numobs = %sysfunc(attrn(&dsid, NOBS));';output;
+record=   '%let rc = %sysfunc(close(&dsid));';output;
+record=" "; output;
+record=   '%if &numobs=0 %then %goto '||"exca&varid.;";output;
+record=" "; output;
+record=" "; output;
+record="*-------------------------------------------------;";output;
+record="* TRANSPOSE DATA SET WITH COUNTS OF SUBJECTS;";output;
+record="*-------------------------------------------------;";output;
+record=" "; output;
+record="proc sort data=&outds.2;";output;
+record="  by &by __tby &groupvars __order   &var __grpid &decode &sortmod;";output;
+record="run;";output;
+record=" "; output;  
+record="proc transpose data=&outds.2 out=__catcnt4 prefix=__cnt_;";output;
+record="  by &by __tby &groupvars __order   &var __grpid &decode &sortmod;";output;
+record="  id __trtid;";output;
+record="  var __cnt;";output;
+record="run;";output;
+record=" "; output;
+record=" "; output; 
+
+
     
    
 
 %if %index(&aetable, EVENTS)>0 %then %do;
 
-    data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    put;
-    put @1 "*------------------------------------------------------------;";
-    put @1 "* CALCULATE COUNT OF EVENTS;";
-    put @1 "*------------------------------------------------------------;";
-    run;
+    
+    record=" "; output;
+    record="*------------------------------------------------------------;";output;
+    record="* CALCULATE COUNT OF EVENTS;";output;
+    record="*------------------------------------------------------------;";output;
+    
 
     %if %upcase(&countwhat)=MAX %then %do;
     
@@ -234,27 +296,27 @@ run;
               
         %if %length(&totaltext) %then %do;
      
-         %__getcntae(
-                 datain = __datasetceo(where=(&totalwhere)),
-                   unit = __eventid,
-                  group = __tby &grpvarbl , 
-                    var =  &lasttmp,
-                 trtvar = &by __trtid &trtvars ,
-                    cnt = __cntevt, 
-                dataout = __catcntevtb);
+             %__getcntae(
+                     datain = __datasetceo(where=(&totalwhere)),
+                       unit = __eventid,
+                      group = __tby &grpvarbl , 
+                        var =  &lasttmp,
+                     trtvar = &by __trtid &trtvars ,
+                        cnt = __cntevt, 
+                    dataout = __catcntevtb);
+                  
+                   
+                record=" "; output;
+                record="data __catcntevt;";output;
+                record="set __catcntevt __catcntevtb (in=__inb);";output;
+                record="if __inb then do;";output;
+                record="  __total=1;";output;
+                record="  &decode = cats('"||"&totaltext"||"');";output;
+                record="end;";output;
               
-            data _null_;
-            file "&rrgpgmpath./&rrguri..sas" mod;
-            put;
-            put @1 "data __catcntevt;";
-            put @1 "set __catcntevt __catcntevtb (in=__inb);";
-            put @1 "if __inb then do;";
-            put @1 "  __total=1;";
-            put @1 "  &decode = cats('" "&totaltext" "');";
-            put @1 "end;";
-          run;    
-        
-        %end;                
+       
+            
+      %end;                
               
     %end;
 
@@ -272,15 +334,15 @@ run;
            
          
            
-    data _null_;
-    file "&rrgpgmpath./&rrguri..sas" mod;
-    put;
-    put;  
-    put @1 "*------------------------------------------------------------;";
-    put @1 "* MERGE COUNT OF SUBJECTS WITH WITH COUNT OF EVENTS;";
-    put @1 "*------------------------------------------------------------;";
-    put;  
-    run;
+   
+    record=" "; output;
+    record=" "; output;  
+    record="*------------------------------------------------------------;";output;
+    record="* MERGE COUNT OF SUBJECTS WITH WITH COUNT OF EVENTS;";output;
+    record="*------------------------------------------------------------;";output;
+    record=" "; output;  output;
+    
+
       
      %__joinds(
           data1 = &outds.2 ,
@@ -290,57 +352,57 @@ run;
         dataout = &outds.2);
               
         
-      data _null_;
-      file "&rrgpgmpath./&rrguri..sas" mod;
-      put;
-      put;  
-      put @1 " proc sort data=&outds.2;";
-      put @1 "   by &by __tby &groupvars __order   &var __grpid &decode &sortmod;";
-      put @1 " run;";
-      put;
-      put @1 "*------------------------------------------------;";
-      put @1 "* TRANSPOSE DATA SET WITH COUNTS OF EVENTS;";
-      put @1 "*-------------------------------------------------;";
-      put;
-      put;
-      put @1 "data &outds.2;";
-      put @1 "set &outds.2;";
-      put @1 "length __ce $ 200;";
-      put @1 "__ce=cats(__cntevt);";
-      put @1 "run;";
-      put;
-      put @1 "proc transpose data=&outds.2 out=__catcnt6 prefix=__colevt_;";
-      put @1 "      by &by __tby &groupvars __order   &var __grpid &decode &sortmod;";
-      put @1 "      id __trtid;";
-      put @1 "      var __ce;";
-      put @1 "run;";
-      put;
-      put;
-      put @1 "*-------------------------------------------------;";
-      put @1 "  * MERGE TRANSPOSED DATA SET WITH COUNTS OF EVENTS";
-      put @1 "    WITH TRANSPOSED DATA SET WITH COUNTS OF SUBJECTS;";
-      put @1 "*-------------------------------------------------;";
-      put;  
-      put @1 "data __catcnt4;";
-      put @1 "merge __catcnt4 __catcnt6; ";
-      put @1 "  by &by __tby &groupvars  __order   &var __grpid &decode &sortmod;";
-      put @1 "run;";
-      put;
-      run;              
+    
+      record=" "; output;
+      record=" "; output;  
+      record=" proc sort data=&outds.2;";output;
+      record="   by &by __tby &groupvars __order   &var __grpid &decode &sortmod;";output;
+      record=" run;";output;
+      record=" "; output;
+      record="*------------------------------------------------;";output;
+      record="* TRANSPOSE DATA SET WITH COUNTS OF EVENTS;";output;
+      record="*-------------------------------------------------;";output;
+      record=" "; output;
+      record=" "; output;
+      record="data &outds.2;";output;
+      record="set &outds.2;";output;
+      record="length __ce $ 200;";output;
+      record="__ce=cats(__cntevt);";output;
+      record="run;";output;
+      record=" "; output;
+      record="proc transpose data=&outds.2 out=__catcnt6 prefix=__colevt_;";output;
+      record="      by &by __tby &groupvars __order   &var __grpid &decode &sortmod;";output;
+      record="      id __trtid;";output;
+      record="      var __ce;";output;
+      record="run;";output;
+      record=" "; output;
+      record=" "; output;
+      record="*-------------------------------------------------;";output;
+      record="  * MERGE TRANSPOSED DATA SET WITH COUNTS OF EVENTS";output;
+      record="    WITH TRANSPOSED DATA SET WITH COUNTS OF SUBJECTS;";output;
+      record="*-------------------------------------------------;";output;
+      record=" "; output;  
+      record="data __catcnt4;";output;
+      record="merge __catcnt4 __catcnt6; ";output;
+      record="  by &by __tby &groupvars  __order   &var __grpid &decode &sortmod;";output;
+      record="run;";output;
+      record=" "; output;
+      
+       
 
 %end;
     
 
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-put;
-put @1 "*------------------------------------------------------------;";
-put @1 "* CALCULATE DENOMINATOR;";
-put @1 "*------------------------------------------------------------;";
-put;  
-run;
+
+record=" "; output;
+record=" "; output;
+record="*------------------------------------------------------------;";output;
+record="* CALCULATE DENOMINATOR;";output;
+record="*------------------------------------------------------------;";output;
+record=" "; output;  
+
+
 
 
 %if &denomincltrt=Y %then %do;
@@ -366,150 +428,113 @@ run;
 
 ** todo: currently &denomvars are on top of trtvars;
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put;
-put;
+
+record=" "; output;
+record=" "; output;
 
 %if &denomincltrt=Y %then %do;
-    put @1 "proc transpose data=__catdenom out=__catdenom2 prefix=__den_;";
-    put @1 "    by __tby &by &denomvars;";
-    put @1 "    id __trtid;";
-    put @1 "    var __denom;";
-    put @1 "run;";
+    record="proc transpose data=__catdenom out=__catdenom2 prefix=__den_;";output;
+    record="    by __tby &by &denomvars;";output;
+    record="    id __trtid;";output;
+    record="    var __denom;";output;
+    record="run;";output;
 %end;
     
-put;
-put;  
-put @1 "*------------------------------------------------------------;";
-put @1 "* MERGE DENOMINATOR WITH COUNT DATASET;";
-put @1 "* CREATE DISPLAY OF STATISTICS;";
-put @1 "*------------------------------------------------------------;";
-put;
-put @1 "proc sort data=__catcnt4;";
-put @1 "by __tby &by &denomvars;";
-put @1 "run;";
-put;
-put @1 "proc sort data=__catdenom2;";
-put @1 "by __tby &by &denomvars;";
-put @1 "run;";
-put;
-
-run;
+record=" "; output;
+record=" "; output;  
+record="*------------------------------------------------------------;";output;
+record="* MERGE DENOMINATOR WITH COUNT DATASET;";output;
+record="* CREATE DISPLAY OF STATISTICS;";output;
+record="*------------------------------------------------------------;";output;
+record=" "; output;
+record="proc sort data=__catcnt4;";output;
+record="by __tby &by &denomvars;";output;
+record="run;";output;
+record=" "; output;
+record="proc sort data=__catdenom2;";output;
+record="by __tby &by &denomvars;";output;
+record="run;";output;
+record=" "; output;
 
 
-%local simplestats simpleorder;
-data _null_;
-  length __allstat __fname __name __modelname __simple __simpord $ 2000;
-  __allstat = upcase(trim(left(symget("stat"))));
-  __overall=0;
-  __simple='';
-  do __i =1 to countw(__allstat, ' ');
-    __fname = scan(__allstat,__i,' ');
-    if index(__fname,'.')>0 then do;
-      __modelname = scan(__fname, 1, '.');
-      __name =  scan(__fname, 2, '.');
-      __model=1;
-    end;
-    else do;
-      __name = __fname;
-      __model=0;
-      __simple = trim(left(__simple))||' '||trim(left(__name));
-      __simpord= trim(left(__simpord))||' '||cats(__i);
-    end;
-    __sorder=__i;
-    output;
-  end;
-  call symput('simplestats', cats(__simple));
-  call symput('simpleorder', cats(__simpord));
-
-run;
-
-%local statf;
-%let statf=%str($__rrgbl.);
-%if %sysfunc(countw(&simplestats, %str( )))>1 %then %do;
-%let statf = %str($__rrgsf.);
-%end;
-
-
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
 length __stat0 $ 20;
-put @1 "data &outds;";
-put @1 "length __col_0  $ 2000 __stat $ 20;";
-put @1 "merge __catcnt4 (in=__a) __catdenom2;";
-put @1 "by __tby &by &denomvars;";
-put @1 "if __a;";
-put;
-put @1 "if 0 then __total=0;";
-put @1 "if __total ne 1 then __total=0;";
-put;
-put @1 'array cnt{*} __cnt_1-__cnt_&maxtrt;';
-put @1 'array pct{*} __pct_1-__pct_&maxtrt;';
-put @1 'array denom{*} __den_1-__den_&maxtrt;';
-put @1 'array col{*} $ 2000 __col_1-__col_&maxtrt;';
+record="data &outds;";output;
+record="length __col_0  $ 2000 __stat $ 20;";output;
+record="merge __catcnt4 (in=__a) __catdenom2;";output;
+record="by __tby &by &denomvars;";output;
+record="if __a;";output;
+record=" "; output;
+record="if 0 then __total=0;";output;
+record="if __total ne 1 then __total=0;";output;
+record=" "; output;
+record=   'array cnt{*} __cnt_1-__cnt_&maxtrt;';output;
+record=   'array pct{*} __pct_1-__pct_&maxtrt;';output;
+record=   'array denom{*} __den_1-__den_&maxtrt;';output;
+record=   'array col{*} $ 2000 __col_1-__col_&maxtrt;';output;
 
 
 %if %index(&aetable, EVENTS)>0 %then %do;
-put @1 'array colevt{*} $ 2000 __colevt_1-__colevt_&maxtrt;';
-put @1 'array cntevt{*} __cntevt_1-__cntevt_&maxtrt;';
-put @1 'array pctevt{*} __pctevt_1-__pctevt_&maxtrt;';
+    record=   'array colevt{*} $ 2000 __colevt_1-__colevt_&maxtrt;';output;
+    record=   'array cntevt{*} __cntevt_1-__cntevt_&maxtrt;';output;
+    record=   'array pctevt{*} __pctevt_1-__pctevt_&maxtrt;';output;
 %end;
 
 
 %if &denomincltrt ne Y %then %do;
-put;
-put @1 '  do over denom;';
-put @1 '    denom=__denom;';
-put @1 '  end;';
-put;
+    record=" "; output;
+    record=  '  do over denom;';output;
+    record=  '    denom=__denom;';output;
+    record=  '  end;';output;
+    record=" "; output;
 %end;
-put;
+record=" "; output;
 
-put @1 "if missing(&var) and __total ne 1 then do;";
-put @1 "    __order=&missorder; ";
-put @1 "    __missing=1; ";
-put @1 "end;";
+record="if missing(&var) and __total ne 1 then do;";output;
+record="    __order=&missorder; ";output;
+record="    __missing=1; ";output;
+record="end;";output;
 %if %length(&totaltext) >0 %then %do;
-put @1 "if __total=1 then do;";
-put @1 "  __col_0 = cats('" "&totaltext"  "');";
-put @1 "    __order=&totorder; ";
-put @1 "end;";
+    record="if __total=1 then do;";output;
+    record="  __col_0 = cats('" ||strip("&totaltext")||  "');";output;
+    record="    __order=&totorder; ";output;
+    record="end;";output;
 %end;
 %local s0 i tmp;
 %do i=1 %to %sysfunc(countw(&simplestats, %str( )));
-  %let s0 = %qscan(&simplestats,&i,%str( ));   
-  %let sord0 = %scan(&simpleorder,1,%str( ));
-  __stat0 = quote("&s0");
-  put @1 "if __total ne 1 then __col_0 = put(" __stat0  ", &statf.);";
-  put @1 "__stat=" __stat0 ";";
-  
-  put @1 "do __i=1 to dim(cnt);";
-     %__fmtcnt(cntvar=cnt[__i], pctvar=pct[__i], 
-          denomvar=denom[__i], stat=%nrbquote(&s0), outvar=col[__i],
-           pctfmt=&pctfmt);
-  put @1 "end;  ";
-  %if %index(&allgrpcnt, EVENTS)>0 %then %do;
-     put @1 "do __i=1 to dim(cnt);";
-       %__fmtcnt(cntvar=cntevt[__i], pctvar=pctevt[__i], 
-          denomvar=denom[___i], stat=N, outvar=colevt[__i], 
-          pctfmt=&pctfmt);
-     put @1 "end;  ";
-  %end;
-  put @1 "__sid =&sord0;";
-  
-  
-  put @1 "output;";
+      %let s0 = %qscan(&simplestats,&i,%str( ));   
+      %let sord0 = %scan(&simpleorder,1,%str( ));
+      __stat0 = quote("&s0");
+      record="if __total ne 1 then __col_0 = put(" ||strip(__stat0)||  ", &statf.);";output;
+      record="__stat="||strip( __stat0)|| ";";output;
+      
+      record="do __i=1 to dim(cnt);";output;
+         %__fmtcnt(cntvar=cnt[__i], pctvar=pct[__i], 
+              denomvar=denom[__i], stat=%nrbquote(&s0), outvar=col[__i],
+               pctfmt=&pctfmt);
+      record="end;  ";output;
+      %if %index(&allgrpcnt, EVENTS)>0 %then %do;
+          record="do __i=1 to dim(cnt);";output;
+           %__fmtcnt(cntvar=cntevt[__i], pctvar=pctevt[__i], 
+              denomvar=denom[___i], stat=N, outvar=colevt[__i], 
+              pctfmt=&pctfmt);
+           record="end;  ";output;
+      %end;
+      record="__sid =&sord0;";output;
+      record="output;";output;
 %end;
-put @1 "run;"; 
+record="run;"; output;
 
-put;
+record=" "; output;
 
 
 
-put '%exca' "&varid.:";
-put;
+record= '%exca'|| "&varid.:"; output;
+record=" "; output;
 run;
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
 
 %mend;
 

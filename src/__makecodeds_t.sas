@@ -18,25 +18,46 @@ data __catv_t;
   set &vinfods (where=(upcase(type)='TRT'));
   run;
 
-proc sql noprint;
-  select trim(left(name))      into:var    separated by ' ' from  __catv_t;
-  select trim(left(fmt))       into:fmt    separated by ' ' from  __catv_t;
-  select trim(left(desc))       into:desc    separated by ' ' from  __catv_t;
-  select trim(left(codelist))  into:codes  separated by ' ' from  __catv_t;
-  select trim(left(codelistds))into:codelistds separated by ' ' from  __catv_t;
-  select trim(left(delimiter)) into:delimiter separated by ' ' from  __catv_t;
-  select VARID into:ID separated by ' ' from  __catv_t;
-  select trim(left(decode))into:decode separated by ' ' from  __catv_t;
+proc sql noprint;  
+select
+  trim(left(name))                 ,
+  trim(left(fmt))                  ,
+  trim(left(desc))                 ,
+  trim(left(codelist))             ,
+  trim(left(codelistds))           ,
+  trim(left(delimiter))            ,
+  VARID                            ,
+  trim(left(decode))               
+into
+  :var                              separated by ' ' ,
+  :fmt                              separated by ' ' ,
+  :desc                             separated by ' ' ,
+  :codes                            separated by ' ' ,
+  :codelistds                       separated by ' ' ,
+  :delimiter                        separated by ' ' ,
+  :ID                               separated by ' ' ,
+  :decode                           separated by ' ' from  __catv_t;
 quit;
 
+/*
+  
+  select trim(left(name))        into:var        separated by ' ' from  __catv_t;
+  select trim(left(fmt))         into:fmt        separated by ' ' from  __catv_t;
+  select trim(left(desc))        into:desc       separated by ' ' from  __catv_t;
+  select trim(left(codelist))    into:codes      separated by ' ' from  __catv_t;
+  select trim(left(codelistds))  into:codelistds separated by ' ' from  __catv_t;
+  select trim(left(delimiter))   into:delimiter   separated by ' ' from  __catv_t;
+  select VARID                   into:ID          separated by ' ' from  __catv_t;
+  select trim(left(decode))      into:decode      separated by ' ' from  __catv_t;
+quit;
+*/
 %if %length(&codelistds) %then %do;
-  data __&codelistds._exec __&codelistds; 
-    set &codelistds;
-  run;
+    data __&codelistds._exec __&codelistds; 
+      set &codelistds;
+    run;
 %end;
 
 %if %length(&codes)=0 or %length(&codelistds) %then %do;
-  
   %goto exit;
 %end;
 
@@ -56,11 +77,11 @@ quit;
 %let vtype = %sysfunc(vartype(&dsid, &vnum));
 %let  vlen = %sysfunc(varlen(&dsid,&vnum));
 %if %length (&decode) %then %do;
-  %let  vnumd = %sysfunc(varnum(&dsid,&decode));
+    %let  vnumd = %sysfunc(varnum(&dsid,&decode));
 %end;  
 %if &vnumd>0 %then %do;
-  %let vtyped = %sysfunc(vartype(&dsid, &vnumd));
-  %let  vlend = %sysfunc(varlen(&dsid,&vnumd));
+    %let vtyped = %sysfunc(vartype(&dsid, &vnumd));
+    %let  vlend = %sysfunc(varlen(&dsid,&vnumd));
 %end;
 %let    rc = %sysfunc(close(&dsid));
 
@@ -86,6 +107,14 @@ data __CODES4TRT_exec;
       end;
     end;
 run;
+
+%if &rrg_debug=1 %then %do;
+  
+proc print data=__CODES4TRT_exec;
+  title '__CODES4TRT_exec';
+run;
+
+%end;
 
 
 
@@ -114,57 +143,55 @@ run;
 
 
 %local tmp ;
-%let tmp=%str(length);
-%if &vtype=C %then %do;
-      %let tmp = &tmp %str(&var $ &vlen);
-%end;
-%if %length (&decode) %then %do;
-  /* %let tmp =&tmp %str (&decode $ &vlend);*/
-  %let tmp =&tmp %str (__dec_&trtvar $ &vlend);
+%if &vtype=C or %length (&decode) %then %do;
+    %let tmp=%str(length);
+    %if &vtype=C %then %do;
+        %let tmp = &tmp %str(&var $ &vlen);
+    %end;
+    %if %length (&decode) %then %do;
+        %let tmp =&tmp %str (__dec_&trtvar $ &vlend);
+    %end;
 %end;
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
 set __CODES4TRT_exec end=eof;
 length __var $ 2000;
 %if &vtype=C %then %do; 
-__var = quote(&var);
+    __var = quote(&var);
 %end;
 %else %do;
-__var=&var;
+    __var=&var;
 %end;
 if _n_=1 then do;
-put;
-put @1 "*------------------------------------------------------------------;";
-put @1 "* CREATE A DATASET WITH LIST OF CODES FOR &var;";
-put @1 "*------------------------------------------------------------------;";
-put;
-put @1 "data __CODES4TRT;";
-put @1 "&tmp ;";
-put;
+    record = " "; output;
+    record =  "*------------------------------------------------------------------;"; output;
+    record =  "* CREATE A DATASET WITH LIST OF CODES FOR &var;"; output;
+    record =  "*------------------------------------------------------------------;"; output;
+    record = " "; output;
+    record =  "data  __CODES4TRT;"; output;
+    
+    record =  "&tmp ;"; output;
+    record = " "; output;
 
 end;
 
 
-put "&var = " __var ";";
+record= "&var = "||strip(__var)|| ";"; output;
 %if %length (&decode) %then %do;
-  
-   put "__dec_&trtvar = " '"' &decode '";';
+     record= "__dec_&trtvar = "|| '"'||strip(&decode)|| '";'; output;
 %end;
-put "output;";
-put;
+record= "output;"; output;
+record = " "; output;
 if eof then do;
-  put "run;";
-  
+   record= "run;"; output;
 end;  
 
-
-run;
- 
-
 run;
 
-
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 
 %exit:

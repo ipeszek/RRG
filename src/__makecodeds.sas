@@ -100,33 +100,55 @@ in rrg_generate, varname is passed to identify GROUPING variable for which
 
 
 %if %length(&varname) %then %do;
-  data __catv;
-  set &vinfods (where=(upcase(name)=upcase("&varname")));
-  run;
+    data __catv;
+    set &vinfods (where=(upcase(name)=upcase("&varname")));
+    run;
 %end;
 %else %do;
-data __catv;
-set &vinfods (where=(varid=&varid));
-run;
+    data __catv;
+    set &vinfods (where=(varid=&varid));
+    run;
 %end;
 
 proc sql noprint;
-  select trim(left(name))      into:var    separated by ' ' from  __catv;
-  select trim(left(fmt))       into:fmt    separated by ' ' from  __catv;
-  select trim(left(desc))       into:desc    separated by ' ' from  __catv;
-  select trim(left(codelist))  into:codes  separated by ' ' from  __catv;
-  select trim(left(codelistds))into:codelistds separated by ' ' from  __catv;
-  select trim(left(delimiter)) into:delimiter separated by ' ' from  __catv;
-  select trim(left(show0cnt)) into:show0cnt separated by ' ' from  __catv;
+select
+  trim(left(name))                         ,
+  trim(left(fmt))                          ,
+  trim(left(desc))                         ,
+  trim(left(codelist))                     ,
+  trim(left(codelistds))                   ,
+  trim(left(delimiter))                    ,
+  trim(left(show0cnt))                     ,
+  trim(left(noshow0cntvals))
+into
+  :var                                     separated by ' ' ,
+  :fmt                                     separated by ' ' ,
+  :desc                                    separated by ' ' ,
+  :codes                                   separated by ' ' ,
+  :codelistds                              separated by ' ' ,
+  :delimiter                               separated by ' ' ,
+  :show0cnt                                separated by ' ' ,
+  :noshow0cntvals                          separated by ' '   from  __catv;       
+/*
+  
+  select trim(left(name))           into:var           separated by ' ' from  __catv;
+  select trim(left(fmt))            into:fmt           separated by ' ' from  __catv;
+  select trim(left(desc))           into:desc           separated by ' ' from  __catv;
+  select trim(left(codelist))       into:codes         separated by ' ' from  __catv;
+  select trim(left(codelistds))     into:codelistds    separated by ' ' from  __catv;
+  select trim(left(delimiter))      into:delimiter      separated by ' ' from  __catv;
+  select trim(left(show0cnt))       into:show0cnt       separated by ' ' from  __catv;
   select trim(left(noshow0cntvals)) into:noshow0cntvals separated by ' ' from  __catv;
+quit;
+*/
 quit;
 
 
 
 %if %length(&codelistds) %then %do;
-  data __&codelistds._exec __&codelistds; 
-    set &codelistds;
-  run;
+    data __&codelistds._exec __&codelistds; 
+      set &codelistds;
+    run;
 %end;
 
 %if %length(&codes)=0 or %length(&codelistds) %then %goto exit;
@@ -146,11 +168,11 @@ quit;
 %let vtype = %sysfunc(vartype(&dsid, &vnum));
 %let  vlen = %sysfunc(varlen(&dsid,&vnum));
 %if %length (&decode) %then %do;
-  %let  vnumd = %sysfunc(varnum(&dsid,&decode));
+    %let  vnumd = %sysfunc(varnum(&dsid,&decode));
 %end;  
 %if &vnumd>0 %then %do;
-  %let vtyped = %sysfunc(vartype(&dsid, &vnumd));
-  %let  vlend = %sysfunc(varlen(&dsid,&vnumd));
+    %let vtyped = %sysfunc(vartype(&dsid, &vnumd));
+    %let  vlend = %sysfunc(varlen(&dsid,&vnumd));
 %end;
 %let    rc = %sysfunc(close(&dsid));
 
@@ -188,12 +210,12 @@ data &outds._exec;
   %if &vtype=C %then %do;
       length &var $ &vlen;
   %end;
-  length &decode $ 2000;
+  length &decode  $ 2000;
   %if &vtype=C %then %do;
       &var = dequote(trim(left(scan(__tmp,1,'='))));
   %end;
   %else %do;
-      &var = scan(__tmp,1,'=')+0;
+      &var = input(scan(__tmp,1,'='),??best.);
   %end;
   &decode = dequote(trim(left(substr(__tmp, index(__tmp,'=')+1))));
   %if %length(&fmt) %then %do;
@@ -209,78 +231,70 @@ run;
 %end;
 %let tmp =&tmp %str (&decode $ &vlend);
 
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
 set &outds._exec end=eof;
 length __var $ 2000;
 %if &vtype=C %then %do; 
-__var = quote(&var);
+    __var = quote(&var);
 %end;
 %else %do;
-__var=&var;
+    __var=put(&var,best.);
 %end;
 if _n_=1 then do;
-  put;
-  put @1 "*------------------------------------------------------------------;";
-  put @1 "* CREATE A DATASET WITH LIST OF CODES FOR &var;";
-  put @1 "*------------------------------------------------------------------;";
-  put;
-  put @1 "data &outds;";
-  put @1 "&tmp ;";
-  put;
+  record = " "; output;
+  record =  "*------------------------------------------------------------------;";output;
+  record =  "* CREATE A DATASET WITH LIST OF CODES FOR &var;";output;
+  record =  "*------------------------------------------------------------------;";output;
+  record = " ";output;
+  record =  "data &outds;";output;
+  record =  "&tmp ;";output;
+  record = " ";output;
 end;
-put @1 '__show0cnt="Y";';
+record =  '__show0cnt="Y";';output;
  
 %if %upcase(&show0cnt)= N %then %do;
-   
     %if %length(&noshow0cntvals) %then %do;
-      put @1 '__show0cnt="N";';
+      record =  '__show0cnt="N";';output;
     %end;
     %else %do;
-      put @1 '__show0cnt="N";';
-      
+      record =  '__show0cnt="N";';output;
     %end;
 %end;
 
 
-put "__order&suff = " __order&suff ";";
-   
-put "&var = " __var ";";
-put "&decode = " '"' &decode '";';
-put "output;";
-put;
+record = "__order&suff = " ||strip(put(__order&suff, best.))|| ";";output;
+record = "&var = " ||strip(__var )||";";output;
+record = "&decode = "||'"'||strip(&decode)|| '";';output;
+record = "output;";output;
+record = " ";output;
 if eof then do;
-  put "run;";
-end;  
-put;
+    record = "run;";output;
+    record =  "proc sort data=&outds;";output;
+    record =  "  by __order&suff;";output;
+    record =  "run;";output;
+    record = " ";output;
+end;    
 run;
-  
-data _null_;
-file "&rrgpgmpath./&rrguri..sas" mod;
-put @1 "proc sort data=&outds;";
-put @1 "  by __order&suff;";
-put @1 "run;";
-put;
-/*
-put @1 "proc print data=&outds;";
-put @1 "title 'dataset from makecodesds';";
-put @1 "run;";
-*/
+
+proc append data=rrgpgmtmp base=rrgpgm;
 run;
 
 %* UPDATE &VINFODS SO NEXT STEPS KNOW ABOUT CREATED DATASET WITH CODES;
 
 %if %length(&varname) %then %do;
-  proc sql noprint;
-  update  &vinfods set decode="&decode" where upcase(name)=upcase("&varname");
-  insert into __rrgpgminfo (key, value, id) values ("gtemplate", "&outds", &id);
-  quit;
+    proc sql noprint;
+    update  &vinfods set decode="&decode" where upcase(name)=upcase("&varname");
+    insert into __rrgpgminfo (key, value, id) values ("gtemplate", "&outds", &id);
+    quit;
 %end;
 %else %do;    
-  proc sql noprint;
-  update  &vinfods set codelistds="&outds" ;
-  update  &vinfods set decode="&decode" ;
-  quit;
+    proc sql noprint;
+    update  &vinfods set codelistds="&outds" ;
+    update  &vinfods set decode="&decode" ;
+    quit;
 %end;
 
 %exit:

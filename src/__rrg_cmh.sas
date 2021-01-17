@@ -11,6 +11,7 @@
   where=,
   trtvar=,
   groupvars=,
+  strata=,
   var=,
   refvals=,
   subjid=,
@@ -32,6 +33,7 @@
 *  WHERE           =  where clause to apply to input dataset
 *  TRTVAR          =  name of treatment variable
 *  GROUPVARS       =  names of grouping variables
+*  STRATA          = names of stratification variables
 *  REFVALS         =  the value(s) of treatment variable which are reference 
 *                     (for pairwise comp)
 *  SUBJID          = name of variabel denoting unique subject id
@@ -61,7 +63,7 @@
 
 %*-------------------------------------------------------------------------------;
 %local dataset where trtvar groupvars  var  refvals subjid 
-       label_pvalga label_opvalga pvalf
+       label_pvalga label_opvalga pvalf strata
        label_pvalnc label_opvalnc label_pvalrmsd label_opvalrmsd;
        
 %if %length(&where)=0  %then %let where=%str(1=1);

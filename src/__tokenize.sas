@@ -13,7 +13,7 @@
 %* nstring (length $ 2000) is value of each token;
 %* number of observations is in this dataset is number of tokens;
 
-%local s  string;
+%local s  string i;
 
 
 
@@ -30,7 +30,8 @@ run;
    %then %do;
      %let ischar=1;
 %end;
-    
+
+/*    
 data __tokends;
 length  nstring $ 2000;
 do nstring=&string;
@@ -38,10 +39,33 @@ do nstring=&string;
       nstring = quote(trim(nstring));
    %end;
    %else %do;
-      nstring =cats(nstring);
+      nstring =cats(input(nstring, ??best.));
    %end;
    output;
 end;
 run;
+*/
+
+%local numtokens ;
+%let numtokens = %sysfunc(countw(&string, %str( ,)));
+%do i=1 %to &numtokens;
+  %local token&i;
+  %let token&i = %sysfunc(scan(&string, &i, %str( ,)));
+%end;
+
+data __tokends;
+length  nstring  $ 2000;
+%do i=1 %to &numtokens;
+  %if &ischar=1 %then %do;
+    nstring=quote(strip(symget("token&i")));
+  %end;
+  %else %do;
+    nstring = strip(symget("token&i"));
+   %end;
+  output;
+%end;
+run;
+
+
 
 %mend;

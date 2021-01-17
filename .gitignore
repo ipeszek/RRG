@@ -2,11 +2,9 @@
 *.bak
 *.o
 *.hi
+*.lst
 
+backups/
 .shake/
 
-bak*
-
-backup*
-2020*
-current*
+current/

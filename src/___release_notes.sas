@@ -12,6 +12,10 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
   
+16Jan2021: removed notes about converting char to num and vice versa
+           fixed bug where ")" was printed as "#/0041"
+           fixed display of grouping variable with PAGE=Y
+  
 09Jan2021: 
 fixed issue with cell borders when page splits into multiple pages
 fixed issue with extra space before superscript in pdf

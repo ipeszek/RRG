@@ -285,6 +285,14 @@ end;
 drop __ncol_:;
 run;
 
+%local dsid   rc;
+%let dsid = %sysfunc(open(&dataset));
+%do i=1 %to &numvars;
+  %local __vtype&i __vnum&i;
+  %let __vnum&i  = %sysfunc(varnum (&dsid, &&name&i));
+  %let __vtype&i = %sysfunc(vartype(&dsid, &&__vnum&i));
+%end;
+%let rc = %sysfunc(close(&dsid));
 
 
 sasfile work.rrgpgm.data open;
@@ -326,63 +334,53 @@ data rrgpgmtmp;
 
 
         record= '%local dsid  numobs rc;';  output;
-        record= '  %let dsid = %sysfunc(open('||"&rrguri));";  output;
-        record= '  %let numobs = %sysfunc(attrn(&dsid, nobs));';  output;
-        record= '  %let rc = %sysfunc(close(&dsid));';  output;
-        record= '  %put numobs=&numobs;';  output;
-
-
+        record= '%let dsid = %sysfunc(open('||"&rrguri));";  output;
+        record= '%let numobs = %sysfunc(attrn(&dsid, nobs));';  output;
+        record= '%let rc = %sysfunc(close(&dsid));';  output;
+        record=" ";  output;
+        record=" ";  output;
 
 
         record= "data &rrguri __head;";  output;
-        record= '%IF &NUMOBS>0 %then %do;';  output;
-        record= "  set &rrguri end=eof;";  output;
-        record= "  by &orderby;";  output;
-
-        record= "  length __datatype $ 8 __suffix  $ 2000";  output;
-        record= "  __spanrowtmp __varbylab  __tcol __align __tmp __tmp2 $ 2000";  output;
-        %do i=0 %to &numcol; 
-            record=  "    __col_&i ";  output;
-        %end;
-        record=  "      $ 2000 ; ";  output;
-        record=" ";  output;
-        record=" ";  output;
-        record= "retain ";  output;
-        %do i=1 %to &numvars; 
-            record= "   __vtype&i";  output;
-        %end;
-        record = "    ;";  output;
-        record=" ";  output;
-        record= "if _n_=1 then do;";  output;
-        record= "  __dsid = open('" ||"&rrguri"|| "');";  output;
-        %do i=1 %to &numvars;
-            record= "  __vtype&i = upcase(vartype(__dsid, varnum(__dsid, '"|| "&&name&i"|| "')));";  output;
-        %end;
-        record= "  __rc = close(__dsid);";  output;
-        record= "end;  ";  output;
-        record=" ";  output;
         record=" ";  output;
 
-        record= "  __spanrowtmp='';";  output;
-        record= "  __varbylab='';";  output;
-        record= "  __tcol='';";  output;
-        record= "  __varbylab='';";  output;
-        record= "  __suffix='';";  output;
-        record= "  __keepn=0;";  output;
-        record= "  __datatype='TBODY';";  output;
-        record= "  __rowid=_n_;";  output;
-        record= "  __tmp='';";  output;
-        record= "  __tmp2='';";  output;
+        record= '%if &numobs>0 %then %do;';  output;
+        record=" %***--- if input dataset is not empty ----;";  output;
+        record="     ";  output;
+        record="    ";  output;
+
+        record= "     set &rrguri end=eof;";  output;
+        record= "     by &orderby;";  output;
+
+        record= "     length __datatype $ 8 __suffix  $ 2000";  output;
+        record= "     __spanrowtmp __varbylab  __tcol __align __tmp __tmp2 __col_0-__col_&numcol $ 2000;";  output;
+        
+        record=" ";  output;
+        record=" ";  output;
+      
+        record= "     __spanrowtmp='';";  output;
+        record= "     __varbylab='';";  output;
+        record= "     __tcol='';";  output;
+        record= "     __varbylab='';";  output;
+        record= "     __suffix='';";  output;
+        record= "     __keepn=0;";  output;
+        record= "     __datatype='TBODY';";  output;
+        record= "     __rowid=_n_;";  output;
+        record= "     __tmp='';";  output;
+        record= "     __tmp2='';";  output;
         record=" ";output;
 
         %if &isspanrow=1 %then %do;
-            record= "retain __fospanvar;";  output;
-            record= "if _n_=1 then __fospanvar=0;";  output;
+            record= "      retain __fospanvar;";  output;
+            record= "      if _n_=1 then __fospanvar=0;";  output;
         %end;
 
         %if &ispage=1 %then %do;
-            record= "  %* DEFINE __VARBYGRP;";  output;
-            record= "    retain __varbygrp 0;";  output;
+            *--------------------------------------------------------;
+            record= "     %* DEFINE __VARBYGRP;";  output;
+            record=" ";output;
+
+            record= "      retain __varbygrp 0;";  output;
             %let z = &pvn1;
             %if %length(&&format&z) %then %do;
                 record= '      __varbylab = cats("'||
@@ -392,45 +390,49 @@ data rrgpgmtmp;
                 record= '      __varbylab = cats("'|| "&&label&z"|| '"'|| "||' '||&&decode&z);";  output;
             %end;
             %else %do;
-
-                record= "      if __vtype&z = 'C' then  __varbylab = cats(" ||
-                            '"'|| "&&label&z"|| '"'|| "||' '||&&name&z);";  output;
-                record= '      else __varbylab = cats("'||
-                            "&&label&z"|| '"'|| "||' '||strip(put(&&name&z, best.)));";  output;
-                
+                %if &&__vtype&z = C %then %do;
+                  record= '      __varbylab = cats("' || "&&label&z" || '"' || "||' '||&&name&z);";  output;
+                %end;
+                %else %do;
+                  record= '      __varbylab = cats("' || "&&label&z" || '"' ||  "||' '||strip(put(&&name&z, best.)));";  output;
+                %end;
             %end;
            
             %do i=2 %to &numpagev;
                 %let z = &&pvn&i;
                 %if %length(&&format&z) %then %do;
-                    record= '        __varbylab = cats(__varbylab,"//","'||
-                       "&&label&z"|| '"||" "'|| "||put(&&name&z, &&format&z));";  output;
+                    record= '        __varbylab = cats(__varbylab,"//","' ||
+                       "&&label&z" || '"||" "' || "||put(&&name&z, &&format&z));";  output;
                 %end;
                 %else %if %length(&&decode&z) %then %do;
                     record= '        __varbylab = cats(__varbylab,"//","' ||
-                        "&&label&z" ||'"||" "' ||"||&&decode&z);";  output;
+                        "&&label&z" || '"||" "' || "||&&decode&z);";  output;
                 %end;
                 %else %do;
-                   record= "        if __vtype&z = 'C' then __varbylab = " ||
-                       'cats(__varbylab,"//","'|| "&&label&z"|| '"||" "'|| "||&&name&z);";  output;
-                   record= '        else __varbylab = cats(__varbylab,"//","' ||
-                        "&&label&z" ||'"||" "'|| "||strip(put(&&name&z, best.)));";  output;
-
+                    %if &&__vtype&z = C %then %do;
+                      record= '    __varbylab = cats(__varbylab,"//","' || "&&label&z" || '"||" "' || "||&&name&z);";  output;
+                    %end;
+                    %else %do;
+                      record= '    __varbylab = cats(__varbylab,"//","' || "&&label&z" || '"||" "' || 
+                               "||strip(put(&&name&z, best.)));";  output;  
+                    %end;        
                 %end;
-
-            
             %end;
          
-            record= "    if first.&lastvb then do;";  output;
-            record= "       __varbygrp=__varbygrp+1;";  output;
-            record= "    end;";  output;
+            record= "       if first.&lastvb then do;";  output;
+            record= "          __varbygrp=__varbygrp+1;";  output;
+            record= "       end;";  output;
             record=" ";  output;
-        %end;
+            
+        *--------------------------------------------------------;    
+        %end; *** end of ispage=1;
          
         %if &isspanrow=1 %then %do;
          
-            record= "  %* DEFINE SPAN ROW VARIABLE;";  output;
-            record= "    __tcol='';";  output;
+            record= "     %* DEFINE SPAN ROW VARIABLE;";  output;
+            record=" ";output;
+            
+            record= "       __tcol='';";  output;
             %do i=1 %to &numspanv;
                 %let z = &&svn&i;
                 record= "       __tmp = '';";  output;
@@ -441,60 +443,66 @@ data rrgpgmtmp;
                     record= "       __tmp = &&decode&z;";  output;
                 %end;
                 %else %do;
-                     record= "       if __vtype&z ='C' then __tmp = &&name&z;";  output;
-                     record= "       else __tmp = strip(put(&&name&z, best.));";  output;
-
+                     %if &&__vtype&z =C %then %do;
+                        record= "         __tmp = &&name&z;";  output;
+                     %end;
+                     %else %do;
+                        record= "       __tmp = strip(put(&&name&z, best.));";  output;
+                     %end;
                 %end;
-              %if %length(&&label&z) %then %do;
-                  record= "       __tmp2"|| ' = cats("'|| "&&label&z"|| '")||" "||cats(__tmp);';  output;
-              %end;
+                %if %length(&&label&z) %then %do;
+                    record= "       __tmp2"|| ' = cats("'|| "&&label&z"|| '")||" "||cats(__tmp);';  output;
+                %end;
               
-              %else %do;
-                  record= "       &&name&z"|| ' = cats(__tmp);';  output;
-                  record= "       __tmp2"|| ' = cats(__tmp);';  output;
-              %end;
+                %else %do;
+                    record= "       &&name&z"|| ' = cats(__tmp);';  output;
+                    record= "       __tmp2"|| ' = cats(__tmp);';  output;
+                %end;
               
-              %if &i>1 %then %do;
-                  record= "          __tcol = cats(__tcol,'//',__tmp2);";  output;
-              %end;
-              %else %do;
-                  record= "          __tcol = cats(__tmp2);";  output;
-              %end;
+                %if &i>1 %then %do;
+                    record= "          __tcol = cats(__tcol,'//',__tmp2);";  output;
+                %end;
+                %else %do;
+                    record= "          __tcol = cats(__tmp2);";  output;
+                %end;
              
-              %if &&keeptogether&z=Y %then %do;
-                  record= "        if last.&&name&z then __keepn = 0; else __keepn=1;";  output;
-              %end;
-            
-            
+                %if &&keeptogether&z=Y %then %do;
+                    record= "        if last.&&name&z then __keepn = 0; else __keepn=1;";  output;
+                %end;
            %end;
          
-            record= "     if first.&lastspan then do;";  output;
-            record= "      __fospan=1;";  output;
-            record= "      __fospanvar+1;";  output;
-            record= "     end; ";  output;
-            record=" ";  output;
-        %end;
+           record= "     if first.&lastspan then do;";  output;
+           record= "      __fospan=1;";  output;
+           record= "      __fospanvar+1;";  output;
+           record= "     end; ";  output;
+           record=" ";  output;
+        %end; *** end of isspanrow=1 ;
          
-        record= "  %* DEFINE __COL_0, __COL_1 ETC;";  output;
-        record= "  %* DEFINE __ALIGN AND __SUFFIX;";  output;
-        record= "  __align = '';";  output;
+        record= "     %* DEFINE __COL_0, __COL_1 ETC;";  output;
+        record= "     %* DEFINE __ALIGN AND __SUFFIX;";  output;
+        record=" ";output;
+
+        record= "     __align = '';";  output;
 
         %do i=0 %to &numcol;
             %let z = &&vcn&i;
             %if %length(&&format&z) %then %do;
-                record= "     __col_&i = cats(put(&&name&z, &&format&z));";  output;
+                record= "        __col_&i = cats(put(&&name&z, &&format&z));";  output;
             %end;
             %else %if %length(&&decode&z) %then %do;
-                record= "     __col_&i = cats(&&decode&z);";  output;
+                  record= "        __col_&i = cats(&&decode&z);";  output;
             %end;
             %else %do;
-                record= "     if __vtype&z='C' then __col_&i = strip(&&name&z);";  output;
-                record= "     else __col_&i = strip(put(&&name&z, best.));";  output;
-
+               %if &&__vtype&z=C %then %do;
+                  record= "     __col_&i = strip(&&name&z);";  output;
+               %end;
+               %else %do;
+                  record= "     __col_&i = strip(put(&&name&z, best.));";  output;
+               %end;
             %end;
-            record= '     __align = cats(__align)||" "||cats("' ||"&&align&z"|| '");';  output;
+            record= '         __align = cats(__align)||" "||cats("' ||"&&align&z"|| '");';  output;
             %if &&skipline&z=Y %then %do;
-                record= "        if last.&&name&z then __suffix = '~-2n';";  output;
+                  record= "        if last.&&name&z then __suffix = '~-2n';";  output;
             %end;
 
            
@@ -513,20 +521,25 @@ data rrgpgmtmp;
 
 
         record= '%else %do;';  output;
-        record= "  length  __align  $ 2000;";  output;
-        record= "__varbygrp=.; __varbylab='';";  output;
+        record="    %***--- if input dataset is empty ---;";output;
+        
+        record=" ";output;
+
+        record= "     length  __align  $ 2000;";  output;
+        record= "   __varbygrp=.; __varbylab='';";  output;
         %do i=0 %to &numcol;
-            record= "__first_&i=0;";  output;
+            record= "   __first_&i=0;";  output;
         %end;
         /* create "no data" as __tcol;*/
-        record= "__tcol='"||strip(symget("nodatamsg"))||"';";  output;
-        record= "__col_0=' ';";  output;
-        record= "__datatype='TBODY';";  output;
-        record= "__align='C';";  output;
-        record= "__rowid=1;";  output;
+        record= "      __tcol='"||strip(symget("nodatamsg"))||"';";  output;
+        record= "      __col_0=' ';";  output;
+        record= "      __datatype='TBODY';";  output;
+        record= "      __align='C';";  output;
+        record= "      __rowid=1;";  output;
+        record=" ";output;
 
-
-        record= "  output &rrguri;";  output;
+   
+        record= "     output &rrguri;";  output;
 
         record= '%end;';  output;
 
@@ -578,14 +591,14 @@ data rrgpgmtmp;
         record= "__datatype='HEAD';";  output;
 
 
-end;
+  end;  *** end of if _n_=1;
 
-%do i=0 %to &numcol;
-    record= "__col_&i = " ||'"' ||strip(__col_&i)|| '";';  output;
-%end;
-record= "__rowid = "||strip(put(__rowid, best.))|| ";";  output;
-record= "output;";  output;
-record=" ";   output;
+  %do i=0 %to &numcol;
+      record= "__col_&i = " ||'"' ||strip(__col_&i)|| '";';  output;
+  %end;
+  record= "__rowid = "||strip(put(__rowid, best.))|| ";";  output;
+  record= "output;";  output;
+  record=" ";   output;
 
 
 if eof then do;
@@ -654,7 +667,7 @@ if eof then do;
     record=" ";   output;
     
   
-end;
+end; *** end of eof;
     
 run;
 

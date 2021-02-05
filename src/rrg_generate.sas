@@ -7,6 +7,7 @@
  */
 
 %macro rrg_generate/store;
+  
 %* TODO: test freqsort with codelist;
 /*
 Purpose:  this macro calculates summary statistics for continuous and
@@ -2441,7 +2442,7 @@ record=  "retain __tcol;";                                                      
 record=  "if 0 then do; __wholerow=''; __tcol=''; __tmptcol=''; end;";                                       output;
 record=  "__oldwr = lag(__wholerow);";                                                                       output;
 record=  "__tmptcol = lag(__col_0);";                                                                        output;
-record=  "if __oldwr = 'Y' then do;";                                                                        output;
+record=  "if upcase(__oldwr) = 'Y' then do;";                                                                        output;
 record=  "  __tcol=strip(__tmptcol);";                                                                       output;
 record=  "  __fospan=1;";                                                                                    output;
 record=  "end;";                                                                                             output;
@@ -2819,7 +2820,7 @@ quit;
     record=  " ";                                                                                                   output;
     record=  '    array cols{*} __col_1-__col_&maxtrt;';                                                            output;
     record=  '    array ncols{*} __ncol_1-__ncol_&maxtrt;';                                                         output;
-    record=  '    __split =cats("' "&splitrow" ' ");';                                                              output;
+    record=  '    __split ="&splitrow";';                                                                           output;
     record=  "    __issplit=0;";                                                                                    output;
     record=  "    __ncol_0=__col_0;";                                                                               output;
     record=  " ";                                                                                                   output;
@@ -3147,6 +3148,7 @@ run;
 
 data _null_;
   set rrgfmt;
+  record = tranwrd(strip(record), '%', '/#0037 ');
   call execute(cats('%nrstr(',record,')'));
 
 run;

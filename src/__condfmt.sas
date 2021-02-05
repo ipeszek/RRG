@@ -8,6 +8,7 @@
 
 %macro __condfmt(condfmt=)/store;
 
+** 22Jan2021: accounted for __val missing;
 
 %local condfmt i j;
 
@@ -30,8 +31,11 @@
        %end;
      
       record= "if __name in ( &statl.) then do;"; output;
-      record= "  __val2 = round(__val, &prec.);";output;
-      record= "  __col = compress(put(__val2, &fmtname.));";output;
+      record= "  __col = '';";output;
+      record= "  if not missing(__val) then do;"; output;
+      record= "    __val2 = round(__val, &prec.);";output;
+      record= "    __col = compress(put(__val2, &fmtname.));";output;
+      record= "  end;"; output;
       record= "end;"; output;
 %end;
 

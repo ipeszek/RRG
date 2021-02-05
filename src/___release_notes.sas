@@ -11,6 +11,11 @@
   TODO:
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
+
+22Jan: accounted for missing__val in __condfmt
+       accounted for not present __indentlev, __next_indentlev, __keepn in __savexml
+       fixed handling of splitrow parameter in rrg_addtrt  
+21Jan replaced % in fmt with /#0037 to avoid errors  
   
 16Jan2021: removed notes about converting char to num and vice versa
            fixed bug where ")" was printed as "#/0041"

@@ -228,7 +228,7 @@ if _n_=1 then do;
   record=''; output;
   record=''; output;
   record= '*----------------------------------------------------------------;'; output;
-  record= '*   BEGIN CUSTOM BEFORE OTHER MACROS CODE;'; output;
+  record= '*   BEGIN CUSTOM  CODE;'; output;
   record= '*----------------------------------------------------------------;'; output;
   record=' '; output;
 end;

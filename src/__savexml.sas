@@ -182,6 +182,9 @@ run;
         __orient='';
         __breakokat='';
         __pgmname='';
+        __indentlev=.;
+        __next_indentlev=.;
+        __keepn=.;
       end;
       
     file "&out" Lrecl=32000;

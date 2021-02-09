@@ -159,11 +159,16 @@ noshow0cntvals=)/store;
 
 %end;
 
-%if %length(&pct4missing)=0 %then %do;
-data _null_;
-  set __rrgconfig(where=(type='[D1]'));
-  call symput(w1,w2);
-run;
+%if %length(&pct4missing)=0 or   %length(&pct4total)=0 %then %do;
+  data _null_;
+    set __rrgconfig(where=(type='[D1]'));
+    %if %length(&pct4missing)=0 %then %do;
+      if lowcase(w1)='pct4missing' then call symput(w1,w2);
+    %end;
+    %if %length(&pct4total)=0 %then %do;
+      if lowcase(w1)='pct4total' then call symput(w1,w2);
+    %end;
+  run;
 %end;
 
 %if &skipline = 1 %then %let skipline=Y;

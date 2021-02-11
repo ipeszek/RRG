@@ -81,32 +81,7 @@ into
   :ordervar                                 separated by ' ' 
   
 from &vinfods;  
-/*
-  select trim(left(decode))                 into:decode          separated by ' '     from &vinfods;
-  select trim(left(where))                  into:where           separated by ' '     from &vinfods;
-  select trim(left(popwhere))               into:popwhere        separated by ' '     from &vinfods;
-  select trim(left(popgrp))                 into:popgrp          separated by ' '    from &vinfods;
-  select trim(left(totalwhere))             into:totalwhere      separated by ' '     from &vinfods;
-  select trim(left(totalgrp))               into:totalgrp        separated by ' '    from &vinfods;
-  select trim(left(name))                   into:var             separated by ' '     from &vinfods;
-  select trim(left(fmt))                    into:fmt             separated by ' '     from &vinfods;
-  select trim(left(denom))                  into:denomvars       separated by ' '     from &vinfods;
-  select trim(left(denomwhere))             into:denomwhere      separated by ' '     from &vinfods;
-  select upcase(trim(left(denomincltrt)))   into:denomincltrt    separated by ' '     from &vinfods;
-  select trim(left(stat))                   into:allstat         separated by ' '     from &vinfods;
-  select dequote(trim(left(totaltext)))     into:totaltext       separated by ' '     from &vinfods;
-  select dequote(trim(left(totalpos)))      into:totalpos        separated by ' '     from &vinfods;
-  select dequote(trim(left(misstext)))      into:misstext        separated by ' '     from &vinfods;
-  select dequote(trim(left(misspos)))       into:misspos         separated by ' '     from &vinfods;
-  select dequote(trim(left(showmissing)))   into:showmiss        separated by ' '     from &vinfods;
-  select dequote(trim(left(pct4missing)))   into:pct4missing     separated by ' '     from &vinfods;
-  select dequote(trim(left(pct4total)))     into:pct4total       separated by ' '     from &vinfods;
-  select trim(left(pctfmt))                 into:pctfmt          separated by ' '                       from &vinfods;
-  select trim(left(countwhat))              into:countwhat       separated by ' '     from &vinfods;
-  select trim(left(show0cnt))               into:show0cnt        separated by ' '     from &vinfods;
-  select trim(left(noshow0cntvals))         into:noshow0cntvals  separated by ' '     from &vinfods;
-  select trim(left(ordervar))               into:ordervar        separated by ' '     from &vinfods;
- */
+
 quit;  
 
 %if %length(&popgrp)=0 %then %let popgrp=&by4pop &groupvars4pop;

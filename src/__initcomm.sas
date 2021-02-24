@@ -28,6 +28,9 @@
  
  
  */
+ 
+ * 20Feb2020 changed handling of rrg_configpath, so it handles the case when  ;
+ *    macro variable rrg_configpath is definedas global but is null ;
 
 %macro __initcomm /store;
 
@@ -95,6 +98,9 @@ proc optsave out=__sasoptions;
 
 %if %symexist(rrg_configpath)=0 %then %do;
   %global rrg_configpath;
+%end;
+
+%if %length(&rrg_configpath)=0 %then %do;
   %let __workdir = %sysfunc(getoption(work));
   %let DELRRGCONF = 1;
   %* CREATE TEMPRARY CONFIGURATION FILE;

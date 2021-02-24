@@ -12,6 +12,9 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
 
+
+20Feb2020 changed handling of rrg_configpath, so it handles the case when  
+          macro variable rrg_configpath is definedas global but is null 
 09Feb2021 fixed handling of pct4total (logic flaw, was not taken from rrg_addcatvar but only from config file)
 22Jan: accounted for missing__val in __condfmt
        accounted for not present __indentlev, __next_indentlev, __keepn in __savexml

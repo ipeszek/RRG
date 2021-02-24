@@ -1,5 +1,5 @@
 /*******************************************************************
-*  ClinChoice, Inc.
+*  RRG sample program
 *  Program name     : hello_world.sas
 *  Project          : RRG Installation Qualification
 *  Written by       : Iza Peszek
@@ -7,7 +7,7 @@
 *  Description      : Test Listing program
 *  Macros called    : RRG macros
 *  Input file       : n/a
-*  Output file      : hello_clinchoice.pdf/rtf
+*  Output file      : hello_world.pdf/rtf
 *  Revision History :
 *  Date      Author      Description of the change
 *******************************************************************/
@@ -42,7 +42,7 @@
 libname rrgmacr   "&rrgmacropath" access=readonly ;
 options mstored sasmstore=rrgmacr  nodate; 
 
-%rrg_initlist(uri=hello_WORLD, outname=hello WORLD);
+%rrg_initlist(uri=hello_world, outname=hello world);
 
 %rrg_codebefore(
 

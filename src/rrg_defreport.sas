@@ -99,7 +99,8 @@ orderby cwatermark savercd   bookmark_rtf bookmark_pdf
       defreport_aetable;
 
 %let defreport_statsincolumn=%upcase(&statsincolumn);
-%if %length(&statsincolumns)>0 %then  %let defreport_statsacross=%upcase(&statsincolumns);;
+%if %length(&statsincolumns)>0  %then  %let defreport_statsacross=%upcase(&statsincolumns);;
+%if %length(&statsacross)       %then  %let defreport_statsacross=%upcase(&statsacross);;
 %let defreport_pooled4stats=%upcase(&pooled4stats);
 %let defreport_print=%upcase(&print);
 %let defreport_savercd=%upcase(&savercd);
@@ -112,7 +113,8 @@ orderby cwatermark savercd   bookmark_rtf bookmark_pdf
 %let defreport_debug                                =     &debug                     ;
 %let defreport_nodatamsg                            =     &nodatamsg                 ;
 %let defreport_subjid                               =     &subjid                    ;
-                                                                                     
+              
+                                                                                  
 %if &rrg_debug>0 %then %do;
 
 data __timer;

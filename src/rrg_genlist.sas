@@ -33,7 +33,7 @@
 
 */
 
-%macro rrg_genlist(debug=0, savexml=, finalize=N)/store;
+%macro rrg_genlist(debug=0, savexml=, finalize=Y)/store;
 %* note: for now, colsize and dist2next (if in units) shoudl be number of chars if java2sas is used; 
 %* assumes __tcol takes only one line between //;
 %* assumes varbygrp has only one line;
@@ -295,9 +295,15 @@ run;
 %let rc = %sysfunc(close(&dsid));
 
 
-sasfile work.rrgpgm.data open;
-run;
-
+/*  */
+/* %if &rrgsasfopen ne 1 %then %do; */
+/* 	sasfile work.rrgpgm.data open; */
+/* 	%let rrgsasfopen =1; */
+/* %end; */
+/* run; */
+/*  */
+/* %let rrgsasfopen=1; */
+/*  */
 
 
 data rrgpgmtmp;

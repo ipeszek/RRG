@@ -55,8 +55,6 @@ Macro parameters:
 */
 
 
-
-
 %put;
 %put;
 %put ------------------------------------------------------------------------;;
@@ -74,7 +72,7 @@ Macro parameters:
        Footnot7 footnot8 footnot9 footnot10
        footnot11 footnot12 footnot13 footnot14 shead_l shead_r shead_m
        sfoot_l sfoot_r sfoot_m systitle
-       By    dest  fontsize
+       By    dest  fontsize nodatamsg
        orient colwidths   extralines
        libsearch  varby4pop varbyn4pop groupby4pop groupbyn4pop;
 %local i j k breakokat;
@@ -84,7 +82,10 @@ Macro parameters:
 proc sql noprint;
   select name into: inmacros separated by ' ' from __varinfo (where=(type='MODEL'));
   select count(*) into:trtcnt separated by ' ' from __varinfo(where=(type='TRT'));
+        
 quit;
+
+
 
 %LOCAL war ning;
 %let war=WAR;
@@ -113,11 +114,12 @@ run;
 
 
 %local i j grpinc trtacross;
+%let trtacross=Y;
 
 proc sql noprint;
   select across into:grpinc separated by ' ' from
    __varinfo(where=(type='GROUP' and across='Y'));
-  select across, name into :trtacross, :trtvar separated by ' ' from
+  select upcase(across), name into :trtacross, :trtvar separated by ' ' from
    __varinfo(where=(type='TRT'));
 quit;
 
@@ -150,10 +152,14 @@ quit;
 
 %* ensures only one trt variable;
 
-
-
-sasfile work.rrgpgm.data open;
-run;
+/*  */
+/* %if &rrgsasfopen=0 %then %do; */
+/* 	sasfile work.rrgpgm.data open; */
+/* 	%let rrgsasfopen =1; */
+/* %end; */
+/* run; */
+/*  */
+/* %let rrgsasfopen=1; */
 
 %if %length(&trtvar)>0 %then %let numtrt = 1;
 
@@ -1045,32 +1051,54 @@ record=  " "; output;
 record=  '%if &numobs=0 %then %do;'; output;
 record=  '  %put  DATASET WITH STATISTICS HAS NO RECORDS, ;'; output;
 record=  '  %put  SKIP TO MACRO GENERATING TABLE;'; output;
-record=  "     data __fall;"; output;
-record=  "  __col_0 = ' ';"; output;
-record=  "  __indentlev = 0;"; output;
-record=  "  __ROWID = 10;"; output;
-record=  "  __tcol = 'new no data tcol';"; output;
-record=  "  __VTYPE = 'DUMMY';"; output;
-record=  "__DATATYPE='TBODY';"; output;
-record=  "__colwidths='NH NH';"; output;
-record=  "__ALIGN='C';"; output;
-record=  "     run;"; output;
+
+  %if &nvarby=0 and &trtacross=Y %then %do;  
+  	  
+  record=  "     data __fall;"; output;  
+  record=  "  __col_0 = ' ';"; output;  
+  record=  "  __indentlev = 0;"; output;  
+  record=  "  __ROWID = 10;"; output;  
+  record= "      __tcol='"||strip(symget("defreport_nodatamsg"))||"';";  output;  
+    
+    
+  record=  "  __VTYPE = 'DUMMY';"; output;  
+  record=  "__DATATYPE='TBODY';"; output;  
+  record=  "__colwidths='NH NH';"; output;  
+  record=  "__ALIGN='C';"; output;  
+  record=  "     run;"; output;  
+  record=  " "; output;  
+  record=  '  %let maxtrt=10;'; output;  
+  record=  " "; output;  
+  record=  "proc sort data=__poph ;"; output;  
+  record=  "by &varby __rowid __trtvar __autospan __prefix;"; output;  
+  record=  "     run;"; output;  
+  record=  " "; output;  
+     
+  record=  "proc transpose data=__poph out=__head prefix=__col_;"; output;  
+  record=  "by &varby __rowid __trtvar __autospan __prefix;"; output;  
+  record=  "id __trtid;"; output;  
+  record=  "var __col;"; output;  
+  record=  "run;"; output;  
+  record=  " "; output;  
+    
+  record=  "data __fall;"; output;  
+  record=  "  set __head (in=a) __fall;"; output;  
+  record=  "  if a then do;"; output;  
+  record=  "   __datatype='HEAD';"; output;  
+  record=  "  end;;"; output;  
+  record=  "run;  "; output;  
+  record=  " "; output;  
+  %end;  
+    
+  %else %do;  
+record=  " data __fall;"; output;
+record=  " if 0;"; output;
+record=  " __indentlev=.;"; output;
+record=  " run;"; output;
 record=  " "; output;
-record=  '  %let maxtrt=10;'; output;
-record=  " "; output;
-record=  "proc transpose data=__poph out=__head prefix=__col_;"; output;
-record=  "by &varby __rowid __trtvar __autospan __prefix;"; output;
-record=  "id __trtid;"; output;
-record=  "var __col;"; output;
-record=  "run;"; output;
-record=  " "; output;
-record=  "data __fall;"; output;
-record=  "  set __head (in=a) __fall;"; output;
-record=  "  if a then do;"; output;
-record=  "   __datatype='HEAD';"; output;
-record=  "  end;;"; output;
-record=  "run;  "; output;
-record=  " "; output;
+
+  %end;  
+    
 record=  '     %goto dotab;'; output;
 record=  '%end;'; output;
 record=  " "; output;
@@ -3017,11 +3045,14 @@ record=  "    from __fall (where=(__vtype not in ('VLABEL','LABEL')));";        
 record=  ' quit; ';                                                                                                    output;
 record=  " ";                                                                                                          output;
 record=  '%if %length(&vtypes)=0 %then %do;';                                                                          output;
+
+%if &nvarby=0 and &trtacross =Y %then %do;
+
 record=  "  data __fall;";                                                                                             output;
 record=  "  __col_0=' ';";                                                                                             output;
 record=  "  __ROWID = 10;";                                                                                            output;
 record=  "  __indentlev = 0;";                                                                                         output;
-record=  "  __tcol='new no data tcol';";                                                                               output;
+record=   "  __tcol='"||strip(symget("defreport_nodatamsg"))||"';";                                                    output;
 record=  "  __VTYPE = 'DUMMY';";                                                                                       output;
 record=  "__DATATYPE='TBODY';";                                                                                        output;
 record=  "__colwidths='NH NH';";                                                                                       output;
@@ -3047,6 +3078,23 @@ record=  " ";                                                                   
 record=  " ";                                                                                                          output;
 record= '%dotab:';                                                                                                     output;
 record=  " ";                                                                                                          output;
+%end;
+
+%else %do;
+
+record=  " data __fall;"; output;
+record=  " if 0;"; output;
+record=  " __indentlev=.;"; output;
+record=  " run;"; output;
+record=  " "; output;
+record=  '  %let maxtrt=1;';                                                                                           output;
+record=  '%end;';                                                                                                      output;
+record=  " ";                                                                                                          output;
+record=  " ";                                                                                                          output;
+record=  " ";                                                                                                          output;
+record= '%dotab:';                                                                                                     output;
+record=  " ";                                                                                                          output;
+%end;
 
 run;
 
@@ -3148,7 +3196,7 @@ run;
 
 data _null_;
   set rrgfmt;
-  record = tranwrd(strip(record), '%', '/#0037 ');
+  *record = tranwrd(strip(record), '%', '/#0037 ');
   call execute(cats('%nrstr(',record,')'));
 
 run;
@@ -3162,7 +3210,6 @@ data _null_;
   set rrgpgm;
 
   file "&__workdir./rrgpgm.sas"  lrecl=1000;
-
   put record  ;
 
 run;

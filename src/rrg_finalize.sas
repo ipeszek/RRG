@@ -107,9 +107,30 @@ data rrgfinalize;;
           %do i=1 %to &rrgtablepartnum;
               %if %upcase(&savexml)=Y %then %do;                                                                           
                   record=  '   %__sasshiato(path=&__path,'|| " debug=&debug, dataset=rrgtablepart&i);";                output;
+                  record=" ";                                                                                          output;
+                  record = 'filename rrgf "&__path./rrgtablepart'||"&i."||'.xml";';                                    output;
+                  record=" ";                                                                                          output;
+
+                  record=  ' data _null_;'   ;                                                                         output;
+                  record=  ' 	if fexist("rrgf") then do;'   ;                                                          output;
+                  %if &i>1 %then %do;
+                  record=  ' 		rc = rename("&__path./rrgtablepart'||"&i."||'.xml", "&__path./&rrguri._part'||
+                    "&i."||'.xml","file");';                                                                           output;
+                  %end;
+                  %else %do;
+                  record=  ' 		rc = rename("&__path./rrgtablepart'||"&i."||'.xml", "&__path./&rrguri..xml","file");'; output;                 	
+                  %end;	
+                  record=  ' 	end;' ;                                                                                  output;
+                  record=  ' run; ' ;                                                                                  output;    
+                  record=" ";                                                                                          output;             
+ 
+                  record = 'filename rrgf ;';                                                                          output;
+                  record=" ";                                                                                          output;             
               %end;                                                                                                       
               %else %do;                                                                                                   
                   record=  '   %__sasshiato('|| "debug=&debug,dataset=rrgtablepart&i);";                               output;
+                  
+
               %end;                                                                       
           %end;                                 
           record=  '  %end;';                                                                                          output;
@@ -317,7 +338,13 @@ proc append data=__timer base=rrgout.__execution;
 run;
 %end;
 
-%if &rrgtablepart=LAST or &rrgtablepart=FIRSTANDLAST %then %do;
+/*  */
+/* %if &rrgsasfopen=1 %then %do; */
+/* 	sasfile work.rrgpgm close; */
+/* 	%LET rrgsasfopen=0; */
+/* %end; */
+
+%if  &rrg_debug=0  AND ( &rrgtablepart=LAST or &rrgtablepart=FIRSTANDLAST) %then %do;
   
     proc datasets memtype=data nolist nowarn;
       delete rrg: __:;
@@ -325,8 +352,6 @@ run;
     quit; 
 
 %end; 
-
-sasfile work.rrgpgm close;
 
     
 %mend;

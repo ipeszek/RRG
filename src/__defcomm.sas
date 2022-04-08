@@ -36,18 +36,17 @@ data _null_;
   call symput(cats('n',w1),w2);
 run;
 
-%if %length(&nodatamsg)=0 %then %let nodatamsg=&nnodatamsg;
-%if %length(&subjid)=0 %then %let defreport_subjid=&nsubjid;
-%if %length(&indentsize)=0 %then %let indentsize=&nindentsize;
+%if %length(&nodatamsg)=0               %then %let defreport_nodatamsg=&nnodatamsg;
+%if %length(&subjid)=0                  %then %let defreport_subjid=&nsubjid;
+%if %length(&indentsize)=0              %then %let defreport_indentsize=&nindentsize;
 %if %length(&defreport_warnonnomatch)=0 %then %let defreport_warnonnomatch=&nwarnonnomatch;
-%if %length(&dest)=0 %then %let dest=&ndest;
+%if %length(&dest)=0                    %then %let dest=&ndest;
 %let dest=%upcase(&dest);
-%if %length(&dest)=0 %then %let dest = APP;
+%if %length(&dest)=0                    %then %let dest = APP;
 
-
-%if %length(&defreport_savercd)=0 %then %let defreport_savercd=&nsavercd;
+%if %length(&defreport_savercd)=0       %then %let defreport_savercd=&nsavercd;
 %let defreport_savercd = %upcase(&defreport_savercd);
-%if &defreport_savercd ne Y %then %let defreport_savercd=N;
+%if &defreport_savercd ne Y             %then %let defreport_savercd=N;
 
 
 
@@ -276,7 +275,7 @@ run;
 
 %if %length(&__fname)=0 %then %let __fname=&rrguri;
 
-%global rrgtablepart rrgtablepartnum ;
+%global rrgtablepart rrgtablepartnum  rrgsasfopen;
 %let append=%upcase(&append);
 %let appendable=%upcase(&appendable);
 %if &append ne Y %then %let append=N;
@@ -453,7 +452,6 @@ bookmark_rtf=trim(left(symget("bookmark_rtf")));
   lastcheadid='0';
   gcols='';
 run;
-
 
   
 %mend;

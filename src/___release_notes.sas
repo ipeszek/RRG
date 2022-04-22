@@ -11,11 +11,19 @@
   TODO:
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
+  
+
+21apr2021  showmissing added to config ,
+            remove works whether or not codelist is used 
 
 7April 2022 removed changing % to /#0037 in rrg_generate
              changed %dolist ro %rrgdolist in rrg_genlist
              removed sasfile option for rrgpgm
              fixed saving of xml file
+             
+             
+15APR2022 coded quotes and parentheses back from symbol to normal display , 
+          rrg_generate at the end sorts by __datatype, __varbygrp, __rowid
 
 30Mar2022 Fixed nodata msg for tables (in rrg_generate). Table headers/footnotes are displayed unless rrg_addtrt.across=n or there are page-by group variables
 

@@ -69,6 +69,19 @@
           
         run;
         
+        
+%macro unmakestring(name);
+    %local name;
+  
+    &name=tranwrd(strip(&name),"/#0034 ",'"');
+    &name=tranwrd(strip(&name),"/#0039 ","'");
+    &name=tranwrd(strip(&name),"/#0040 ",'(');
+    &name=tranwrd(strip(&name),"/#0041 ",')');
+
+    record=  "__"|| "&name="||'"'|| strip(&name)||'";';  output;
+%mend;  
+
+        
          data out.&rrguri (compress=YES);
         
          set __tmp;
@@ -77,7 +90,31 @@
                 __indentlev  __next_indentlev __align __suffix __keepn __blockid 
                __dsid __tcol __gcols __first:  __fname __cell: __topborderstyle 
               __bottomborderstyle __foot: __title: __shead_: __sfoot_: __nodatamsg;
-    
+   
+         if __datatype='RINFO' then do;
+            %unmakestring(nodatamsg);
+
+
+            %do jj=1 %to 6;
+              %unmakestring(title&jj);
+            %end;
+
+            %do jj=1 %to 14;
+              %unmakestring(footnot&jj);
+            %end;
+
+            %unmakestring(nodatamsg);
+            %unmakestring(shead_l); 
+            %unmakestring(shead_r); 
+            %unmakestring(shead_m );
+            %unmakestring(sfoot_r );
+            %unmakestring(sfoot_l );
+            %unmakestring(sfoot_m );
+            %unmakestring(sprops); 
+      
+         end;
+
+
          keep __datatype __vtype __rowid __col_: __foot: __title: __next_indentlev 
           __shead_: __sfoot_: __nodatamsg __align __suffix __keepn __blockid __cell:
           __indentlev __dsid __tcol __gcols __first: __varbygrp __varbylab __fname 

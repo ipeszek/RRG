@@ -43,11 +43,13 @@ quit;
 
 
 %let __tmpfilepath = &__workdir.&__dirdel.&__xmlfile;
-
-
-%if %length(&path)>0 %then
-    %let  __xmlpath = &path.%str(/)&__xmlfile;
-%else
+%let __tmpfilepath2 = /sasdata/Data/Development/BDM/ToolsDev/Macros/RRG_v4/tmp/&__xmlfile;
+%put  __tmpfilepath=&__tmpfilepath ;
+%put __tmpfilepath2=&__tmpfilepath2;
+/*  */
+/* %if %length(&path)>0 %then */
+/*     %let  __xmlpath = &path.%str(/)&__xmlfile; */
+/* %else */
 	%let __xmlpath = &__tmpfilepath;
 
 
@@ -68,6 +70,20 @@ reptype=&reptype
 );
 
 
+%if %length(&path) %then %do;
+	
+	filename rrgfin "&__xmlpath..xml" recfm=n;
+	filename rrgfout "&path.%str(/)&__xmlfile..xml" recfm=n;
+	%local rc;
+	%if %sysfunc(fexist(rrgfin)) %then %do;
+		%let rc = %sysfunc(FCOPY(rrgfin,rrgfout));
+   	%put %sysfunc(SYSMSG());
+   	%put File &__xmlpath..xml was copied to &path.%str(/)&__xmlfile..xml;
+	%end;
+	%else %do;
+		%put File &__xmlpath..xml was not found and was not copied;
+	%end;
+%end;
 
 %*let __security_token = ad6128a9623ca1c222cd7cc176334d15;
 %local sc;
@@ -93,12 +109,14 @@ data _null_;
    tmp ="out_dir=&rrgoutpath.";
    tmp = tranwrd(tmp, "\", "/");
    put tmp;
-   tmp ="work_dir=&__workdir.";
-   tmp = tranwrd(tmp, "\", "/");
-   put tmp;
+   *tmp ="work_dir=&__workdir.";
+   *tmp ="work_dir=&rrgoutpath.";
+   *tmp = tranwrd(tmp, "\", "/");
+   *put tmp;
  %end;
 
  put "log2=file";
+* tmp="log2f=&__tmpfilepath2..str";
  tmp="log2f=&__tmpfilepath..str";
  tmp = tranwrd(tmp, "\", "/");
  put tmp;
@@ -116,6 +134,17 @@ data _null_;
 
 run; 
 
+*** PROPS FILE;
+data _null_;
+	infile "&__workdir.&__dirdel.sasshiato.props" length=len lrecl=2000; 
+   input record $varying2000. len; 
+   put record $varying2000. len; 
+run;
+
+*** END OF PROPS FILE;
+
+
+
 
  
 data _null_;
@@ -130,18 +159,23 @@ run;
 data _null_;
   fname="tempfile";
     ** log file;
+    *rc=filename(fname,"&__tmpfilepath2..str");
     rc=filename(fname,"&__tmpfilepath..str");
     if rc = 0 and fexist(fname) then
-    	rc=fdelete(fname);
+    rc=fdelete(fname);
     rc=filename(fname);
 run;
 
+%put INFO ABOUT OS: sysscp=&sysscp;
 
 %if  &SYSSCP ne WIN %then %do;
   
   data _null_;
   length tmp $ 2000;
-  tmp = "&__sasshiato_home./sasshiato.sh "||quote("&__workdir.&__dirdel.sasshiato.props");
+  /*tmp = "sh &__sasshiato_home./sasshiato.sh "||quote("&__workdir.&__dirdel.sasshiato.props")||
+ ' > /sasdata/Data/Development/BDM/ToolsDev/Macros/RRG_v4/tmp/logme.log 2>&1';
+ put 'COMMAND IS ' tmp;*/
+ tmp = "sh &__sasshiato_home./sasshiato.sh "||quote("&__workdir.&__dirdel.sasshiato.props");
   tmp = tranwrd(tmp,'\','/');
   call system(tmp);
   run;  
@@ -172,8 +206,8 @@ run;
 
 %put BRGIN SASSHIATO INVOCATION LOG;
 %put - - - - - - - - - - - - - - - - ;
-
 data _null_; 
+   *infile "&__tmpfilepath2..str" length=len lrecl=2000; 
    infile "&__tmpfilepath..str" length=len lrecl=2000; 
    input record $varying2000. len; 
    put record $varying2000. len; 
@@ -184,12 +218,14 @@ run;
 
 
 
+
 %if &debug < 50 %then %do;
 %put file cleanup;
 
 data _null_;
   fname="tempfile";
     ** log file;
+    *rc=filename(fname,"&__tmpfilepath2..str");
     rc=filename(fname,"&__tmpfilepath..str");
     if rc = 0 and fexist(fname) then
     	rc=fdelete(fname);

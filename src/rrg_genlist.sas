@@ -293,17 +293,14 @@ run;
   %let __vtype&i = %sysfunc(vartype(&dsid, &&__vnum&i));
 %end;
 %let rc = %sysfunc(close(&dsid));
-
-
 /*  */
 /* %if &rrgsasfopen ne 1 %then %do; */
-/* 	sasfile work.rrgpgm.data open; */
-/* 	%let rrgsasfopen =1; */
+/* sasfile work.rrgpgm.data open; */
 /* %end; */
 /* run; */
 /*  */
 /* %let rrgsasfopen=1; */
-/*  */
+
 
 
 data rrgpgmtmp;
@@ -323,7 +320,7 @@ data rrgpgmtmp;
         record=" ";  output;
         record=" ";  output;
 
-        record= '%macro dolist;';  output;
+        record= '%macro rrgdolist;';  output;
 
         record= "*---------------------------------------------------------------------;";  output;
         record= "** TRANSFORM DATASET APPLYING FORMATS AND DECODES AS NEEDED;";  output;
@@ -587,7 +584,7 @@ data rrgpgmtmp;
         record=" ";  output;
         record= '%mend;';  output;
         record=" ";  output;
-        record= '%dolist;';  output;
+        record= '%rrgdolist;';  output;
 
         record=" ";  output;
         record=" ";  output;

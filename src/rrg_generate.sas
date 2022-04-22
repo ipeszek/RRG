@@ -3179,12 +3179,16 @@ record=  "  __next_indentlev=lag(__indentlev);";                                
 record=  "  if first.__datatype then __next_indentlev=.;";                                                                                        output;
 record=  "run;";                                                                                                                                  output;
 record=  " ";                                                                                                                                     output;
+record=  "proc sort data=&rrguri;";                                                                                                               output;
+record=  "  by  __datatype __varbygrp  __rowid;";                                                                                                 output;
+record=  "run;";                                                                                                                                  output;
+record=  " ";                                                                                                                                     output;            
 record=  " ";                                                                                                                                     output;
 record=  '%mend;';                                                                                                                                output;
 record=  " ";                                                                                                                                     output;
 record=  " ";                                                                                                                                     output;
 record=  '%rrg;';                                                                                                                                 output;
-record=  'sasfile work.__dataset close;   '  ;                                                                                                          output;
+record=  'sasfile work.__dataset close;   '  ;                                                                                                    output;
 record=  "run;";                                                                                                                                  output;
 
 run;

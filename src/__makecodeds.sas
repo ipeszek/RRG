@@ -143,7 +143,7 @@ quit;
 */
 quit;
 
-
+%put delimiter=&delimiter;
 
 %if %length(&codelistds) %then %do;
     data __&codelistds._exec __&codelistds; 
@@ -193,10 +193,10 @@ data &outds._exec;
    __del = trim(left(symget("delimiter")));
    do i=1 to length(string);
       %if %upcase(&desc)=Y %then %do;
-        __tmp = scan(string, -1*i, __del);
+        __tmp = strip(scan(string, -1*i, __del));
       %end;
       %else %do;
-        __tmp = scan(string, i, __del);
+        __tmp = strip(scan(string, i, __del));
       %end;  
       if __tmp ne '' then do; 
         __order&suff+1;
@@ -204,6 +204,8 @@ data &outds._exec;
       end;
     end;
 run;
+
+
 
 data &outds._exec;
   set &outds._exec;
@@ -215,7 +217,7 @@ data &outds._exec;
       &var = dequote(trim(left(scan(__tmp,1,'='))));
   %end;
   %else %do;
-      &var = input(scan(__tmp,1,'='),??best.);
+      &var = input(strip(scan(__tmp,1,'=')),??best.);
   %end;
   &decode = dequote(trim(left(substr(__tmp, index(__tmp,'=')+1))));
   %if %length(&fmt) %then %do;
@@ -223,6 +225,8 @@ data &outds._exec;
   %end;
   keep __order&suff &var &decode;
 run;
+
+
 
 %local tmp ;
 %let tmp=%str(length);

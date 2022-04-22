@@ -5,7 +5,7 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
-
+/*
 ****************************************************************************
 ****************************************************************************
 **-PROGRAM NAME: COMP_RCD.SAS
@@ -28,6 +28,7 @@
 **-NOTES: 
 ****************************************************************************
 ****************************************************************************;
+*/
 
 options mautosource sasautos=(sasautos);
 

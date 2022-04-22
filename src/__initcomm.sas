@@ -29,8 +29,10 @@
  
  */
  
+/*
  * 20Feb2020 changed handling of rrg_configpath, so it handles the case when  ;
  *    macro variable rrg_configpath is definedas global but is null ;
+*/
 
 %macro __initcomm /store;
 

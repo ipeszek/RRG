@@ -48,7 +48,7 @@ pct4missing=,
 pct4total=n,
 pctfmt=%nrbquote(__rrgp1d.),
 preloadfmt=,
-showmissing=y,
+showmissing=,
 keepwithnext=N,
 templatewhere=,
 desc=,
@@ -159,7 +159,7 @@ noshow0cntvals=)/store;
 
 %end;
 
-%if %length(&pct4missing)=0 or   %length(&pct4total)=0 %then %do;
+%if %length(&pct4missing)=0 or   %length(&pct4total)=0 or   %length(&showmissing)=0  %then %do;
   data _null_;
     set __rrgconfig(where=(type='[D1]'));
     %if %length(&pct4missing)=0 %then %do;
@@ -168,8 +168,14 @@ noshow0cntvals=)/store;
     %if %length(&pct4total)=0 %then %do;
       if lowcase(w1)='pct4total' then call symput(w1,w2);
     %end;
+     %if %length(&showmissing)=0 %then %do;
+      if lowcase(w1)='showmissing' then  call symput(w1,w2);
+     %end;
   run;
 %end;
+
+/* if showmissing not included in configuration file */
+%if %length(&showmissing)=0 %then %let showmissing=y;
 
 %if &skipline = 1 %then %let skipline=Y;
 %if %length(skipline)=0 %then %let skipline=Y;

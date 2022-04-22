@@ -162,10 +162,26 @@ __missdec=quote(strip(__missdec));
         record= "end;  ";                                                              output;
     %end;                                                                             
                                                                                        
-    record= "run;";                                                                    
+    record= "run;";                                                                    output;
     record=" " ;                                                                       output;
 %end;                                                                                 
-%else %do;                                                                             
+%else %do;            
+  
+  %if %length(&remove)>0 %then %do;                                                  
+        length remove $ %length(&remove);                                              
+        remove = strip(symget("remove"));  
+        record= "data &dsin;";                                                         output;
+        record= "set &dsin;";                                                          output;
+        record= "  if 0 then __total=.;";                                              output;
+
+        record= "if __total ne 1  then do;";                                           output;
+        record= "   if &var  in ( "||strip(remove)||" ) then delete;";                 output;
+        record= "end;  ";                                                              output;
+        record= "run;";                                                                output;
+        record=" " ;                                                                   output;        
+    %end;       
+  
+                                                                   
     record= "proc sort data=&dsin;";                                                   output;
     record= "  by &by __tby &groupvars   __order &var __grpid &decode ;";              output;
     record= "run;";                                                                    output;

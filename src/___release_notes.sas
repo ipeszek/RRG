@@ -12,6 +12,11 @@
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
   
+3Aug2022  handled case when sortcolumn param has comma-separated values (which it shoul dnot)
+         misc typos were fixed
+         added rrg_defreport param lowmemorymode (if Y, __dataset is not handled as sasfile, default is N  )  
+         fixed a bug in rrg_unindentv/rrg_unindent which caused col_0 header to be taken from table body when varbygrp is used
+  
 
 21apr2021  showmissing added to config ,
             remove works whether or not codelist is used 

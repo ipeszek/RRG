@@ -523,8 +523,8 @@ record=" ";output;
 
       record="  proc sql noprint;";output;
       record="    create table __nm as select count(*) as __totn, &tmp";output;
-      record="    from (select distinct &tmp, &unit from __dataset(where=(&var ne . and ";
-      record=  strip(record)|| strip(symget("defreport_tabwhere")) || " and"  || strip(symget("where")) ||")))";output;
+      record="    from (select distinct &tmp, &unit from __dataset (where=(&var ne . and "; output;
+      record=   strip(symget("defreport_tabwhere")) || " and "  || strip(symget("where")) ||")))";output;
       record="    group by &tmp";output;
       record="    order by &tmp";output;
       record="    ;";output;

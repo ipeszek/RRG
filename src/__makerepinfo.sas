@@ -88,7 +88,8 @@
     record=  "__"|| "&name="||'"'|| strip(&name)||'";';  output;
 %mend;  
 
-  
+
+
 
 data rrgpgmtmp;
 length record $ 2000;

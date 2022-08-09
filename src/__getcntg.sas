@@ -37,7 +37,7 @@ record = "run;";                                                                
  
     record=" ";                                                                                 output;
     record = "*------------------------------------------------------;";                        output;
-    record = "* COUNT NUM of DISTINCT &UNIT IN EACH &TMP1 COMBINATION;";                        output;
+    record = "* COUNT NUM of DISTINCT &UNIT IN EACH PARAMETER COMBINATION;";                    output;
     record = "*------------------------------------------------------;";                        output;
     record = "  proc sql noprint;";                                                             output;
     record = "    create table &dataout as";                                                    output;

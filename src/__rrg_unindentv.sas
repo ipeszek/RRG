@@ -67,6 +67,7 @@ record =  ' %end;';output;
 record =  "      end;";output;
 record =  "    end;";output;
 record =  "    if __datatype='RINFO' then __lastcheadid=__lastcheadid+1;";output;
+record =  "    if __datatype='HEAD' then __newcol0='';";output;
 record =  "  run;";output;
 record = " ";    output;
 record = " ";output;

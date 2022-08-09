@@ -29,13 +29,17 @@ NOTE: COLHEAD1 IN __REPINFO HAS "(","(" AND SINGLE QUOTES RECODED AS "RPAR, "LPA
 %*** READ SUBJID, INDENTSIZE, NODATAMSG DEST AND WARNONNOMATCH FROM CONFIGURATION FILE;
 %*** IF NOT GIVEN IN MACRO CALL THEN USE VALUES FROM CONFIGURATION FILE;
 
-%local  nsavercd  ;
+
+
+%local  nsavercd  nlowmemorymode;
 
 data _null_;
   set __rrgconfig(where=(type ='[D4]'));
   call symput(cats('n',w1),w2);
 run;
 
+
+%if %length(&defreport_lowmemorymode)=0 %then %let defreport_lowmemorymode=&nlowmemorymode; 
 %if %length(&nodatamsg)=0               %then %let defreport_nodatamsg=&nnodatamsg;
 %if %length(&subjid)=0                  %then %let defreport_subjid=&nsubjid;
 %if %length(&indentsize)=0              %then %let defreport_indentsize=&nindentsize;
@@ -293,11 +297,11 @@ run;
 data __repinfo;
 length    
 fontsize dest sfoot_fs outformat  papersize extralines lastcheadid rtype dist2next $ 8 
-font margins ncw tmp  $ 30
+font margins  tmp  $ 30
 footnot1-footnot14 title1-title6
 bookmark_rtf bookmark_pdf filename nodatamsg watermark
 sprops  shead_r shead_m shead_l 
- sfoot_r sfoot_m sfoot_l stretch colwidths stretch  gcols $ 2000;
+ sfoot_r sfoot_m sfoot_l stretch ncw colwidths  stretch  gcols $ 2000;
  
     
    
@@ -338,6 +342,7 @@ stretch = upcase(trim(left(symget("stretch"))));
 colspacing=trim(left(symget("colspacing")));
 
 colwidths=trim(left(symget("colwidths")));
+
 if colwidths ne '' then do;
     ncw = '';
     do __i=1 to countw(colwidths, ' ');

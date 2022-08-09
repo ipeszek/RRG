@@ -357,7 +357,7 @@ libname __newlb "&oldlib";
     %else %do;
     
     data d3;
-    length __col_0 - __col_&maxc $ 4000;
+    length __col_0 - __col_&maxc __colwidths $ 4000;
     merge d1 (rename=(%do i=0 %to &oldnumcol; __col_&i=__newcol_&i  %end;)) d2;
     by __rowid;
     %if &j=1 %then %do;

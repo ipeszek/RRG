@@ -75,7 +75,8 @@ print=Y,
 savercd=,
 pooled4stats=N,
 bookmark_rtf=,
-bookmark_pdf=)/store;
+bookmark_pdf=,
+lowmemorymode=Y)/store;
 
 %local Dataset popWhere tabwhere Colhead1 subjid Title1 title2 title3
 title4 title5 title6 Footnot1 Footnot2 Footnot3 Footnot4
@@ -90,13 +91,13 @@ csfoot_fs tablepart
 cpapersize corient coutformat cfontsize cfont cmargins 
 cshead_l cshead_r cshead_m csfoot_l csfoot_m csfoot_r 
 splitchars esc_char  gen_size_info rtf_linesplit
-orderby cwatermark savercd   bookmark_rtf bookmark_pdf
+orderby cwatermark savercd   bookmark_rtf bookmark_pdf  lowmemorymode
 ;
 
 %global defreport_pooled4stats defreport_statsincolumn defreport_statsacross defreport_savercd 
       defreport_print defreport_colhead1 defreport_popwhere defreport_dataset
       defreport_tabwhere defreport_warnonnomatch defreport_debug defreport_aetable defreport_nodatamsg defreport_subjid
-      defreport_aetable;
+      defreport_aetable defreport_lowmemorymode;
 
 %let defreport_statsincolumn=%upcase(&statsincolumn);
 %if %length(&statsincolumns)>0  %then  %let defreport_statsacross=%upcase(&statsincolumns);;
@@ -105,6 +106,8 @@ orderby cwatermark savercd   bookmark_rtf bookmark_pdf
 %let defreport_print=%upcase(&print);
 %let defreport_savercd=%upcase(&savercd);
 %let defreport_colhead1=&colhead1;
+%let defreport_lowmemorymode=%upcase(&lowmemorymode);
+%if &defreport_lowmemorymode ne Y %then %let defreport_lowmemorymode=N;
 
 %let defreport_popwhere                             =     &popwhere                  ;
 %let defreport_dataset                              =     &dataset                   ;

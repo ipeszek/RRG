@@ -149,6 +149,7 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   desc = (trim(left(symget("desc")))); 
   subjid=(trim(left(symget("subjid"))));
   sortcolumn=(trim(left(symget("sortcolumn"))));
+  sortcolumn=tranwrd(sortcolumn,',',' ');
   parms = (trim(left(symget("parms"))));
   cutoffcolumn=(trim(left(symget("cutoffcolumn"))));
   freqsort=(trim(left(dequote(symget("freqsort")))));

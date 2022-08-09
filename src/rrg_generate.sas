@@ -74,11 +74,14 @@ Macro parameters:
        sfoot_l sfoot_r sfoot_m systitle
        By    dest  fontsize nodatamsg
        orient colwidths   extralines
-       libsearch  varby4pop varbyn4pop groupby4pop groupbyn4pop;
+       libsearch  varby4pop varbyn4pop groupby4pop groupbyn4pop ;
 %local i j k breakokat;
 %local indata inmacros  trtcnt ;
 
 
+
+%local numtrt trtvar;
+%let numtrt=0;
 proc sql noprint;
   select name into: inmacros separated by ' ' from __varinfo (where=(type='MODEL'));
   select count(*) into:trtcnt separated by ' ' from __varinfo(where=(type='TRT'));
@@ -144,9 +147,6 @@ quit;
 * DETERMINE TREATMENT VARIABLES ;
 *----------------------------------------------------------------;
 
-
-%local numtrt trtvar;
-%let numtrt=0;
 
 
 
@@ -603,8 +603,10 @@ record = "  call symput('__filesizebytes', put(FILESIZE, best.) );"; output;
 record = 'run;'; output;
 record = '%put RRG INFO: __dataset has &__filesizebytes bytes;'; output;
 record = ' ';    output;
+%if &defreport_lowmemorymode=N %then %do;
 record=  "sasfile work.__dataset.data open; "; output;
 record=  "run; "; output;
+%end;
 
 %if &numtrt>1 %then %do;
     %local nt;
@@ -3188,9 +3190,10 @@ record=  '%mend;';                                                              
 record=  " ";                                                                                                                                     output;
 record=  " ";                                                                                                                                     output;
 record=  '%rrg;';                                                                                                                                 output;
+%if &defreport_lowmemorymode=N %then %do;
 record=  'sasfile work.__dataset close;   '  ;                                                                                                    output;
 record=  "run;";                                                                                                                                  output;
-
+%end;
 run;
 
 proc append base=rrgpgm data=rrgpgmtmp;

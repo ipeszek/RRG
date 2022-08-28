@@ -78,19 +78,19 @@
     &name=tranwrd(strip(&name),"/#0040 ",'(');
     &name=tranwrd(strip(&name),"/#0041 ",')');
 
-    record=  "__"|| "&name="||'"'|| strip(&name)||'";';  output;
+    /* record=  "__"|| "&name="||'"'|| strip(&name)||'";';  output; */
 %mend;  
 
         
          data out.&rrguri (compress=YES);
         
-         set __tmp;
+        
     
          retain __col_:  __rowid __datatype __varbygrp __varbylab __vtype 
                 __indentlev  __next_indentlev __align __suffix __keepn __blockid 
                __dsid __tcol __gcols __first:  __fname __cell: __topborderstyle 
               __bottomborderstyle __foot: __title: __shead_: __sfoot_: __nodatamsg;
-   
+         set __tmp;
          if __datatype='RINFO' then do;
             %unmakestring(nodatamsg);
 

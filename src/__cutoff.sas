@@ -21,9 +21,8 @@ groupvars=)/store;
   grpsrt mincntpctvar;
 
 
-
 data __varinfo_cutoff;
-  set __varinfo (where=( upcase(strip(type)) not in ('TRT',"'MODEL'")));
+  set __varinfo (where=( upcase(strip(type)) not in ('TRT',"'MODEL'",'NEWTRT')));
 run;
 
 data __varinfo_cutoff;
@@ -34,7 +33,7 @@ run;
 
 proc sql noprint;
 select name into: grpsrt separated by ' '
-  from __varinfo_cutoff where type not in ('TRT',"'MODEL'")
+  from __varinfo_cutoff where type not in ('TRT',"'MODEL'", 'NEWTRT')
   order by __grpid;
 select name into: mincntpctvar    separated by ''
 from __varinfo_cutoff

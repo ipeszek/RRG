@@ -249,8 +249,15 @@ record =  "__indentlev =__indentlev+1;";                                        
     record =  '    __col_1 = __col_&j;';output;
     record =  "    __align = cats(__align)||' '||scan(__tmpalign," ||'%eval(&j+1),'|| "' ');";output;
     record =  '    if __col_&j ' ||" ne '' then output;"; output;
-    record =  '  %end;';output;
-    record =  '  drop __col_2-__col_&maxtrt;';output;
+    record =  '  %end;';output; 
+    record =  '  %if &maxtrt>2 %then %do;              ';output;
+    record =  '    drop __col_2-__col_&maxtrt;         ';output;
+    record =  '  %end;                                 ';output;
+    record =  '  %else %if &maxtrt=2 %then %do;        ';output;
+    record =  '    drop __col_2;                       ';output;
+    record =  '  %end;                                 ';output;
+   
+    
 %end;
   
 record =  'run;  ';output;

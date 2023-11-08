@@ -77,7 +77,6 @@ select
   ovstat                                           ,
   trim(left(subjid))                               ,
   dequote(trim(left(misstext)))                    ,
-  dequote(trim(left(totaltext)))                   ,
   dequote(trim(left(misspos)))                     ,
   dequote(trim(left(totalpos)))                    ,
   dequote(trim(left(showmissing)))                 ,
@@ -101,7 +100,6 @@ into
   :ovstat                                           separated by ' ' ,
   :asubjid                                          separated by ' ' ,
   :misstext                                         separated by ' ' ,
-  :totaltext                                        separated by ' ' ,
   :misspos                                          separated by ' ' ,
   :totalpos                                         separated by ' ' ,
   :showmiss                                         separated by ' ' ,
@@ -110,7 +108,34 @@ into
   :tmpcodes                                         separated by ' '  
   from __catv;            
 
+/*
+proc sql noprint;
+  select trim(left(decode))    into:decode    separated by ' '  from __catv;
+  select codelist              into:tmpcodes  separated by ' ' from __catv;
+                                       
 
+  select trim(left(decode))                into:decode      separated by ' '  from __catv;
+  select trim(left(where))                 into:where       separated by ' ' from __catv;
+  select trim(left(name))                  into:var         separated by ' ' from __catv;
+  select trim(left(fmt))                   into:fmt         separated by ' ' from __catv;
+  select indent                            into:indent         separated by ' ' from __catv;
+  select upcase(skipline)                  into:skipline    separated by ' ' from __catv;
+  select trim(left(dequote(label)))        into:label       separated by ' ' from __catv;
+  select labelline                         into:labelline   separated by ' ' from __catv;
+  select trim(left(countwhat))             into:countwhat   separated by ' ' from __catv;
+  select codelist                          into:tmpcodes    separated by ' ' from __catv;
+  select codelistds                        into:tmpcodesds   separated by ' ' from __catv;
+  select delmods                           into:delmods     separated by ' ' from __catv;
+  select stat                              into:stat        separated by ' ' from __catv;
+  select ovstat                            into:ovstat      separated by ' ' from __catv;
+  select trim(left(subjid))                into:asubjid     separated by ' ' from  __catv;
+  select dequote(trim(left(misstext)))     into:misstext    separated by ' '     from __catv;
+  select dequote(trim(left(misspos)))      into:misspos     separated by ' '     from __catv;
+  select dequote(trim(left(totalpos)))     into:totalpos    separated by ' '     from __catv;
+  select dequote(trim(left(showmissing)))  into:showmiss    separated by ' '     from __catv;
+  select trim(left(keepwithnext))          into:keepn        separated by ' ' from  __catv;    
+  select desc                              into:desc        separated by ' ' from __catv;
+*/  
 quit;
 
 %if %length(&tmpcodes) %then %let codes=1;
@@ -1060,17 +1085,12 @@ record=" "; output;
     record= "  array cole{*} $ 2000 __colev:;"; output;
 
     record= "  output;"; output;
-    %if &totalpos ne -1 %then %do;
-      record= "  do __i=1 to dim(cols);"; output;
-      record= "    cols[__i]='';"; output;
-      record= "  end;"; output;
-      record= "  do __i=1 to dim(cole);"; output;
-      record= "    cole[__i]='';"; output;
-      record= "  end;"; output;
-    %end;
-    %else %do;
-       record= "  __total=.;"; output;
-    %end;
+    record= "  do __i=1 to dim(cols);"; output;
+    record= "    cols[__i]='';"; output;
+    record= "  end;"; output;
+    record= "  do __i=1 to dim(cole);"; output;
+    record= "    cole[__i]='';"; output;
+    record= "  end;"; output;
     record= "  __tmprowid=-1;"; output;
     record= "  __grpid=__grpid-0.1;"; output;
     record= "  if first.__grpid then output;"; output;
@@ -1080,18 +1100,11 @@ record=" "; output;
 %end;
   
 
-
 record= "data &outds;"; output;
 record= "  set __catcnt4;"; output;
 record= "length __skipline $ 1;"; output;
 %if %upcase(&aetable) ne N %then %do;
-  %if &totalpos=-1 %then %do;
-     record= "     if ceil(__grpid)=1 or __total=1 then delete;"; output;
-   
-  %end;
-  %else %do;
-     record= "     if ceil(__grpid)=1 then delete;"; output;
-  %end;
+    record= "     if ceil(__grpid)=1 then delete;"; output;
 %end;
 record= "  __col__1='';"; output;
 record= "  __skipline=cats('"||"&skipline"|| "');"; output;

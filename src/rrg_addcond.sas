@@ -9,6 +9,7 @@
 %macro rrg_addcond(
 where=,
 label=,
+labelvar=,
 stats=npct, 
 skipline=Y,
 labelline=1,
@@ -31,7 +32,7 @@ countwhat=subjid)/store;
 %local where  label stats skipline indent templateds denom 
        grouping pctfmt denomwhere overallstats labelline
        keepwithnext subjid denomgrp templatewhere show0cnt
-       notcondition countwhat DENOMINClTRT;
+       notcondition countwhat DENOMINClTRT labelvar;
 
 %put STARTING RRG_ADDCOND USING WHERE: &WHERE ;
 
@@ -42,6 +43,8 @@ countwhat=subjid)/store;
 %__rrgaddgenvar(
 where=%nrbquote(&where),
 label=%nrbquote(&label),
+labelvar=%nrbquote(&labelvar),
+
 stat=%nrbquote(&stats), 
 ovstat=%nrbquote(&overallstats),
 skipline=%upcase(&skipline),

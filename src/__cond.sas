@@ -90,30 +90,6 @@ into
     :denomincltrt                   separated by ' ' 
     
 from  __condv;
-
-  /*
-  select trim(left(templateds))    into:templateds      separated by ' ' from  __condv;
-  select trim(left(templatewhere)) into:templatewhere   separated by ' ' from  __condv;
-  select trim(left(where))         into:where           separated by ' ' from  __condv;
-  select trim(left(denom))         into:denomvars       separated by ' ' from  __condv;
-  select trim(left(denomwhere))    into:denomwhere      separated by ' ' from  __condv;
-  select labelline                 into:labelline       separated by ' ' from  __condv;
-  select trim(left(stat))          into:allstat         separated by ' ' from  __condv;
-  select trim(left(ovstat))        into:ovstat          separated by ' ' from  __condv;
-  select indent                    into:indent          separated by ' ' from  __condv;
-  select upcase(skipline)          into:skipline        separated by ' ' from  __condv;
-  select trim(left(label))         into:label           separated by ' ' from  __condv;
-  select trim(left(labelvar))      into:labelvar        separated by ' ' from  __condv;
-  select trim(left(grouping))      into:grouping        separated by ' ' from  __condv;
-  select trim(left(pctfmt))        into:pctfmt          separated by ' ' from  __condv;
-  select trim(left(subjid))        into:asubjid         separated by ' ' from  __condv;
-  select trim(left(show0cnt))      into:show0cnt        separated by ' ' from  __condv;
-  select trim(left(keepwithnext))  into:keepwithnext    separated by ' ' from  __condv;
-  select trim(left(notcondition))  into:notcondition    separated by ' ' from  __condv;
-  select trim(left(countwhat))     into:countwhat       separated by ' ' from  __condv;
-  select trim(left(denomincltrt))  into:denomincltrt    separated by ' ' from  __condv;
-  */
- 
 quit;
 
 
@@ -190,22 +166,8 @@ data rrgpgmtmp;
 length record $ 2000;
 keep record;
 
-%if %length(&labelvar) %then %do;
-    record=" "; output;
-    record="*-----------------------------------------------------------------------;" ; output;
-    record="* DETERMINE LABEL FOR CONDITION;";  output;
-    record="*-----------------------------------------------------------------------;" ; output;
-    record=" "; output;
-    record='%local label4cond;'; output;
-    record=" "; output;
-    record=" proc sql noprint;"; output;
-    record=" select distinct &labelvar into: label4cond separated by ' ' "; output;
-    record=" from __dataset (where=(";
-    record=strip(record)|| trim(left(symget("defreport_tabwhere")))||" and "
-    record=strip(record)|| trim(left(symget("where"))) ||" ));"; output;
-    record="quit;"; output;
-    record=" "; output;
-%end;
+
+   
 
 record=" "; output;
 record="*-----------------------------------------------------------------------;" ; output;
@@ -541,7 +503,6 @@ record=" "; output;
     record=" "; output;
 %end;
 
-%* templateds is not used currently;
 %if %length(&templateds) %then %do;
     record=" "; output;
     record="data __templateds;"; output;
@@ -554,7 +515,7 @@ record=" "; output;
     record="run;"; output;
     record=" "; output;
     record="data __condcnt2;"; output;
-    record="merge  __templateds (in=__a) __condcnt2;"; output;
+    record="merge  __templateds (in=__a keep= &by &groupvars __tby &labelvar) __condcnt2;"; output;
     record="by &by &groupvars __tby;"; output;
     record="if __a;"; output;
     record="__order=1;"; output;
@@ -594,7 +555,7 @@ record='array col{*} $ 2000 __col_1-__col_&maxtrt;'; output;
 %end;
 
 record="do __i=1 to dim(cnt);"; output;
-
+record="   if cnt[__i]=. then cnt[__i]=0;"; output; 
 %if &notcondition = Y %then %do;
     record="cnt[__i] = den[__i]-cnt[__i];"; output;
 %end;
@@ -949,7 +910,7 @@ run;
     record="*-----------------------------------------------------------;"; output;
     record=" "; output;
     record="proc sort data=__modelstatr ;"; output;
-    record="by &by __tby &groupvars  __order __col_0 __fname __tmpalign;"; output;
+    record="by &by __tby &groupvars  __order __col_0 __fname __tmpalign ;"; output;
     record="run;"; output;
     record=" "; output;
     record="proc transpose data=__modelstatr out=__modelstatra prefix=__col_;"; output;
@@ -1099,7 +1060,7 @@ __label = quote(dequote(trim(left(symget("label")))));
     %if &labelline ne 0 %then %do;
         record=" if first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;
         %if %length(&labelvar) %then %do;
-            record="    __col_0 = strip(symget('label4cond'))||' '||trim(left(__col_0));"; output;
+            record="    __col_0 = strip(&labelvar)||' '||trim(left(__col_0));"; output;
         %end;
         %else %do;
             record="    __col_0 = " ||strip(__label)|| "||' '||trim(left(__col_0));"; output;
@@ -1114,7 +1075,7 @@ __label = quote(dequote(trim(left(symget("label")))));
         record="output;"; output;
         record=" if __order=1 and first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;
         %if %length(&labelvar) %then %do;
-            record="  __col_0 = strip(symget('label4cond'));"; output;
+            record="  __col_0 = strip(&labelvar);"; output;
         %end;
         %else %do;
             record="  __col_0 = "||strip(__label)|| ";"; output;
@@ -1135,7 +1096,7 @@ __label = quote(dequote(trim(left(symget("label")))));
     %if &labelline ne 0 %then %do;
         record=" if first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;
         %if %length(&labelvar) %then %do;
-            record="    __col_0 = strip(symget('label4cond'))||' '||trim(left(__col_0));"; output;
+            record="    __col_0 = strip(&labelvar)||' '||trim(left(__col_0));"; output;
         %end;
         %else %do;
             record="    __col_0 = " ||strip(__label)|| "||' '||trim(left(__col_0));"; output;
@@ -1149,7 +1110,7 @@ __label = quote(dequote(trim(left(symget("label")))));
         record="output;"; output;
         record=" if __order=1 and first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;
         %if %length(&labelvar) %then %do;
-            record="  __col_0 = strip(symget('label4cond'));"; output;
+            record="  __col_0 = strip(&labelvar);"; output;
         %end;
         %else %do;
           record="  __col_0 = " ||strip(__label)|| ";"; output;

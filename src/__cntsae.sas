@@ -94,7 +94,7 @@ quit;
 %if %length(&denomwhere)=0  %then %let denomwhere=%str(1=1);
 
 %local i tmp j lasttmp grpvarbl sortmod;
-%if %length(&totaltext) %then %do;
+%if %length(&totaltext) or %length(&totalpos) %then %do;
 
       %let tmp=;
       %let j = %sysfunc(countw(&groupvars, %str( )));
@@ -149,7 +149,7 @@ length record $ 2000;
 keep record;
 record=" "; output;
 
-%if %length(&totaltext) %then %do;
+%if %length(&totaltext) or %length(&totalpos) %then %do;
     record="data __datasetco ;"; output;
     record="set &ds4var;";output;
     record="run;";output;
@@ -163,7 +163,7 @@ record=" "; output;
     record="run;"; output;
     record=" "; output;
 
-    %if %length(&totaltext) %then %do;
+    %if %length(&totaltext) or %length(&totalpos) %then %do;
         record="data __datasetceo ;"; output;
         record="set &ds4var;"; output;
         record="run;"; output;
@@ -193,7 +193,7 @@ record=" "; output;
       
        
 
-    %if %length(&totaltext) %then %do;
+    %if %length(&totaltext) or %length(&totalpos) %then %do;
     
        
         record=" "; output;    
@@ -219,10 +219,11 @@ record=" "; output;
           record=" "; output;
           
           record="data &outds.2;";output;
+          record="length &decode $ %sysfunc(max(1,%length(&totaltext)));";output;
           record="set &outds.2 &outds.2b (in=__inb);";output;
           record="if __inb then do;";output;
           record="  __total=1;";output;
-          record="  &decode = cats('"|| strip("&totaltext")|| "');";output;
+          record="  &decode = '"|| strip("&totaltext")|| "';";output;
           record="end;";output;
         
     
@@ -294,7 +295,7 @@ record=" "; output;
                   cnt = __cntevt, 
               dataout = __catcntevt);
               
-        %if %length(&totaltext) %then %do;
+        %if %length(&totaltext) or %length(&totalpos) %then %do;
      
              %__getcntae(
                      datain = __datasetceo(where=(&totalwhere)),
@@ -493,7 +494,7 @@ record="if missing(&var) and __total ne 1 then do;";output;
 record="    __order=&missorder; ";output;
 record="    __missing=1; ";output;
 record="end;";output;
-%if %length(&totaltext) >0 %then %do;
+%if %length(&totaltext) >0 or %length(&totalpos) %then %do;
     record="if __total=1 then do;";output;
     record="  __col_0 = cats('" ||strip("&totaltext")||  "');";output;
     record="    __order=&totorder; ";output;

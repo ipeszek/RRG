@@ -659,22 +659,7 @@ run;
 * WITH CODES;
 *------------------------------------------------------------------;
 
-/*
-CREATE DATASET __GRPCODES_EXEC:
-      this dataset contains variable names , decode values
-      (stored in __display_<variable name>), and order (stored in __order_<variable name>)
-      of all grouping variables for which codelist was provided.
-      All values/decodes for grouping variables for which codelist was proveded are cross-joined.
-      For those grouping variables for which codelist was not provided, dummy __order_<variable name>
-      variables are created with null values.
-      This dataset is then sorted by __order_vn1, __order__vn2 etc
-      and a variable __orderb=_n_ is added to it
 
-      As a by-product, at runtime the datasets __grp_template_&tmp (&tmp is the name of
-        grouping variable ) are created and indicated as "group template dataset"
-        if __rrgpgminfo, so they are later used by generated program to generate
-        "real time" __grpcodes dataset which is a copy of __grpcodes_exec
-*/
 
 
 

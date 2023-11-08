@@ -1,0 +1,7 @@
+rrg_addcond (grouping=y) with rrg_addgroup(across=y) may generate columns for null grouping var with all counts=0
+  reason: merge of condcnt with condcnt_tmplt template results in empty groups
+  solution: use codelist in rrg_addgroup
+  
+if user drops columns in rrg_codeafter, errro "index out of bound" occurs
+  reason: __breakokat hvalues referring to columns no longer on dataset
+  solution: drop or recreate __breakokat  

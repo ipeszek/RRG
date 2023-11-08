@@ -11,7 +11,29 @@
   TODO:
   nline for %rrg_addgroup with page=Y
   keeptogether for grouping (not just last one)
+  test labelvar
+  test statsacross vs statsincolumn
   
+
+20Jul2023 fixed rrg_addgroup and rrg_addcatvar handling of preload format to remove trailing blanks
+  
+16Jun2023 Fixed __makerepinfo : if last character was coded to ascii number, the blank after it was being stripped 
+  
+23Feb2023 in ae tables by severity, total counts can be placed on the same row as aebodsys etc, 
+         by specifying totalpos=-1 in severity addcatvar. fixed issue in __cntsae when program bombs out
+         if totaltext length is greater than length of specified decode variable
+
+
+25Ja2023 removed comment from rrg_generate, updated __cond to handle labelvar parameter properly. Labelvar indicates a variable in templateds dataset
+
+20Jan2023 Fixed bug in __transposet which created crash when only one treatment was present (drop stmt caused crash)
+
+14Nov2022 implemented labelvar in rrg_addcond (logic was already there but macro param labelvar was not defined with macro) 
+
+ 
+
+  
+
 3Aug2022  handled case when sortcolumn param has comma-separated values (which it shoul dnot)
          misc typos were fixed
          added rrg_defreport param lowmemorymode (if Y, __dataset is not handled as sasfile, default is N  )  

@@ -85,7 +85,7 @@
     &name=tranwrd(strip(&name),'(',"/#0040 ");
     &name=tranwrd(strip(&name),')',"/#0041 ");
 
-    record=  "__"|| "&name="||'"'|| strip(&name)||'";';  output;
+    record=  "__"|| "&name="||'"'|| strip(&name)|| ' ";';  output;
 %mend;  
 
 

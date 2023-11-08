@@ -61,7 +61,7 @@ ordervar=
     length __ns $ 200;
     
     if type='N' then __ns = cats(start,"=",quote(cats(label)));
-    else if type='C' then __ns = cats(quote(start),"=",quote(cats(label)));
+    else if type='C' then __ns = cats(quote(strip(start)),"=",quote(cats(strip(label))));
     if start ='**OTHER**' and index(hlo,'O')>0 then delete;
     run;
     

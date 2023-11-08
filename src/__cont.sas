@@ -32,7 +32,7 @@ outds=)/store;
        indent skipline   label labelline indent groupvars4pop groupvarsn4pop
        basedec basedecds outds align j outds by ovstat by4pop byn4pop
        decinfmt sdfmt keepn templatewhere popgrp  groupvars  condfmt 
-       pvfmt maxdec showneg0;
+       pvfmt maxdec showneg0 subjid;
 
 %let by = &by4pop &byn4pop;
 %if %length(&by) %then %let by = %sysfunc(compbl(&by));
@@ -75,7 +75,9 @@ select
   trim(left(keepwithnext)),
   trim(left(condfmt)),      
   trim(left(maxdec)) ,      
-  trim(left(showneg0)) 
+  trim(left(showneg0)),
+  trim(left(subjid))                               ,
+
   
 into
   :where              separated by ' ' ,
@@ -98,38 +100,15 @@ into
   :keepn              separated by ' ' ,
   :condfmt            separated by ' ' ,
   :maxdec             separated by ' ' ,
-  :showneg0           separated by ' ' 
+  :showneg0           separated by ' ' ,
+  :subjid           separated by ' ' 
+
 
 from  __contv;
   
   
   
       
-  /*
-  select trim(left(where))     into:where         separated by ' ' from  __contv;
-  select trim(left(popgrp))    into:popgrp        separated by ' ' from  __contv;
-  select trim(left(templatewhere))    
-                               into:templatewhere separated by ' ' from  __contv;
-  select trim(left(name))      into:var           separated by ' ' from  __contv;
-  select trim(left(stat))      into:stat          separated by ' ' from  __contv;
-  select trim(left(statsetid)) into:statsetid     separated by ' ' from  __contv;
-  select indent                into:indent        separated by ' ' from  __contv;
-  select upcase(skipline)      into:skipline      separated by ' ' from  __contv;
-  select trim(left(label))     into:label         separated by ' ' from  __contv;
-  select labelline             into:labelline     separated by ' ' from  __contv;
-  select basedec               into:basedec       separated by ' ' from  __contv;
-  select trim(left(align))     into:align         separated by ' ' from  __contv;
-  select trim(left(ovstat))    into:ovstat        separated by ' ' from  __contv;
-  select trim(left(sdfmt))     into:sdfmt         separated by ' ' from  __contv;
-  select trim(left(slfmt))     into:slfmt         separated by ' ' from  __contv;
-  select trim(left(pvalfmt))   into:pvfmt         separated by ' ' from  __contv;
-  select trim(left(decinfmt))  into:decinfmt      separated by ' ' from  __contv;
-  select trim(left(keepwithnext))
-                               into:keepn         separated by ' ' from  __contv;
-  select trim(left(condfmt))   into:condfmt       separated by ' ' from  __contv;
-  select trim(left(maxdec))    into:maxdec        separated by ' ' from  __contv;
-  select trim(left(showneg0))  into:showneg0      separated by ' ' from  __contv;
-  */
 quit;
 
 
@@ -142,6 +121,8 @@ quit;
 %* BASEDEC CAN BE AN INTEGER OR THE NAME OF VARIABLE WITH INTEGER VALUES;
 %* IF BASEDEC = VARIABLE NAME THEN SAVE THIS NAME IN &DECVAR;
 
+%if %length(&subjid)>0 %then %let unit=&subjid;
+%else %let unit=&defreport_subjid;
 
 
 %if  %sysfunc(notdigit(&basedec))>0 %then %do;
@@ -1027,7 +1008,7 @@ run;
           if parms ne '' then do;
               record=strip(parms)||",";output;
           end;
-          record="     subjid=&defreport_subjid);";output;
+          record="     subjid=&subjid);";output;
           record=" ";output;
           
           

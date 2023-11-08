@@ -14,6 +14,8 @@
   test labelvar
   test statsacross vs statsincolumn
   
+8Nov2023 added subjid to rrg_addvar
+
 
 20Jul2023 fixed rrg_addgroup and rrg_addcatvar handling of preload format to remove trailing blanks
   

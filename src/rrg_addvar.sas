@@ -32,13 +32,14 @@ popgrp=,
 condfmt=,
 condfmtstats=, /* not used */
 maxdec=,
-showneg0=N
+showneg0=N,
+subjid=
 )/store;
 
 
 %local where name label labelline suffix stats statsetid
        skipline indent align basedec ovstats keepwithnext
-       templatewhere popgrp condfmt condfmtstats maxdec showneg0;
+       templatewhere popgrp condfmt condfmtstats maxdec showneg0 subjid;
 
 %PUT STARTING RRG_ADDVAR USING VARIABLE &NAME;
 
@@ -80,7 +81,9 @@ condfmt=%nrbquote(&condfmt),
 condfmtstats=%nrbquote(&condfmtstats),
 maxdec=%nrbquote(&maxdec),
 showneg0=%nrbquote(&showneg0),
-outds=__varinfo);
+outds=__varinfo,
+subjid=%nrbquote(&subjid),
+);
 
 
 

@@ -871,7 +871,7 @@ run;
           %__cnts (
                dsin  = __dataset,
             dsinrrg  = &datasetrrg,
-                unit = %nrbquote(&defreport_subjid),
+                unit = ,
                varid = &i,
        groupvars4pop = &groupby4pop,
       groupvarsn4pop = &groupbyn4pop,

@@ -5,6 +5,12 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
+/* Version history 
+
+2023-11-13 added statlabel parameter to modify display of statistic labels (N, %, etc)
+
+
+*/
 
 %macro rrg_addcond(
 where=,
@@ -13,6 +19,7 @@ labelvar=,
 stats=npct, 
 skipline=Y,
 labelline=1,
+statlabel=,
 indent=0,
 templateds=,
 overallstats=,
@@ -32,7 +39,7 @@ countwhat=subjid)/store;
 %local where  label stats skipline indent templateds denom 
        grouping pctfmt denomwhere overallstats labelline
        keepwithnext subjid denomgrp templatewhere show0cnt
-       notcondition countwhat DENOMINClTRT labelvar;
+       notcondition countwhat DENOMINClTRT labelvar statlabel;
 
 %put STARTING RRG_ADDCOND USING WHERE: &WHERE ;
 
@@ -44,6 +51,7 @@ countwhat=subjid)/store;
 where=%nrbquote(&where),
 label=%nrbquote(&label),
 labelvar=%nrbquote(&labelvar),
+statlabel=%nrbquote(&statlabel),
 
 stat=%nrbquote(&stats), 
 ovstat=%nrbquote(&overallstats),

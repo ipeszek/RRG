@@ -28,7 +28,7 @@ data __timer;
 	length task $ 100;
 	output;
 		if eof then do; 
-		  task = "RRG FINILIZE (OUTPUT GENERATION) STARTED";
+		  task = "RRG FINALIZE (OUTPUT GENERATION) STARTED";
 		  dt=datetime(); 
 		  output;
 		end;
@@ -133,6 +133,7 @@ data rrgfinalize;;
 
 run;
 
+%put DEBUG INFO rrgfinalize_done=&rrgfinalize_done;
 %if &rrgfinalize_done=0 %then %do;
 
 %if &rrg_debug>0 %then %do;
@@ -150,6 +151,7 @@ run;
   data _null_;
     set rrgfinalize;
     call execute(cats('%nrstr(',record,')'));
+    run;
     
    %if &rrg_debug>0 %then %do; 
   data __timer;

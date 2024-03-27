@@ -570,7 +570,7 @@ record=  "__trtvar=1;"; output;
     record=  "  __col='';"; output;
     record=  "  __prefix=__prefix_&&trt&i;"; output;
     %if %length(&grpinc)=0 %then %do;
-        record=  "  if __nline_&&trt&i='Y' then "; output;
+        record=  "  if upcase(__nline_&&trt&i)='Y' then "; output;
         record=  "    __col = cats(__dec_&&trt&i, '//(N=',__pop_&i, ')', "; output;
         record=  "      __suff_&&trt&i);"; output;
         record=  "  else  __col = cats(__dec_&&trt&i,  __suff_&&trt&i);"; output;
@@ -871,7 +871,7 @@ run;
           %__cnts (
                dsin  = __dataset,
             dsinrrg  = &datasetrrg,
-                unit = ,
+                unit = %nrbquote(&defreport_subjid),
                varid = &i,
        groupvars4pop = &groupby4pop,
       groupvarsn4pop = &groupbyn4pop,
@@ -3164,6 +3164,7 @@ record=  "  __label_cont='';";                                                  
 record=  "  __title1_cont='';";                                                                                                                   output;
 record=  "  __next_indentlev=lag(__indentlev);";                                                                                                  output;
 record=  "  if first.__datatype then __next_indentlev=.;";                                                                                        output;
+record=  "__tablepart=&defreport_tablepart;";                                                                                                     output;
 record=  "run;";                                                                                                                                  output;
 record=  " ";                                                                                                                                     output;
 record=  "proc sort data=&rrguri;";                                                                                                               output;

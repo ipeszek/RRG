@@ -76,7 +76,7 @@ select
   trim(left(condfmt)),      
   trim(left(maxdec)) ,      
   trim(left(showneg0)),
-  trim(left(subjid))                               ,
+  trim(left(subjid))                               
 
   
 into

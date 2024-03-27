@@ -75,6 +75,7 @@ noshow0cntvals=)/store;
 
 %if %length(&denom) %then %let denomgrp=&denom;
 
+%if %length(&totaltext)=0 %then %let totalpos=;
 %if %length(&preloadfmt) %then %do;
 
  

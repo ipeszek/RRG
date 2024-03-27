@@ -82,7 +82,7 @@ condfmtstats=%nrbquote(&condfmtstats),
 maxdec=%nrbquote(&maxdec),
 showneg0=%nrbquote(&showneg0),
 outds=__varinfo,
-subjid=%nrbquote(&subjid),
+subjid=%nrbquote(&subjid)
 );
 
 

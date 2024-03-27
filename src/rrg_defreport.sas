@@ -70,7 +70,7 @@ extralines=,
 stretch=,
 append=,
 appendable=,
-tablepart=,
+tablepart=1,
 print=Y,
 savercd=,
 pooled4stats=N,
@@ -97,8 +97,9 @@ orderby cwatermark savercd   bookmark_rtf bookmark_pdf  lowmemorymode
 %global defreport_pooled4stats defreport_statsincolumn defreport_statsacross defreport_savercd 
       defreport_print defreport_colhead1 defreport_popwhere defreport_dataset
       defreport_tabwhere defreport_warnonnomatch defreport_debug defreport_aetable defreport_nodatamsg defreport_subjid
-      defreport_aetable defreport_lowmemorymode;
+      defreport_aetable defreport_lowmemorymode defreport_tablepart;
 
+%let defreport_tablepart=&tablepart;
 %let defreport_statsincolumn=%upcase(&statsincolumn);
 %if %length(&statsincolumns)>0  %then  %let defreport_statsacross=%upcase(&statsincolumns);;
 %if %length(&statsacross)       %then  %let defreport_statsacross=%upcase(&statsacross);;

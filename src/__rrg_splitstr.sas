@@ -17,7 +17,7 @@ __tmp0 = tranwrd(strip(&string), '//', byte(12));
 __tabsize=0;
 __tmpf2='';
 &debugc put;
-&debugc put "4iza " &string= __tmp0=;
+&debugc put "DEBUG INFO " &string= __tmp0=;
 do while (__tmp0 ne '');
   __tabpos = index(__tmp0, '/t');
   if __tabpos<=0 then do;

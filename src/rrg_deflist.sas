@@ -16,6 +16,7 @@
  
  ds updated __rrginlibs
  
+ 15Nov2023: stored tablepart in &defreport_tablepart;
 
  
  */
@@ -89,7 +90,8 @@ orderby cwatermark savercd  gentxt bookmark_rtf bookmark_pdf lowmemorymode
 %global defreport_pooled4stats defreport_statsincolumn defreport_statsacross defreport_savercd 
       defreport_print defreport_colhead1 defreport_popwhere defreport_dataset
       defreport_tabwhere defreport_warnonnomatch defreport_debug defreport_aetable defreport_nodatamsg defreport_subjid
-      defreport_aetable defreport_lowmemorymode;
+      defreport_aetable defreport_lowmemorymode defreport_tablepart;
+%let defreport_tablepart=%upcase(&tablepart);
       
 %let defreport_print=%upcase(&print);
 %let defreport_savercd=%upcase(&savercd);

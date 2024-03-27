@@ -29,14 +29,15 @@ incolumn=,
 colhead=,
 mincnt=,
 minpct=,
-ordervar=
+ordervar=,
+eventcnt=
 )/store;
 
 
 %* note stat parameter seems to be never used;
 
 %local name label stat page decode incolumns  codelist delimiter nline 
-     sortcolumn freqsort autospan preloadfmt across incolumn colhead popsplit;
+     sortcolumn freqsort autospan preloadfmt across incolumn colhead popsplit eventcnt;
 
 %put STARTING RRG_ADDGROUP USING VARIABLE &NAME;
 
@@ -154,7 +155,8 @@ skipline=%nrbquote(%upcase(&skipline)),
 preloadfmt = %nrbquote(&preloadfmt),
 sortcolumn=&sortcolumn,
 mincnt=%nrbquote(&mincnt),
-minpct=%nrbquote(&minpct)
+minpct=%nrbquote(&minpct),
+eventcnt=%upcase(&eventcnt)
 /*,
 ordervar=&ordervar
 */

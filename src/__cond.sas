@@ -4,6 +4,10 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
+
+ * 2023-11-13 do not calculate denominator unless percents are requested
+              added statlabel (only one can be specified, and it applies to all requested statistics) and statindent 
+              (applies to additional indnetation  when labelline=0)
  */
 
 %macro __cond(
@@ -26,7 +30,7 @@ rrg_addcond macro. It was supposed to be the name of the variable which value wa
 */
 
 %local outds varid   unit groupvars by  events  trtvars 
-       denomvars denomwhere stat allstat indent skipline label 
+       denomvars denomwhere stat allstat indent skipline label statlabel statindent
        templateds  grouping  showfirst where pctfmt labelline 
        keepwithnext asubjid templatewhere show0cnt notcondition labelvar
        groupvars4pop groupvarsn4pop by4pop byn4pop countwhat denomincltrt;
@@ -58,6 +62,8 @@ select
     indent                         ,
     upcase(skipline)               ,
     trim(left(label))              ,
+    trim(left(statlabel))          ,
+    trim(left(statindent))         ,
     trim(left(labelvar))           ,
     trim(left(grouping))           ,
     trim(left(pctfmt))             ,
@@ -79,6 +85,8 @@ into
     :indent                         separated by ' ' ,
     :skipline                       separated by ' ' ,
     :label                          separated by ' ' ,
+    :statlabel                      separated by ' ' ,
+    :statindent                     separated by ' ' ,
     :labelvar                       separated by ' ' ,
     :grouping                       separated by ' ' ,
     :pctfmt                         separated by ' ' ,
@@ -256,6 +264,26 @@ record=" "; output;
 
 
 record=" "; output;
+
+
+%if %upcase(&allstat)=N %then  %do;
+    record="    proc sort data=__dataset (where=( "; 
+    record=   strip(record)|| trim(left(symget("defreport_tabwhere")))||"))"; output;
+    record="     out= __conddenom (keep = &denomvars __trtid &trtvars __tby) "; output;
+    record="     nodupkey;"; output;
+    record="     by  &denomvars __trtid &trtvars __tby;"; output;
+    record="    run;"; output;
+    record=" "; output;
+  record=" data __conddenom; "; output;
+    record="      set __conddenom;"; output;
+    record="      __denom=0;"; output;
+  record="run; "; output;
+  record=" "; output;
+  
+  %goto skipdenom;
+%end;
+************* begin calculation of denominator;
+
 record="*----------------------------------------------------;"; output;
 record="* CALCULATE DENOMINATOR;"; output;
 record="*----------------------------------------------------;"; output;
@@ -281,7 +309,7 @@ record=" "; output;
   
 %end;            
       
-
+%skipdenom:
 
 
 record=" ";       output;
@@ -335,6 +363,8 @@ record="      __cntevt=0;"; output;
 record="    run;"; output;
 record='  %end;'; output;
 record=" "; output;
+
+
 
 
 
@@ -580,7 +610,12 @@ record="end;"; output;
 
 __stat0 = quote("&s0"); 
 record="__order=&sord0;"; output;
-record="__col_0 = put(" ||strip(__stat0)||  ", &statf.);"; output;
+%if %length(&statlabel) %then %do;
+  record='__col_0 = strip("'||"&statlabel"||'");'; output;
+%end;
+%else %do;
+  record="__col_0 = put(" ||strip(__stat0)||  ", &statf.);"; output;
+%end;
 record="__stat="||strip(__stat0)|| ";"; output;
 %* NOTE: currently, event count will be always placed next to first non-model based statistics;
 record="output;"; output;
@@ -597,7 +632,12 @@ record="output;"; output;
         record="end;"; output;
         record="__order=&sord0;"; output;
         __stat0 = quote("&s0"); 
-        record="__col_0 = put("||strip(__stat0)||  ", &statf.);"; output;
+        %if %length(&statlabel) %then %do;
+        record='__col_0 = strip("'||"&statlabel"||'");'; output;
+        %end;
+        %else %do;
+          record="__col_0 = put("||strip(__stat0)||  ", &statf.);"; output;
+        %end;
         record="__stat=" ||strip(__stat0)|| ";"; output;
         record="output;"; output;
     %end;
@@ -1067,10 +1107,10 @@ __label = quote(dequote(trim(left(symget("label")))));
         %end;
         record="  __indentlev=&indent+&ngrpv;"; output;
         record=" end;"; output;
-        record=" else __indentlev=&indent+&ngrpv+1;"; output;
+        record=" else __indentlev=&indent+&ngrpv+&statindent;"; output;
     %end;
     %else %do;
-        record="  __indentlev=&indent+1+&ngrpv;"; output;
+        record="  __indentlev=&indent+&statindent+&ngrpv;"; output;
         record="if __col_0 = '' then __col_0 = put(__stat, $__rrgsf.);"; output;
         record="output;"; output;
         record=" if __order=1 and first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;
@@ -1102,10 +1142,10 @@ __label = quote(dequote(trim(left(symget("label")))));
             record="    __col_0 = " ||strip(__label)|| "||' '||trim(left(__col_0));"; output;
         %end;
         record=" end;"; output;
-        record=" __indentlev=&indent+&ngrpv+1;"; output;
+        record=" __indentlev=&indent+&ngrpv+&statindent;"; output;
     %end;
     %else %do;
-        record="  __indentlev=&indent+1+&ngrpv;"; output;
+        record="  __indentlev=&indent+&statindent+&ngrpv;"; output;
         record="if __col_0 = '' then __col_0 = put(__stat, $__rrgsf.);"; output;
         record="output;"; output;
         record=" if __order=1 and first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;

@@ -4,6 +4,7 @@
  * This file is part of the RRG project (https://github.com/ipeszek/RRG) which is released under GNU General Public License v3.0.
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
+ 13Nov2023 fixed length of display variable when total is used
  */
 
 %macro __cntsae(
@@ -81,6 +82,7 @@ from &vinfods;
     */
 quit;
 
+%put DEBUG INFO totalpos=&totalpos;
 %if %upcase(&countwhat) ne MAX and %length(&totaltext)>0 %then %do;
     %put &WAR.&NING.: TOTAL in event-like tables can only be requested if COUNTWHAT=MAX. Request for TOTAL was ignored.;
     %let totaltext=;
@@ -142,7 +144,10 @@ run;
     %let statf = %str($__rrgsf.);
 %end;
 
+/* mld is the maximum length of decode variable */
 
+%local mld;
+%let mld=1;
 
 data rrgpgmtmp;
 length record $ 2000;
@@ -218,8 +223,14 @@ record=" "; output;
          
           record=" "; output;
           
+          %if %length(&decode) %then %do;
+         record='proc sql noprint;'; output;
+         record="  select max(length(&decode)) into: mld separated by '' from &outds.2;"; output;
+         record='  quit;'; output;
+         record=" "; output;
+          %end;  
           record="data &outds.2;";output;
-          record="length &decode $ %sysfunc(max(1,%length(&totaltext)));";output;
+          record="length &decode $ "||'%sysfunc(max(&mld,'||"%length(&totaltext)));";output;
           record="set &outds.2 &outds.2b (in=__inb);";output;
           record="if __inb then do;";output;
           record="  __total=1;";output;

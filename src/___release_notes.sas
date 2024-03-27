@@ -14,6 +14,11 @@
   test labelvar
   test statsacross vs statsincolumn
   
+21Nov added eventcnt parameter to rrg_addgroup to allow for count events line (values: ABOVE or BELOW)
+13Nov added statlabel to rrg_addcod. applies to only 1st requested statistics. If >1 statistics are requsted, it will apply to all 
+      added statindent (applies to additional indnetation when labelline=0, default=1)
+      fixed issue with unit not being set properly in __cnts CALL
+      fixed length of decode for total in cntsae 
 8Nov2023 added subjid to rrg_addvar
 
 

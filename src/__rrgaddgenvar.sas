@@ -8,8 +8,11 @@
  * 2002-05-26 added maxdec parameter (max number of decimals for continous stats)
  *    TODO: handle ordervar same as other parms
  *    2020-06-16 added showneg0 parameter, see __cont for functionality 
+ *    2023-11-13 added statlabel parameter to modify display of statistic labels (N, %, etc)
+
+
+*/
  
- */
 
 %macro __rrgaddgenvar(
 where=,
@@ -20,6 +23,8 @@ decode=,
 label=,
 labelvar=,
 labelline=0,
+statlabel=,
+statindent=,
 suffix=,
 stat=, 
 ovstat=,
@@ -92,7 +97,8 @@ desc=,
 condfmt=,
 condfmtstats=,
 maxdec=,
-showneg0=)/store;
+showneg0=,
+eventcnt=)/store;
 
 %local where popwhere cond name decode label labelline suffix stat countwhat 
        totaltext totalpos skipline indent denom denomwhere  popgrp fmt
@@ -104,7 +110,7 @@ showneg0=)/store;
        totalwhere across incolumn colhead subjid misspos misstext delmods
        templatewhere show0cnt wholerow notcondition desc popsplit labelvar
        condfmt condfmtstats slfmt pvalfmt DENOMINClTRT noshow0cntvals pct4total
-       maxdec showneg0;
+       maxdec showneg0 statlabel statindent eventcnt;
 
 
 
@@ -134,16 +140,17 @@ run;
 
 
 data __tmp;
-length name fmt  decode align countwhat ordervar type statds page basedec $ 20 
+length name fmt  decode align countwhat ordervar type statds page basedec eventcnt $ 20 
        delimiter nline  showmissing showgroupcnt showemptygroups wholerow
        autospan splitrow pct4missing keepwithnext across incolumn skipline show0cnt 
-       notcondition desc popsplit DENOMINClTRT pct4total $ 1
+       notcondition desc popsplit DENOMINClTRT pct4total statindent $ 1
        cond where popwhere label suffix stat codelist codelistds denomwhere  
        denom worst totaltext events templateds sortcolumn freqsort mincnt 
        minpct popgrp newvalue values newlabel model statsetid cutoffcolumn 
        parms ovstat totalgrp totalwhere colhead delmods labelvar condfmt pvalfmt condfmtstats 
-       noshow0cntvals $ 2000 pctfmt  preloadfmt decinfmt 
+       noshow0cntvals statlabel $ 2000 pctfmt  preloadfmt decinfmt 
        sdfmt subjid maxdec showneg0 $ 40;
+  eventcnt= strip(symget("eventcnt"));  
   events='';
   delmods = (trim(left(symget("delmods"))));  
   desc = (trim(left(symget("desc")))); 
@@ -195,6 +202,8 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   statds=trim(left(symget("statds")));
   label=trim(left(dequote(symget("label"))));
   labelvar=trim(left(dequote(symget("labelvar"))));
+  statlabel=trim(left(dequote(symget("statlabel"))));
+
   labelline=&labelline;
   decode=trim(left(symget("decode")));
   align=trim(left(symget("align")));
@@ -232,6 +241,7 @@ length name fmt  decode align countwhat ordervar type statds page basedec $ 20
   showemptygroups = upcase(trim(left(symget("showemptygroups"))));
   pct4missing = upcase(trim(left(symget("pct4missing"))));
   pct4total = upcase(trim(left(symget("pct4total"))));
+  statindent = upcase(trim(left(symget("statindent"))));
   keepwithnext = upcase(trim(left(symget("keepwithnext"))));
   showmissing = upcase(trim(left(symget("showmissing"))));
   autospan = upcase(trim(left(symget("autospan"))));

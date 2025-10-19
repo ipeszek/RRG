@@ -3,6 +3,7 @@
 *.o
 *.hi
 *.lst
+*.tmp
 
 backups/
 .shake/

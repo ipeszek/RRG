@@ -8,6 +8,7 @@
 
 %macro __sasshiato(
 dataset=,
+suffix=,
 path=,
 debug=0,
 reptype=
@@ -15,7 +16,7 @@ reptype=
 
   
 %local dataset path debug __shs __sh __outpathc __tmpfilepath __xmlpath
-      __runc __security_token __xmlfile __dirdel reptype;
+      __runc __security_token __xmlfile __dirdel reptype suffix;
 %local __workdir;
 
 %if %length(&dataset)=0 %then %let dataset=&rrguri;
@@ -33,7 +34,7 @@ quit;
 
 %if %length(&path)>0 %then %let path = %sysfunc(tranwrd(&path, %str(\), %str(/)));
 
-%let __xmlfile=&dataset;
+%let __xmlfile=&dataset.&suffix;
 
 %let __workdir = %sysfunc(getoption(work));
 %*let __workdir = &rrgoutpath;
@@ -86,17 +87,17 @@ reptype=&reptype
 %end;
 
 %*let __security_token = ad6128a9623ca1c222cd7cc176334d15;
-%local sc;
-%let sc = white pelikan;
-
-data _null_;
-length tmp $ 200;
-tmp = cats(symget('sc'))||put(today(), yymmdd10.);
-tmp2 = md5(trim(tmp));
-tmp3 = put(tmp2,hex32.);
-call symput('__security_token', tmp3);
-run;
-
+/* %local sc; */
+/* %let sc = white pelikan; */
+/*  */
+/* data _null_; */
+/* length tmp $ 200; */
+/* tmp = cats(symget('sc'))||put(today(), yymmdd10.); */
+/* tmp2 = md5(trim(tmp)); */
+/* tmp3 = put(tmp2,hex32.); */
+/* call symput('__security_token', tmp3); */
+/* run; */
+/*  */
 
 data _null_;
  length tmp $ 1000;
@@ -121,8 +122,8 @@ data _null_;
  tmp = tranwrd(tmp, "\", "/");
  put tmp;
  put "log2lev=&debug";
- tmp = cats(symget("__security_token")); 
- put "sec=" tmp;
+ /* tmp = cats(symget("__security_token"));  */
+/*  put "sec=" tmp; */
  %if %length(&watermark)>0 %then %do;
  tmp = cats('watermark_file=', "&watermark");
  tmp = tranwrd(tmp, "\", "/");

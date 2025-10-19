@@ -19,6 +19,8 @@
 
 %local string inlibs;
 
+%let string=%superq(syspbuff);
+
 %local st ;
 %let st=;
 
@@ -26,7 +28,7 @@
 
 data rrgcodebefore;
 length string ns tmp  $ 32000;
-string = symget("syspbuff");
+string = symget("string");
 string = trim(left(string));
 retain __word;
 __word=0;

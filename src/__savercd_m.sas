@@ -31,7 +31,7 @@
             __tcol='';
             __gcols='';
             __datatype='';
-            __varbygrp='';
+            __varbygrp=.;
             __varbylab='';
             __vtype='';
             __fname='';
@@ -63,6 +63,7 @@
             __dsid=.;
             __first=.;
             __next_indentlev=.;
+            __tablepart=.;
           end;
           
         
@@ -75,8 +76,10 @@
   
     &name=tranwrd(strip(&name),"/#0034 ",'"');
     &name=tranwrd(strip(&name),"/#0039 ","'");
-    &name=tranwrd(strip(&name),"/#0040 ",'(');
-    &name=tranwrd(strip(&name),"/#0041 ",')');
+   /*  &name=tranwrd(strip(&name),"/#0040 ",'('); */ 
+   /** 2024-09-27;*/
+   /*  &name=tranwrd(strip(&name),"/#0041 ",')'); */
+    /** 2024-09-27;*/
 
     /* record=  "__"|| "&name="||'"'|| strip(&name)||'";';  output; */
 %mend;  
@@ -90,35 +93,37 @@
                 __indentlev  __next_indentlev __align __suffix __keepn __blockid 
                __dsid __tcol __gcols __first:  __fname __cell: __topborderstyle 
               __bottomborderstyle __foot: __title: __shead_: __sfoot_: __nodatamsg;
-         set __tmp;
+         set __tmp end=eof;
+         if eof then __last=1;
+         
          if __datatype='RINFO' then do;
-            %unmakestring(nodatamsg);
+            %unmakestring(__nodatamsg);
 
 
             %do jj=1 %to 6;
-              %unmakestring(title&jj);
+              %unmakestring(__title&jj);
             %end;
 
             %do jj=1 %to 14;
-              %unmakestring(footnot&jj);
+              %unmakestring(__footnot&jj);
             %end;
 
-            %unmakestring(nodatamsg);
-            %unmakestring(shead_l); 
-            %unmakestring(shead_r); 
-            %unmakestring(shead_m );
-            %unmakestring(sfoot_r );
-            %unmakestring(sfoot_l );
-            %unmakestring(sfoot_m );
-            %unmakestring(sprops); 
+           
+            %unmakestring(__shead_l); 
+            %unmakestring(__shead_r); 
+            %unmakestring(__shead_m );
+            %unmakestring(__sfoot_r );
+            %unmakestring(__sfoot_l );
+            %unmakestring(__sfoot_m );
+            %unmakestring(__sprops); 
       
          end;
 
 
          keep __datatype __vtype __rowid __col_: __foot: __title: __next_indentlev 
           __shead_: __sfoot_: __nodatamsg __align __suffix __keepn __blockid __cell:
-          __indentlev __dsid __tcol __gcols __first: __varbygrp __varbylab __fname 
-          __topborderstyle __bottomborderstyle;
+          __indentlev __dsid __tcol __gcols __first: __last: __varbygrp __varbylab __fname 
+          __topborderstyle __bottomborderstyle __tablepart;
           
         run;
    

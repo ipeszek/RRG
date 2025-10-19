@@ -12,6 +12,7 @@
  * ds initialized:
  * ds updated:   __timer
 
+
 */
 
 
@@ -70,7 +71,6 @@ extralines=,
 stretch=,
 append=,
 appendable=,
-tablepart=1,
 print=Y,
 savercd=,
 pooled4stats=N,
@@ -87,7 +87,7 @@ systitle_r systitle_m sfoot_l sfoot_m sfoot_r systitle
 extralines warnonnomatch print debug aetable stretch indentsize
 font margins papersize statsincolumn statsacross colspacing
 append appendable addlines pooled4stats 
-csfoot_fs tablepart
+csfoot_fs 
 cpapersize corient coutformat cfontsize cfont cmargins 
 cshead_l cshead_r cshead_m csfoot_l csfoot_m csfoot_r 
 splitchars esc_char  gen_size_info rtf_linesplit
@@ -97,9 +97,34 @@ orderby cwatermark savercd   bookmark_rtf bookmark_pdf  lowmemorymode
 %global defreport_pooled4stats defreport_statsincolumn defreport_statsacross defreport_savercd 
       defreport_print defreport_colhead1 defreport_popwhere defreport_dataset
       defreport_tabwhere defreport_warnonnomatch defreport_debug defreport_aetable defreport_nodatamsg defreport_subjid
-      defreport_aetable defreport_lowmemorymode defreport_tablepart;
+      defreport_aetable defreport_lowmemorymode  global defreport_ae_max defreport_missing;
 
-%let defreport_tablepart=&tablepart;
+
+%macro clear_globals;
+
+%local macro_list i var;
+%let macro_list=defreport_pooled4stats defreport_statsincolumn defreport_statsacross defreport_savercd 
+      defreport_print defreport_colhead1 defreport_popwhere defreport_dataset
+      defreport_tabwhere defreport_warnonnomatch defreport_debug defreport_aetable defreport_nodatamsg defreport_subjid
+      defreport_aetable defreport_lowmemorymode  global defreport_ae_max defreport_missing;
+
+    /* Loop through the list and delete each macro variable */
+    %let i = 1;
+    %do %while (%scan(&macro_list, &i) ne );
+        %let var = %scan(&macro_list, &i);
+       /*  %symdel &var / nowarn; */
+         %let &var=;
+        %let i = %eval(&i + 1);
+    %end;
+%mend clear_globals;
+
+/* Call the macro to clear global macro variables */
+%clear_globals;
+
+
+%let defreport_ae_max=;
+%* this is for PY tables with countwaht=max;
+
 %let defreport_statsincolumn=%upcase(&statsincolumn);
 %if %length(&statsincolumns)>0  %then  %let defreport_statsacross=%upcase(&statsincolumns);;
 %if %length(&statsacross)       %then  %let defreport_statsacross=%upcase(&statsacross);;
@@ -144,7 +169,7 @@ run;
 %end;
 
 
-%let tablepart=%upcase(&tablepart);
+
 
 
 
@@ -193,7 +218,7 @@ data rrgfmt;
  record=' '; output;
  record='proc format;';  output;
  record="value $__rrgsf";output;
- record= " 'N'     = 'N'";output;
+ record= " 'N'     = 'n'";output;
  record= " 'PCT'   = '%'";output;
  record= " 'NPCT'  = 'n (%)'";output;
  record= " 'N+PCT'  = 'n (%)'";output;
@@ -319,6 +344,8 @@ data __rrginlibs;
   set __rrginlibs __rrginlibs0;
 run;
 */
+
+
 
 %skipdef:
 

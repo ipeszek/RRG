@@ -27,16 +27,30 @@ remove=
 
 %local codelistds codes codesds grptemplateds countds dsin by 
        groupvars var decode warn_on_nomatch fmt misstext missorder
-       showmiss remove;
+       showmiss remove statcnt stats;
 
 %local missdec iscodelistds;
-%local ngrp tmpgrp i;
+%local ngrp tmpgrp i tmpcnt;
 
 %let ngrp = %sysfunc(countw(&groupvars, %str( )));
 %do i=1 %to &ngrp;
     %let tmpgrp = &tmpgrp %scan(&groupvars, &i, %str( ))%str(=);
 %end;
 %let missdec = %nrbquote(&misstext);
+
+%* statcnt is the  count of all requested statistics (not model based);
+
+
+proc sql noprint;
+   select stat into: stats separated by  ' ' from __varinfo (where=(upcase(name)=upcase("&var")));
+quit;
+
+%let statcnt=0;
+%do i=1 %to %sysfunc(countw(&stats, %str( )))  ;
+  %if %index (%qscan(&stats,&i,%str( )), %str(.))=0 %then %let statcnt=%eval(&statcnt+1);
+%end;
+
+
 
 *------------------------------------------------------------;
 * IF CODELISTDS EXIST THEN MERGE IT IN TO DELETE MODALITIES;
@@ -198,7 +212,9 @@ record= "  length __col_0 $ 2000;";                                             
 record= "  set &dsin;";                                                                output;
 record= "  by &by __tby &groupvars   __order &var __grpid &decode ;";                  output;
 record=" ";                                                                            output;
-record= '  array __col{*} $ 2000 __col_1 -__col_&maxtrt;';                             output;
+/* %do i=1 %to &statcnt; */
+/* record= "  array __col&i.{*} $ 2000 __col&i._1 -__col&i._"||'&maxtrt;';                output; */
+/* %end; */
 record= '  array __cnt{*} __cnt_1 -__cnt_&maxtrt;';                                    output;
 record= '  array __colevt{*} $ 2000 __colevt_1 -__colevt_&maxtrt;';                    output;
 record=" " ;                                                                           output;
@@ -206,7 +222,9 @@ record= "  if 0 then do;";                                                      
 record= "    __total=0;";                                                              output;
 record= "    __missing=0;";                                                            output;
 record= "    __fordelete=.;";                                                          output;
-record= "    do __i =1 to dim(__col);";                                                output;
+record= "    __py__=.;";                                                          output;
+record= "    __pyr__=.;";                                                          output;
+record= "    do __i =1 to dim(__cnt);";                                                output;
 record= "      __cnt[__i]=0;";                                                         output;
 record= "      __colevt[__i]='';";                                                     output;
 record= "    end;";                                                                    output;
@@ -214,8 +232,10 @@ record= "   end;";                                                              
 record=" " ;                                                                           output;
 record=" ";                                                                            output;
 record= "  __rowtotal=0;";                                                             output;
-record= "  do __i =1 to dim(__col);";                                                  output;
-record= "    if __col[__i]='' then __col[__i]='0';";                                   output;
+record= "  do __i =1 to dim(__cnt);";                                                  output;
+/* %do i=1 %to &statcnt; */
+/* record= "    if __col&i.[__i]='' then __col&i.[__i]='0';";                             output; */
+/* %end; */
 record= "    if __cnt[__i]=.  then __cnt[__i]=0;";                                     output;
 record= "    if __colevt[__i]='' then __colevt[__i]='0';";                             output;
 record= "     __rowtotal=__rowtotal+__cnt[__i];";                                      output;
@@ -257,13 +277,14 @@ record= "    if __col_0='' then __col_0="||strip(__missdec)|| ";";              
 record= "  end;";                                                                      output;
 record= "__col__0=''; __cnt__0=.; __pct__0=.; __colevt__0='';";                        output;
 record= "if __fordelete=1 then delete;";                                               output;
-record= "drop __col__: __cnt__: __pct__: __colevt__:;  ";                              output;
+record= "drop __col__: __cnt__: __pct__: __colevt__: __py__: __pyr__:;  ";                              output;
                                                                                       
 record= "run;";                                                                        output;
 record=" ";                                                                            output;
 
 run;
 
+%put END of MACRO __APPLYCODESDS.SAS;
 
 
 

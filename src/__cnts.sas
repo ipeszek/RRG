@@ -5,6 +5,50 @@
  * You can use RRG source code for statistical reporting but not to create for-profit selleable product. 
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
+ /* explanation of some internal macro parameters:
+ 
+ __cntv: __varinfo where varid=&varid
+ __datasetc: __dataset where defreport_tabwhere and addcatvar.where
+  
+ &varid         __varinfo.varid
+&vinfods        __cntv    __varinfo where varid=&varid)
+&ds4var:        __datasetc (__dataset where defreport_tabwhere and addcatvar.where_)
+&dsin:          __dataset (rrg_defreport where &popwhere)
+&groupvars4ae:    rrg_generate.&groupby4ae
+                 group vars with page ne Y and aegroup = Y
+
+                  prev:
+                    rrg_generate.&cgrps rrg_generate.&notcgrps : all group vars with page ne Y
+                      (&cgrps: group vars with across=Y and page ne Y
+                      &notcgrps: group vars with across ne Y and  page ne Y)
+
+                  
+
+
+&groupvarsn4ae:  rrg_generate.&groupbyn4ae : group vars with page ne Y and aegroup ne Y
+&by              &by4pop &byn4pop -> &varbyn4pop &varby4pop  -> all group variables with page=Y
+&unit            &defreport_subjid (unless rrg_addcatvar.asubjid is spcified - then asubjid)
+&aetable         &defreport_aetable : if rrg_defreport=Events then takes values EVENTS | EVENTSES| EVENTSSE|Y (no events)
+
+&missorder       999999 if __catv.misspos is not specifed, 
+                 else 999998 if misspos=last, 
+                 else -999999 if misspos=first, 
+                 else %scan(misspos,1, %str( )) 
+                 
+&totorder        0 if __catv.totalpos is not specifed, 
+                 else 999997 if totalpos=last, 
+                 else 0 if totalpos=first, 
+                 else %scan(totalpos,1, %str( )) 
+
+
+&groupvars=      &groupvars4pop &groupvarsn4pop:
+                 rrg_defreport.&groupby4pop rrg_defreport.&groupbyn4pop:
+                 group variables with page ne Y
+                 
+
+
+                                  
+*/                                        
 
 %macro __cnts (
 dsin =,
@@ -15,6 +59,8 @@ groupvars4pop=,
 groupvarsn4pop=,
 by4pop=,
 byn4pop=,
+groupvars4ae = ,
+groupvarsn4ae = , 
 aetable=N,
 trtvars=,
 warn_on_nomatch=1,
@@ -22,7 +68,7 @@ outds=)/store;
 
 %* STARTING __CNTS FOR VARIABLE &VARID;
 
-%local allgrpcnt i j lastms;
+%local allgrpcnt i j lastms ;
 
 
 %local dsin varid  unit groupvars by aetable  
@@ -33,7 +79,7 @@ outds=)/store;
        warn_on_nomatch indent stats ovstat codes codesds totalpos
        tmpcodes tmpcodesds asubjid missorder totorder misspos misstext
        showmiss keepn groupvars4pop groupvarsn4pop by4pop byn4pop
-       delmods
+       delmods groupvars4ae groupvarsn4ae   show0cnt
        ;
 
 
@@ -42,6 +88,8 @@ outds=)/store;
 %if %length(&by) %then %let by = %sysfunc(compbl(&by));
 %let groupvars = &groupvars4pop &groupvarsn4pop;
 %if %length(&groupvars) %then %let groupvars = %sysfunc(compbl(&groupvars));
+
+
 
 
 %*-------------------------------------------------------------;
@@ -83,7 +131,8 @@ select
   dequote(trim(left(showmissing)))                 ,
   trim(left(keepwithnext))                         ,
   desc                                             ,
-  codelist
+  show0cnt
+  
 into
   :decode                                           separated by ' ' ,
   :where                                            separated by ' ' ,
@@ -107,7 +156,11 @@ into
   :showmiss                                         separated by ' ' ,
   :keepn                                            separated by ' ' ,
   :desc                                             separated by ' ' ,
-  :tmpcodes                                         separated by ' '  
+  :show0cnt                                         separated by ' ' 
+ 
+ 
+ 
+ 
   from __catv;            
 
 
@@ -122,12 +175,17 @@ quit;
 
 %if %length(&where)=0  %then %let where=%str(1=1);
 
-%if %length (&misspos)>0 %then %let missorder = &misspos;
-%if %upcase(&misspos)=LAST %then %let missorder = 999998;
-%if %upcase(&misspos)=FIRST %then %let missorder=-999999;
+%if %length (&misspos)>0 %then %let missorder = %scan(&misspos,1, %str( ));
+%* 15Nov2024;
+/* %if %upcase(&misspos)=LAST %then %let missorder = 999998; */
+/* %if %upcase(&misspos)=FIRST or &misspos= %then %let missorder=-999999; */
+%if %upcase(&misspos)=LAST or &misspos= %then %let missorder = 999998;
+%if %upcase(&misspos)=FIRST  %then %let missorder=-999999;
+%* eof 15Nov2024;
+
 %if %length(&missorder)=0 %then %let missorder=999999;
 
-%if %length (&totalpos)>0 %then %let totorder = &totalpos;
+%if %length (&totalpos)>0 %then %let totorder = %scan(&totalpos, 1, %str( ));;
 %if %upcase(&totalpos)=LAST %then %let totorder = 999997;
 %if %upcase(&totalpos)=FIRST %then %let totorder=0;
 %if %length(&totorder)=0 %then %let totorder=0;
@@ -135,6 +193,9 @@ quit;
 %let mistext=%nrbquote(&misstext);
 %if %length(&misstext)=0 %then %let misstext=Missing;
 
+
+
+%put DEBUG INFO MISSORDER=&missorder misspos=&misspos;
 
 data rrgpgmtmp;
 length record $ 2000;
@@ -158,6 +219,10 @@ record= "proc sql noprint;";                                               outpu
 record= "  create table __datasetc as select * ";                          output;
 record= "     from __dataset (where=("||strip(symget("defreport_tabwhere"))||" and "||strip(symget("where")) || "));";   output;     
 record= "quit;";                                                           output;
+%* if show0cnt is requested, but dataset is empty, and codelist is provided, create a dummy dataset;
+
+
+
 record= " "; output;
 record= '%local dsid rc nobs ;';                                           output;
 record= '%let dsid =%sysfunc(open(__datasetc));';                         output;
@@ -170,21 +235,22 @@ record= '%end;';                                                           outpu
 
 record= " "; output;
 record= " "; output;
-
-%if %index(&aetable, EVENTS)<=0 %then %do;
-    record= "proc sort data=__datasetc nodupkey ;";                         output;
-    record= "  by  &by &groupvars &var &unit &trtvars ;";                   output;
-    record= "run;";                                                         output;
-    record= " "; output;
-%end;
-%else %do;
-    record= "proc sort data=__datasetc nodupkey ;";                         output;
-    record= "by  &by &groupvars &var &unit &trtvars __eventid;";            output;
-    record= "run;";                                                         output;
-    record= " "; output;
-%end;
-
-record= " "; output;                                                        output;
+/*  */
+/* %if %index(&aetable, EVENTS)<=0 %then %do; */
+/*     record= "proc sort data=__datasetc nodupkey ;";                         output; */
+/*     record= "  by  &by &groupvars &var &unit &trtvars ;";                   output; */
+/*     record= "run;";                                                         output; */
+/*     record= " "; output; */
+/* %end; */
+/* %else %do; */
+/*     record= "proc sort data=__datasetc nodupkey ;";                         output; */
+/*     record= "by  &by &groupvars &var &unit &trtvars __eventid;";            output; */
+/*     record= "run;";                                                         output; */
+/*     record= " "; output; */
+/* %end; */
+/*  */
+/* record= " "; output;                                                        output; */
+/*  */
 record= "data __catcnt4;";                                                  output;
 record= "if 0;";                                                            output;
 record= "run;";                                                             output;
@@ -241,6 +307,7 @@ data __modelstat;
 run;
 
 %if %length(&simplestats)=0 %then %goto skipcnt;
+
 
 *-------------------------------------------------------------;
 * PROCESS LIST OF CODES (IF GIVEN);
@@ -300,12 +367,15 @@ run;
 
 %else %do;
 
-    %__cntsae (
+
+    %__cntsaepy (
           vinfods = __catv,
             varid = &varid,
            ds4var = __datasetc,
          ds4denom = &dsin ,
-        groupvars = &groupvars,
+        groupvars = &groupvars4ae,
+   notaegroupvars = &groupvarsn4ae ,   
+           byvars = &by,
              unit = &unit __theid,
           aetable = &aetable, 
             outds = __catcnt4,
@@ -320,12 +390,19 @@ data rrgpgmtmp;
 length record $ 2000;
 keep record;
 record=" "; output;
-record= '%if %sysfunc(exist(__catcnt4)) = 0 %then %do;';                           output;
+record='%local nobs;'; output;
+record= '%let dataset = __catcnt42;                         '; output;
+record= '%let dsid = %sysfunc(open(&dataset));        '; output;
+record= '%let nobs = %sysfunc(attrn(&dsid,nlobs));    '; output;
+record= '%let dsid = %sysfunc(close(&dsid));          '; output;
+record= '%if %sysfunc(exist(__catcnt4)) = 0 or &nobs=0 %then %do;';                           output;
 record= '  %put -----------------------------------------------------------;';     output;
 record= '  %put NO RECORDS IN RESULT DATASET : SKIP REST OF MANIPULATION;  ';      output;
 record= '  %put -----------------------------------------------------------;';     output;
 record= '  %goto '||"exitc&varid;";                                                 output;
-record= '%end;';                                                                   output;
+record= '%end;';   
+
+                                                                output;
 record=" "; output;
 run;
 
@@ -341,6 +418,21 @@ proc sql noprint;
   select trim(left(decode)) into:decode from __catv;
 quit;
 
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+record=" "; output;
+record= '  * -----------------------------------------------------------;';     output;
+record= '  * STARTING MACRO  __applycodesds ';      output;
+record= '  * -----------------------------------------------------------;';     output;
+
+record=" "; output;
+run;
+
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 %__applycodesds(
    codelistds = __catcodes&varid,
@@ -366,10 +458,46 @@ warn_on_nomatch = &warn_on_nomatch,
 proc append data=rrgpgmtmp base=rrgpgm;
 run;
 
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+record=" "; output;
+record= '  * -----------------------------------------------------------;';     output;
+record= '  * FINSHED MACRO  __applycodesds ';      output;
+record= '  * -----------------------------------------------------------;';     output;
+
+record=" "; output;
+run;
+
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
 
 %*-----------------------------------------------------------------;
 %* APPLY FREQUENCY-BASED SORTING;
 %*-----------------------------------------------------------------;
+
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+record=" "; output;
+record= '  * -----------------------------------------------------------;';     output;
+record= '  * STARTING MACRO  __freqsort ';      output;
+record= '  * -----------------------------------------------------------;';     output;
+
+record=" "; output;
+run;
+
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
+%local modified_grpvars;
+%* remove notaegroupvars from &groupvars;
+
+
 
 
 %__freqsort(
@@ -379,20 +507,22 @@ run;
      trtds = __trt,
  trtinfods = __trtinfo,
         by = &by,
- groupvars = &groupvars,
+ groupvars = &groupvars4ae,
        var = &var
 );
 
+
+
 %local ngrp;
 %let ngrp=0;
-%if %length(&groupvars) %then %let ngrp = %sysfunc(countw(&groupvars, %str( )));
+%if %length(&groupvars4ae) %then %let ngrp = %sysfunc(countw(&groupvars4ae, %str( )));
 
 %do i=1 %to &ngrp;
     %local j ngrpvars currgrp;
-    %let currgrp = %scan(&groupvars, &i, %str( ));
+    %let currgrp = %scan(&groupvars4ae, &i, %str( ));
     %let ngrpvars=;
     %do j=1 %to %eval(&i-1);
-        %let ngrpvars = &ngrpvars %scan(&groupvars, &j, %str( ));
+        %let ngrpvars = &ngrpvars %scan(&groupvars4ae, &j, %str( ));
     %end;
     
     data __catv_&i;
@@ -417,17 +547,36 @@ run;
 %end;
 
 
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+record=" "; output;
+record= '  * -----------------------------------------------------------;';     output;
+record= '  * FINISHED MACRO  __freqsort ';      output;
+record= '  * -----------------------------------------------------------;';     output;
+
+record=" "; output;
+run;
+
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
+
 %*-----------------------------------------------------------------;
 %* APPLY COUNT CUT-OF AND/OR PERCENT CUT-OFF;
 %*-----------------------------------------------------------------;
 
-%__cutoff(
-       dsin = __catcnt4,
-    vinfods = __catv,
-         by = &by,
-  trtinfods = __trtinfo,   
-      trtds = __trt,      
-  groupvars = &groupvars);
+/*  */
+/* %__cutoff( */
+/*        dsin = __catcnt4, */
+/*     vinfods = __catv, */
+/*          by = &by, */
+/*   trtinfods = __trtinfo,    */
+/*       trtds = __trt,       */
+/*   groupvars = &groupvars); */
+/*  */
+
 
 %skipcnt:
 
@@ -440,7 +589,7 @@ run;
 %local statf;
 %let statf=%str($__rrgbl.);
 %if %length(&simplestats)>0 %then %do;
-    %if %sysfunc(countw(&simplestats, %str( )))>1 %then %do;
+    %if %sysfunc(countw(&simplestats, %str( )))>1 or %upcase(&defreport_statsacross)=Y %then %do;
         %let statf = %str($__rrgsf.);
     %end;
 %end;
@@ -907,6 +1056,22 @@ run;
 
 %*-----------------------------------------------------------------;
      
+     
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+record=" "; output;
+record= '  * -----------------------------------------------------------;';     output;
+record= '  * RESUMING  MACRO  __CNTS';      output;
+record= '  * -----------------------------------------------------------;';     output;
+
+record=" "; output;
+run;
+
+
+proc append data=rrgpgmtmp base=rrgpgm;
+run;
 
 %local newgrvars;     
 proc sql noprint;
@@ -956,7 +1121,7 @@ record= "  set __catcnt4 end=eof;"; output;
 %else %do;
     record= "  by &by __tby &groupvars __grpid  __order __fname;"; output;
 %end;
-record= "if 0 then __tmpalign=''; "; output;
+record= "if 0 then do; __tmpalign=''; __vtype=''; end; "; output;
 record= '  array cols{*} __col_1-__col_&maxtrt;'; output;
 record=" "; output;  
 record=" "; output;  
@@ -965,11 +1130,13 @@ record= "  if __tmpl1 ne '' then __varlabel = __tmpl1;   "; output;
 record=" "; output;  
 record= "__keepnvar='"||strip("&keepn")|| "';"; output;
 record=" "; output;
-%if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
-    record= "  __indentlev=max(&indent+&ngrpv-1,0);"; output;
+%if %upcase(&defreport_statsacross)=Y and &ngrpv>0 and  %upcase(&defreport_aetable) ne N %then %do;
+/*     record= "  __indentlev=max(&indent+&ngrpv-1,0);"; output; */
+    record= "  __indentlev=max(&indent+&ngrpv,0);"; output;
+     record= "  __indent_modifier=&indent;"; output;
 %end;
 %else %do;
-    record= "  __indentlev=&indent+&ngrpv;"; output;
+    record= "  __indentlev=&indent+&nnotcgrpv;"; output;
 %end;
 record= "  if __vtype='CATS' then do;"; output;
 record= "    __indentlev+1;"; output;
@@ -981,10 +1148,10 @@ record= "  end;"; output;
 record= "  else do;"; output;
 record= "    __align = 'L';"; output;
 record= '    do __i=1 to &maxtrt;'; output;
-record= "    if __stat in ('NPCT', 'NNPCT') then "; output;
-record= "       __align = trim(left(__align))||' RD';"; output;
-record= "    else __align = trim(left(__align))||' D';"; output;
-
+record= '       do __k=1 to countw(compbl(__stat), " ");'; output;
+record= "          if scan(compbl(__stat) ,__k, ' ') in ('NPCT', 'NNPCT') then __align = trim(left(__align))||' RD';"; output;
+record= "          else __align = trim(left(__align))||' D';"; output;
+record= "       end;"; output;
 record= "    end;"; output;
 record= "  end;"; output;
 record= "  __suffix='';"; output;
@@ -1047,6 +1214,30 @@ record=" "; output;
     %end;
     record= "  run;"; output;
 
+/*  */
+/*     record= "  data __catcnt4;                                               "; output;  */
+/*     record= "  set __catcnt4;                                                "; output; */
+/*     record= "  by  __tby  &groupvars __grpid __order ;                "; output; */
+/*     record= "  __tmpgrpid=lag(__grpid);                                      "; output; */
+/*     record= "  run;                                                          "; output; */
+/*     record= "                                                                "; output; */
+/*     record= "                                                                "; output; */
+/*     record= "  data __catcnt4;                                               "; output; */
+/*     record= "  set __catcnt4;                                                "; output; */
+/*     record= "  by  __tby  &groupvars __grpid __order ;                "; output; */
+/*     record= "  if __grpid=999 then __grpid=__tmpgrpid;                       "; output; */
+/*     record= "  run;                                                          "; output; */
+/*     record= "                                                                "; output; */
+/*    record= "  proc sort data=__catcnt4;"; output; */
+/*     %if %length(&simplestats) %then %do; */
+/*         record= "    by &by __tby &groupvars  __grpid __order &var;"; output; */
+/*     %end; */
+/*     %else %do; */
+/*         record= "    by &by __tby &groupvars  __grpid __order;"; output; */
+/*     %end; */
+/*     record= "  run;"; output;   */
+/*     record= "                                                                "; output; */
+/*  */
     record= "  data __catcnt4;"; output;
     record= "  set __catcnt4;"; output;
     %if %length(&simplestats) %then %do;
@@ -1061,6 +1252,7 @@ record=" "; output;
 
     record= "  output;"; output;
     %if &totalpos ne -1 %then %do;
+      /* record= "  do __i=1 to dim(cols);"; output; */
       record= "  do __i=1 to dim(cols);"; output;
       record= "    cols[__i]='';"; output;
       record= "  end;"; output;
@@ -1072,7 +1264,9 @@ record=" "; output;
        record= "  __total=.;"; output;
     %end;
     record= "  __tmprowid=-1;"; output;
+    record= "  __total=0;"; output;    
     record= "  __grpid=__grpid-0.1;"; output;
+    record= "  if __order ne 999997 then __suffix='';"; output;
     record= "  if first.__grpid then output;"; output;
 
     record= "  run;"; output;

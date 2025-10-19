@@ -7,7 +7,11 @@
  */
 /* Version history 
 
-2023-11-13 added statlabel parameter to modify display of statistic labels (N, %, etc)
+2023-11-13 added statlabel and statindent parameters to modify display of statistic labels (N, %, etc)
+                  they should be used only if one statistic is requested
+                 statindent applies to indentation when labelline=0 (stats on separate row)
+                 and defines additional indentation. default is 1
+           
 
 
 */
@@ -20,6 +24,7 @@ stats=npct,
 skipline=Y,
 labelline=1,
 statlabel=,
+statindent=1,
 indent=0,
 templateds=,
 overallstats=,
@@ -39,7 +44,8 @@ countwhat=subjid)/store;
 %local where  label stats skipline indent templateds denom 
        grouping pctfmt denomwhere overallstats labelline
        keepwithnext subjid denomgrp templatewhere show0cnt
-       notcondition countwhat DENOMINClTRT labelvar statlabel;
+       notcondition countwhat DENOMINClTRT labelvar statlabel statindent
+;
 
 %put STARTING RRG_ADDCOND USING WHERE: &WHERE ;
 
@@ -52,7 +58,7 @@ where=%nrbquote(&where),
 label=%nrbquote(&label),
 labelvar=%nrbquote(&labelvar),
 statlabel=%nrbquote(&statlabel),
-
+statindent=%nrbquote(&statindent),
 stat=%nrbquote(&stats), 
 ovstat=%nrbquote(&overallstats),
 skipline=%upcase(&skipline),

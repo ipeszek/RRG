@@ -291,6 +291,7 @@ run;
   %local __vtype&i __vnum&i;
   %let __vnum&i  = %sysfunc(varnum (&dsid, &&name&i));
   %let __vtype&i = %sysfunc(vartype(&dsid, &&__vnum&i));
+  %put DEBUG INFO: name&i=&&name&i __vnum=&&__vnum&i __vtype&i=&&__vtype&i;
 %end;
 %let rc = %sysfunc(close(&dsid));
 /*  */

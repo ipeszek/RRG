@@ -14,19 +14,32 @@
   overall=0)/store;
 
 %local dsin  varby groupby trtvar overall;
-%local i grpstuff ngrp ngrpw tmp tmp2 lastgrplab;
+%local i grpstuff ngrp ngrpw tmp tmp2 lastgrplab lastgrp;
 %let ngrp=0;
+%put DEBUG INFO 18NOV2024: groupby=&groupby;
 %let groupby = %lowcase(&groupby);
 %let ngrpw=0;
 %if %length(&groupby) %then %let ngrpw = %sysfunc(countw(&groupby, %str( )));
 %do i=1 %to &ngrpw;
   %let tmp = %scan(&groupby, &i, %str( ));
-  %if %index(&tmp, __order_)ne 1 %then %do;
+  %if %index(&tmp, __order_) ne 1 %then %do;
      %let ngrp=%eval(&ngrp+1);
      %let grpstuff=&grpstuff __grplabel_&tmp;
      %let lastgrplab = __grplabel_&tmp;
+     /* 18NOV2024 */
+/*      %let lastgrp = &tmp; */
+     /* eof 18NOV2024 */
+
+
   %end;
 %end;
+
+     /* 18NOV2024 */
+%if %sysfunc(countw(&groupby,%str( )))>2 %then %let lastgrp=%scan(&groupby, -3, %str( ));
+%else %let lastgrp=__tmptrtvar;
+
+     /* eof 18NOV2024 */
+
 
 %local  ntrt;
 %if %length(&trtvar)=0 %then %let ntrt=1;
@@ -97,18 +110,27 @@ record = " ";output;
 record =  "data __all2;";output;
 record =  "set &dsin  (where = (__vtype in ('CAT','COND','CONT','OV','CATS')";output;
 record =  '   and __grpid=ceil(__grpid)));';output;
-record =  "if 0 then __varbylab='';";output;
+record =  "if 0 then do; "; output;
+record =  "   __varbylab=''; "; output;
+record =  "   __den_1=.;  "; output;
+record =  "   __cnt_1=.;  "; output;
+record =  "   __pct_1=.;  "; output;
+record =  "   __colevt_1='';  "; output;
+record =  "end;";output;
 record =  "length __colx __col0 $ 2000;";output;
-record =  'array cols{*} __col_1-__col_&maxtrt;';output;
+record =  'array cols{*} __col_1-__col_&maxtrt; ';output;
 record =  'array cnts{*} __cnt_1-__cnt_&maxtrt;';output;
 record =  'array pcts{*} __pct_1-__pct_&maxtrt;';output;
 record =  'array cevs{*} __colevt_1-__colevt_&maxtrt;';output;
+record =  'array den{*} __den_1-__den_&maxtrt ;';output;
 record =  '  __col0=__col_0;';output;
 record =  '%do i=1 %to &maxtrt;';output;
 record =  '__trtid=&i;';output;
 record =  '__colx = cats(__col_&i);';output;
 record =  '__cnt = __cnt_&i;';output;
 record =  '__pct = __pct_&i;';output;
+record =  '__den = __den_&i;';output;
+
 record =  '__colevt = __colevt_&i;';output;
 record =  '__nalign = scan(__align, &i+1, ' ||"' ');";output;
 %if &overall>0 and %length(&trtvar) %then %do;
@@ -118,7 +140,7 @@ record =  '__nalign = scan(__align, &i+1, ' ||"' ');";output;
     record =  ' output;';output;
 %end;
 record =  '%end;';output;
-record =  "drop __col_: __pct_: __cnt_: __colevt_:;";output;
+record =  "drop __col_: __pct_: __cnt_: __colevt_: __den_:;";output;
 record =  "run;";output;
 record = " ";output;
 record = " ";output;
@@ -206,6 +228,14 @@ record =  '  __grptype __indentlev ;';output;
 record =  'id __ntrtid;';output;
 record =  'run;';output;
 record = " ";output;
+record =  'proc transpose data=__all6 out=__all7den prefix=__denom_;';output;
+record =  'var __den;';output;
+record =  " by  &varby  __varbylab __tby ";output;
+record =  "   &groupby &grpstuff  __grpid  ";output;
+record =  '  __grptype __indentlev ;';output;
+record =  'id __ntrtid;';output;
+record =  'run;';output;
+record = " ";output;
 record =  'proc transpose data=__all6 out=__all7c prefix=__colevt_;';output;
 record =  'var __colevt;';output;
 record =  " by  &varby  __varbylab __tby ";output;
@@ -224,7 +254,7 @@ record =  'run;';output;
 record = " ";output;
 record = " ";output;
 record =  "data &dsin;";output;
-record =  'merge  __all7 __all7a __all7c;';output;
+record =  'merge  __all7 __all7a __all7c __all7den;';output;
 record =  "by &varby  __varbylab __tby ";output;
 record =  "  &groupby &grpstuff __grpid  ";output;
 record =  '  __grptype __indentlev ;';output;
@@ -291,13 +321,17 @@ record =  '  length __col_0 $ 2000 __vtype $ 20;';output;
 record =  "  by &varby __grptype __tby ";output;
 record =  "     &groupby &grpstuff __grpid;";output;
 record =  '  __tmprowid=_n_;';output;
-%if &ngrp>1 %then %do;
-    record =  "  if last.%scan(&groupby,-2,%str( )) then __keepn=0;";output;
+
+
+/* 18Nov2024 */
+/* %if &ngrp>1 %then %do; */
+    record =  "  if last.&lastgrp.  then do; __keepn=0; if not last.__tby then __suffix='//'; end; ";output;
     record =  '  else __keepn=1;';output;
-%end;
-%else %do;
-    record =  '  __keepn=0;';output;
-%end;
+/* %end; */
+/* %else %do; */
+/*     record =  '  __keepn=0;';output; */
+/* %end; */
+/* eof 18NOV2024*/
 record =  '  __blockid=1;';output;
 record =  '  __order=1;';output;
 record =  "  __col_0=' ';";output;
@@ -405,7 +439,7 @@ record = " ";output;
     record =  'run;';output;
     record = " ";output;
     record =  "data __poph&i;";output;
-    record =  "merge __poph&i __all5a;";output;
+    record =  "merge __poph&i __all5a ;";output;
     record =  "by &varby __trtid;";output;
     record =  "run;";output;
     record = " ";output;

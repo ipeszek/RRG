@@ -15,24 +15,24 @@
   
 %local debug  savexml output_engine  varby ;  
 %local  tablepart  replace;
- 
+%local cleanup;
 
-%local debug savexml    ;
+%if &debug > 0 %then %let cleanup=0;
 
 %local rrgoutpathlazy ;
 %let rrgoutpathlazy=&rrgoutpath;
 
 %if &rrg_debug>0 %then %do; 
-data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "RRG FINALIZE (OUTPUT GENERATION) STARTED";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
+    data __timer;
+      set __timer end=eof;
+    	length task $ 100;
+    	output;
+    		if eof then do; 
+    		  task = "RRG FINALIZE (OUTPUT GENERATION) STARTED";
+    		  dt=datetime(); 
+    		  output;
+    		end;
+    run;
 
 %end;
   
@@ -69,13 +69,61 @@ data rrgfinalize;;
   %end;
   record=  "run;";output;
   record= " ";output;
-  record=  "data &rrguri rrgtablepart&rrgtablepartnum;";output;
+
+%* rrgtablepart&rrgtablepartnum is used when appending tables;
+%* rrgtsection&defreport_tablepart is used when combining tables (same titles and header);
+
+  record=  "data &rrguri rrgtablepart&rrgtablepartnum  rrgtsection&defreport_tablepart;";output;
+
   record=  "set &rrguri (where=(__datatype='RINFO')) __tmp;";output;
   record=  "__rowid=_n_-1;";output;
   RECORD= "__dsid=&rrgtablepartnum;"; output;
+/*   record= "__maxcol=&maxtrt;"; output; */
   record=  "run;";output;
   record= " ";output;
   record= " ";output;
+  
+  %* if this is multi-part table, combine parts;
+  
+  %if &defreport_tablepart>1 %then %do;
+  record="                                                                             "; output;
+  record=  "data __tmp;                                                                "; output;
+  record=  "  set rrgtsection1 (in=a) rrgtsection2-rrgtsection&defreport_tablepart;    "; output;
+  /* record=  "  if __tablepart ne &defreport_tablepart and __datatype ne: 'T' then delete;                             "; output; */
+  record=  "  if __datatype ne: 'T' then delete;                                       "; output;
+  record=  "run;                                                                       "; output;
+  record=  "                                                                           "; output;
+  record=  "data __tmp;                                                               "; output; 
+  record=  "  set rrgtsection&defreport_tablepart (in=a where=(__datatype ne: 'T')) __tmp; "; output; 
+  record=  "  rowid=_n_-1;                                                             "; output; 
+  record=  "if a then __tablepart=1;                                                             "; output; 
+  record=  "run;                                                                       "; output; 
+  record=  "                                                                           "; output; 
+  
+  %if %length(&varby) %then %do;
+  record=  "proc sort data=__tmp;                                                      "; output;
+  record=  "  by __varbygrp __tablepart __rowid;                                                  "; output;
+  record=  "run;                                                                       "; output;
+  record=  "                                                                           "; output;
+  record=  "data &rrguri rrgtablepart&rrgtablepartnum;                                 "; output;
+  record=  "  set __tmp;                                                               "; output;
+  record=  "  __rowid=_n_-1;                                                           "; output;
+  record=  "run;                                                                       "; output;
+  record="                                                                             "; output;
+  %end;
+  %else %do;
+  record=  "proc sort data=__tmp;                                                      "; output;
+  record=  "  by __tablepart __rowid;                                                  "; output;
+  record=  "run;                                                                       "; output;
+  record=  "                                                                           "; output;
+  record=  "data &rrguri rrgtablepart&rrgtablepartnum;                                 "; output;
+  record=  "  set __tmp;                                                               "; output;
+  record=  "  __rowid=_n_-1;                                                           "; output;
+  record=  "run;                                                                       "; output;
+  record="                                                                             "; output;
+%end;    
+  %end;    
+  
 
                                       
 
@@ -107,7 +155,7 @@ data rrgfinalize;;
           %do i=1 %to &rrgtablepartnum;
               %if %upcase(&savexml)=Y %then %do;   
               	%if &i>1 %then %do;                                                                        
-                	record=  '   %__sasshiato(path=&__path,'|| " debug=&debug, dataset=&rrguri._part&i);";                output;
+                	record=  '   %__sasshiato(path=&__path,'|| " debug=&debug, dataset=&rrguri, suffix=_part&i);";                output;
                	%end;
                 %else %do;
                 	 record=  '   %__sasshiato(path=&__path,'|| " debug=&debug, dataset=&rrguri);";                      output;
@@ -134,68 +182,77 @@ data rrgfinalize;;
 run;
 
 %put DEBUG INFO rrgfinalize_done=&rrgfinalize_done;
+
 %if &rrgfinalize_done=0 %then %do;
 
-%if &rrg_debug>0 %then %do;
-data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "GENERATING PDF AND/OR RTF OUTPUT STARTED";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
-%end;
-  data _null_;
-    set rrgfinalize;
-    call execute(cats('%nrstr(',record,')'));
+    %if &rrg_debug>0 %then %do;
+        data __timer;
+          set __timer end=eof;
+        	length task $ 100;
+        	output;
+        		if eof then do; 
+        		  task = "GENERATING PDF AND/OR RTF OUTPUT STARTED";
+        		  dt=datetime(); 
+        		  output;
+        		end;
+        run;
+    %end;
+
+    data _null_;
+        set rrgfinalize;
+        call execute(cats('%nrstr(',record,')'));
     run;
-    
-   %if &rrg_debug>0 %then %do; 
-  data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "RRG FINALIZE finished";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
-%end;
+        
+    %if &rrg_debug>0 %then %do; 
+          data __timer;
+          set __timer end=eof;
+        	length task $ 100;
+        	output;
+        		if eof then do; 
+        		  task = "RRG FINALIZE finished";
+        		  dt=datetime(); 
+        		  output;
+        		end;
+        run;
+    %end;
 
 %end;
 
 %*-------------------------------------------------;
 %* CREATE GENERATED PROGRAM;
 %*-------------------------------------------------;
+
 %if &rrg_debug>0 %then %do;
-data __timer;
-  set __timer end=eof;
-	length task $ 100;
-	output;
-		if eof then do; 
-		  task = "WRITING GENERATED PROGRAM TO DISK STARTED";
-		  dt=datetime(); 
-		  output;
-		end;
-run;
+    data __timer;
+      set __timer end=eof;
+    	length task $ 100;
+    	output;
+    		if eof then do; 
+    		  task = "WRITING GENERATED PROGRAM TO DISK STARTED";
+    		  dt=datetime(); 
+    		  output;
+    		end;
+    run;
 %end;
+
+%local mod;
+%let mod=mod;
+
+%if &defreport_tablepart<2 %then %let mod=;
+
 %if &rrgtablepart = FIRSTANDLAST  %then %do;
 
     data _null_;
-      set %if %sysfunc(exist(rrgheader)) %then %do; rrgheader %end;
-          %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+      set %if %sysfunc(exist(rrgheader)) and &defreport_tablepart<2 %then %do; rrgheader %end;
+          %if %sysfunc(exist(rrgfmt)) and &defreport_tablepart<2 %then %do; rrgfmt %end;
           %if %sysfunc(exist(rrginc)) %then %do; rrginc %end;
           %if %sysfunc(exist(rrgjoinds)) %then %do; rrgjoinds %end;
 
-          %if %sysfunc(exist(rrgcodebefore)) %then %do; rrgcodebefore %end;
+          %if %sysfunc(exist(rrgcodebefore)) and &defreport_tablepart<2 %then %do; rrgcodebefore %end;
           rrgpgm 
-          %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end;
+          %if %sysfunc(exist(rrgcodeafter))  %then %do; rrgcodeafter %end;
           rrgfinalize;
-      file "&rrgpgmpath./&rrguri..sas"  lrecl=1000;
+      file "&rrgpgmpath./&rrguri..sas"  &mod lrecl=1000;
       put record  ;
       
     run;
@@ -205,16 +262,16 @@ run;
 %else %if &rrgtablepart = FIRST  %then %do;
 
     data rrgpgm0;
-        set %if %sysfunc(exist(rrgheader)) %then %do; rrgheader %end;
-          %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+        set %if %sysfunc(exist(rrgheader)) and &defreport_tablepart<2  %then %do; rrgheader %end;
+          %if %sysfunc(exist(rrgfmt)) and &defreport_tablepart<2 %then %do; rrgfmt %end;
           %if %sysfunc(exist(rrginc)) %then %do; rrginc %end;
           %if %sysfunc(exist(rrgjoinds)) %then %do; rrgjoinds %end;
 
           
 
-          %if %sysfunc(exist(rrgcodebefore)) %then %do; rrgcodebefore %end;
+          %if %sysfunc(exist(rrgcodebefore)) and &defreport_tablepart<2 %then %do; rrgcodebefore %end;
           rrgpgm 
-          %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end;
+          %if %sysfunc(exist(rrgcodeafter))   %then %do; rrgcodeafter %end;
           rrgfinalize;
     run;
     
@@ -224,9 +281,9 @@ run;
 
     data rrgpgm0;
       set rrgpgm0 
-       %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+       %if %sysfunc(exist(rrgfmt)) and &defreport_tablepart<2 %then %do; rrgfmt %end;
        rrgpgm 
-       %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end; 
+       %if %sysfunc(exist(rrgcodeafter)) and &defreport_tablepart<2  %then %do; rrgcodeafter %end; 
       rrgfinalize;
     run;
     
@@ -236,12 +293,12 @@ run;
 
     data _null_;
       set rrgpgm0 
-         %if %sysfunc(exist(rrgfmt)) %then %do; rrgfmt %end;
+         %if %sysfunc(exist(rrgfmt)) and &defreport_tablepart<2 %then %do; rrgfmt %end;
       rrgpgm 
        %if %sysfunc(exist(rrgcodeafter)) %then %do; rrgcodeafter %end; 
       rrgfinalize;
      
-      file "&rrgpgmpath./&rrguri..sas"  lrecl=1000;
+      file "&rrgpgmpath./&rrguri..sas" &mod  lrecl=1000;
       put record  ;
       
     run;
@@ -329,7 +386,7 @@ run;
 %end;
 
 
-%if  &rrg_debug=0  AND ( &rrgtablepart=LAST or &rrgtablepart=FIRSTANDLAST) %then %do;
+%if  &rrg_debug<=0  and &debug<100 and  ( &rrgtablepart=LAST or &rrgtablepart=FIRSTANDLAST) and &defreport_tablepart=0 %then %do;
   
     proc datasets memtype=data nolist nowarn;
       delete rrg: __:;

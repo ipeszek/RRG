@@ -17,6 +17,7 @@ popsplit=,
 decode=,
 incolumns=,
 codelist=,
+codelistds=,
 delimiter=%str(,),
 nline=N,
 sortcolumn=,
@@ -30,14 +31,20 @@ colhead=,
 mincnt=,
 minpct=,
 ordervar=,
-eventcnt=
+eventcnt=,
+aegroup=,
+cutoffval=,
+cutofftype=
+
 )/store;
 
 
 %* note stat parameter seems to be never used;
 
-%local name label stat page decode incolumns  codelist delimiter nline 
-     sortcolumn freqsort autospan preloadfmt across incolumn colhead popsplit eventcnt;
+%local name label stat page decode incolumns  codelist codelistds delimiter nline 
+     sortcolumn freqsort autospan preloadfmt across incolumn colhead mincnt minpct
+     popsplit eventcnt ordervar
+     aegroup cutoffval cutofftype ;
 
 %put STARTING RRG_ADDGROUP USING VARIABLE &NAME;
 
@@ -47,6 +54,52 @@ eventcnt=
 %if &skipline = 1 %then %let skipline=Y;
 
 %if %upcase(&page) = Y and %length(&popsplit)=0 %then %let popsplit=Y;
+%if %upcase(&aegroup) ne N %then %let aegroup=Y;
+
+
+%if %length(&codelistds) %then %do;
+  
+  %local __name_type __decode_type;
+  
+  data __tmp;
+  set &codelistds ;
+  if _n_=1 then do;
+    call symput('__name_type',vtype(&name));
+    call symput('__decode_type',vtype(&decode));
+  end;
+  run;
+
+   %if &__name_type=N and &__decode_type=N %then %do;
+      proc sql noprint;
+      select  strip(put(&name, best.))||'='||quote(strip(put(&decode, best.)))
+      into: codelist separated by "&delimiter"
+      from &codelistds;
+      quit;
+   %end;
+   %else %if &__name_type=N and &__decode_type=C %then %do;
+      proc sql noprint;
+      select  strip(put(&name, best.))||'='||quote(strip(&decode))
+      into: codelist separated by "&delimiter"
+      from &codelistds;
+      quit;
+   %end;
+   %else %if &__name_type=C and &__decode_type=N %then %do;
+      proc sql noprint;
+      select  quote(strip(&name))||'='||quote(strip(put(&decode, best.)))
+      into: codelist separated by "&delimiter"
+      from &codelistds;
+      quit;
+   %end;
+   %else %if &__name_type=C and &__decode_type=C %then %do;
+      proc sql noprint;
+      select  quote(strip(&name))||'='||quote(strip(&decode))
+      into: codelist separated by "&delimiter"
+      from &codelistds;
+      quit;
+   %end;
+
+  
+%end;  
 
 %if %length(&preloadfmt) %then %do;
 
@@ -156,7 +209,10 @@ preloadfmt = %nrbquote(&preloadfmt),
 sortcolumn=&sortcolumn,
 mincnt=%nrbquote(&mincnt),
 minpct=%nrbquote(&minpct),
-eventcnt=%upcase(&eventcnt)
+eventcnt=%upcase(&eventcnt),
+aegroup=%upcase(&AEGROUP),
+cutoffval=&cutoffval,
+cutofftype=&cutofftype
 /*,
 ordervar=&ordervar
 */

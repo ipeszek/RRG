@@ -786,7 +786,7 @@ record="  if first.__order and last.__order then do;";output;
 record="    __ncol =upcase(__name);";output;
 record="    __col =tranwrd(strip(__ncol), strip(upcase(__name)), strip(__col));";output;
 record="    if compress(__col, '.,(): ')='' then __col='';     ";   output;
-record="    if __name in ('STD', 'STDERR') and __col='' then  __col='-';"; output;
+record="    if __name in ('STD', 'STDERR') and __col='' then  __col='"||"&defreport_missing"||"';"; output;
 record="    __tmpalign = cats('"|| "&align"|| "');";   output;
 record="    output;";   output;
 record="  end;";output;
@@ -798,7 +798,7 @@ record="       __ncol =tranwrd(strip(__ncol), '$'||strip(upcase(__name))||'$', s
 record="       if last.__order then do;";output;
 
 record="          if compress(__ncol, '.,(): ')='' then __ncol='';     ";output;
-record="          if __name in ('STD', 'STDERR') then __ncol=tranwrd(__ncol,'( )','(-)');"; output;
+record="          if __name in ('STD', 'STDERR') then __ncol=tranwrd(__ncol,'( )','(&defreport_missing)');"; output;
 
 record="          __col=strip(__ncol);";output;
 
@@ -809,12 +809,13 @@ record="  end;";output;
 
 record="run;";output;
 
-record="                                               ";output;
-record="  data __contstat2;";output;
-record="  set __contstat2;";output;
-record="     __col = tranwrd(strip(__col),'(.','(NA');";output;
-record="  run;"; output;
-
+/*  */
+/* record="                                               ";output; */
+/* record="  data __contstat2;";output; */
+/* record="  set __contstat2;";output; */
+/* record="     __col = tranwrd(strip(__col),'(.','(NA');";output; */
+/* record="  run;"; output; */
+/*  */
 run;
 
 proc append data=rrgpgmtmp base=rrgpgm;
@@ -1008,7 +1009,7 @@ run;
           if parms ne '' then do;
               record=strip(parms)||",";output;
           end;
-          record="     subjid=&subjid);";output;
+          record="     subjid=&defreport_subjid);";output;
           record=" ";output;
           
           

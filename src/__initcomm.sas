@@ -53,7 +53,7 @@
 %put REQUIRED MACRO VARIABLE RRGOUTPATH IS NOT DEFINED;
 %put EXITING SAS;
 %put ***********************************************************;
-ENDSAS;
+%abort abend;
 %end;
 
 
@@ -186,7 +186,7 @@ data rrgfmt;
   record='';
 run;
 
-data codebefore;
+data rrgcodebefore;
   if 0;
   length record $ 2000;
   record='';
@@ -213,12 +213,16 @@ run;
 %* VERIFY THAT RRGURI conforms to SAS DATASET NAMING RULES;
 
 %__verifyuri(&rrguri);
-
-data rrgpgm ;
-  length record $ 2000;
-  keep record;
-  record='';
-run;
+    
+  %if &defreport_tablepart <2 %then %do;  
+    
+  data rrgpgm ;  
+    length record $ 2000;  
+    keep record;  
+    record='';  
+  run;  
+    
+  %end;  
 
 
 %mend;

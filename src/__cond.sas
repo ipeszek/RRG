@@ -187,6 +187,8 @@ record=" "; output;
 
 
 %if %upcase(&countwhat)=EVENTS %then %do;
+  
+   
 
     %let events=N;
     
@@ -199,7 +201,6 @@ record=" "; output;
 %end;
 
 %else %do;
-
     %__getcntg(datain=__dataset (where=(&defreport_tabwhere and &where)), 
               unit=&unit, 
               group=__tby &groupvars &by __trtid &trtvars, 
@@ -265,23 +266,28 @@ record=" "; output;
 
 record=" "; output;
 
+/*  */
+/* %if %upcase(&allstat)=N %then  %do; */
+/*       %put debug3mar I am here - allstats=n; */
+/*  */
+/*     record="    proc sort data=__dataset (where=( ";  */
+/*     record=   strip(record)|| trim(left(symget("defreport_tabwhere")))||"))"; output; */
+/*     record="     out= __conddenom (keep = &denomvars __trtid &trtvars __tby) "; output; */
+/*     record="     nodupkey;"; output; */
+/*     record="     by  &denomvars __trtid &trtvars __tby;"; output; */
+/*     record="    run;"; output; */
+/*     record=" "; output; */
+/*     record="    data __conddenom;"; output; */
+/*     record="      set __conddenom;"; output; */
+/*     record="      __denom=0;"; output; */
+/*     record="    run;"; output; */
+/*     record=" "; output; */
+/*    */
+/*     %goto skipdenom; */
+/*  */
+/* %end; */
 
-%if %upcase(&allstat)=N %then  %do;
-    record="    proc sort data=__dataset (where=( "; 
-    record=   strip(record)|| trim(left(symget("defreport_tabwhere")))||"))"; output;
-    record="     out= __conddenom (keep = &denomvars __trtid &trtvars __tby) "; output;
-    record="     nodupkey;"; output;
-    record="     by  &denomvars __trtid &trtvars __tby;"; output;
-    record="    run;"; output;
-    record=" "; output;
-  record=" data __conddenom; "; output;
-    record="      set __conddenom;"; output;
-    record="      __denom=0;"; output;
-  record="run; "; output;
-  record=" "; output;
-  
-  %goto skipdenom;
-%end;
+
 ************* begin calculation of denominator;
 
 record="*----------------------------------------------------;"; output;
@@ -310,7 +316,6 @@ record=" "; output;
 %end;            
       
 %skipdenom:
-
 
 record=" ";       output;
 record='%local dsid rc nobs nobsd;'; output;
@@ -363,6 +368,7 @@ record="      __cntevt=0;"; output;
 record="    run;"; output;
 record='  %end;'; output;
 record=" "; output;
+
 
 
 

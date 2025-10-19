@@ -56,6 +56,9 @@ events=n,
 worst=,
 sortcolumn=,
 cutoffcolumn=,
+cutoffval=,
+cutofftype=,
+cutoffvar=,
 freqsort=,
 templateds=,
 grouping=,
@@ -98,7 +101,9 @@ condfmt=,
 condfmtstats=,
 maxdec=,
 showneg0=,
-eventcnt=)/store;
+eventcnt=,
+aegroup=,
+multiplier=)/store;
 
 %local where popwhere cond name decode label labelline suffix stat countwhat 
        totaltext totalpos skipline indent denom denomwhere  popgrp fmt
@@ -110,7 +115,8 @@ eventcnt=)/store;
        totalwhere across incolumn colhead subjid misspos misstext delmods
        templatewhere show0cnt wholerow notcondition desc popsplit labelvar
        condfmt condfmtstats slfmt pvalfmt DENOMINClTRT noshow0cntvals pct4total
-       maxdec showneg0 statlabel statindent eventcnt;
+       maxdec showneg0 statlabel statindent eventcnt aegroup cutoffval cutofftype cutoffvar
+       multiplier;
 
 
 
@@ -143,7 +149,7 @@ data __tmp;
 length name fmt  decode align countwhat ordervar type statds page basedec eventcnt $ 20 
        delimiter nline  showmissing showgroupcnt showemptygroups wholerow
        autospan splitrow pct4missing keepwithnext across incolumn skipline show0cnt 
-       notcondition desc popsplit DENOMINClTRT pct4total statindent $ 1
+       notcondition desc popsplit DENOMINClTRT pct4total statindent aegroup $ 1
        cond where popwhere label suffix stat codelist codelistds denomwhere  
        denom worst totaltext events templateds sortcolumn freqsort mincnt 
        minpct popgrp newvalue values newlabel model statsetid cutoffcolumn 
@@ -159,6 +165,9 @@ length name fmt  decode align countwhat ordervar type statds page basedec eventc
   sortcolumn=tranwrd(sortcolumn,',',' ');
   parms = (trim(left(symget("parms"))));
   cutoffcolumn=(trim(left(symget("cutoffcolumn"))));
+  cutoffval=(trim(left(symget("cutoffval"))));
+  cutoffvar=(trim(left(symget("cutoffvar"))));
+  cutofftype=upcase((trim(left(symget("cutofftype")))));
   freqsort=(trim(left(dequote(symget("freqsort")))));
   notcondition=(trim(left(dequote(symget("notcondition")))));
   varid = &numvar;
@@ -261,6 +270,9 @@ length name fmt  decode align countwhat ordervar type statds page basedec eventc
   noshow0cntvals=upcase(trim(left(symget("noshow0cntvals"))));
   maxdec = upcase(trim(left(symget("maxdec"))));
   showneg0 = upcase(trim(left(symget("showneg0"))));
+  aegroup = upcase(trim(left(symget("aegroup"))));
+  multiplier = upcase(trim(left(symget("multiplier"))));
+
   output;
 run;
 

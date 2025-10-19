@@ -82,9 +82,11 @@
     *&name=tranwrd(strip(&name),')',"#rpar");
     &name=tranwrd(strip(&name),'"',"/#0034 ");
     &name=tranwrd(strip(&name),"'","/#0039 ");
-    &name=tranwrd(strip(&name),'(',"/#0040 ");
-    &name=tranwrd(strip(&name),')',"/#0041 ");
-
+   /*  &name=tranwrd(strip(&name),'(',"/#0040 "); */ 
+   /** 2024-09-27;*/
+   /*  &name=tranwrd(strip(&name),')',"/#0041 "); */ 
+   /** 2024-09-27;*/
+/*  */
     record=  "__"|| "&name="||'"'|| strip(&name)|| ' ";';  output;
 %mend;  
 
@@ -112,6 +114,7 @@ record=   "   __varbygrp   = .;"; output;
 %if &islist=Y %then %do;
   record=   '__fontsize="' ||strip(fontsize)|| '";';output;
 %end;
+record=   '__orient="' ||strip(upcase(orient))|| '";';output;
 
 record=   '__fontsize="' ||strip(fontsize)|| '";';output;
 record=   '__bookmarks_rtf="' ||strip(bookmark_rtf) || '";'; output;

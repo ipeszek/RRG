@@ -6,6 +6,21 @@
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  */
 
+
+/* some macro variables used inside:
+
+datain:  __datasetc: __dataset where defreport_tabwhere and addcatvar.where
+unit:   &defreport_subjid __theid (unless rrg_addcatvar.asubjid is spcified - then asubjid __theid) 
+group:  __tby + all group vars with page ne Y <@TODO: exclude group vars with page ne Y and aegroup ne Y>
+var:  __order &var &decode
+trtvar: all group variables with page=Y + group vars with page ne Y and aegroup ne Y + __trtid rrg_addtrt.name
+cnt = __cnt
+dataout: ____catcn42
+
+
+
+*/
+
 %macro __getcntae(datain=, unit=, group=, cnt=, dataout=, 
                  trtvar=, var=)/store;
 

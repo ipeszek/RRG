@@ -248,7 +248,7 @@ run;
 %* NGRPV IS THE NUMBER OF GROUPING VARIABLES with page ne Y;
 %* GRP1, GRP2, ETC ARE THE GROUPING VARIABLES;
 *----------------------------------------------------------------;
-%local groupby  ngrpv varby  nvarby nnotcgrpv i j k  tmp;
+%local groupby origgroupby ngrpv varby  nvarby nnotcgrpv i j k  tmp;
 %let nvarby=0;
 %let ngrpv=0;
 
@@ -288,7 +288,10 @@ proc sql noprint;
 
 quit;
 
-%put DEBUG INFO: ngrpv=&ngrpv nnotcgrpv=&nnotcgrpv;
+
+%let origgroupby=&groupby;
+
+%put DEBUG INFO: ngrpv=&ngrpv nnotcgrpv=&nnotcgrpv origgroupby=&origgroupby;
 
 %local  cgrps cgrps_w_trt tmp notcgrps allgrps ;
 
@@ -1945,7 +1948,7 @@ quit;
 
         %do i=1 %to &ngrpv;
             record=  "   __grplabel_&&grp&i='';";                                                                                       output;
-            record=  "   __order_&&grp&i=.;";                                                                                          output;
+            record=  "   __order_&&grp&i='';";                                                                                          output;
             record=  "   call missing(&&grp&i);";                                                                                       output;
         %end;
 
@@ -2164,7 +2167,7 @@ quit;
 
         %do i=1 %to &ngrpv;
            record=  "   __grplabel_&&grp&i='';";                                                                   output;
-           record=  "   __order_&&grp&i=.;";                                                                      output;
+           record=  "   __order_&&grp&i='';";                                                                      output;
            record=  "   call missing(&&grp&i);";                                                                   output;
         %end;
 
@@ -2307,63 +2310,7 @@ quit;
 
 
 
-/*  */
-/* %else %if %upcase(&defreport_statsacross)=Y and %upcase(&defreport_aetable) ne N and &splitcolumns ne 'Y' %then %do; */
-/*  */
-/* %* this was added to allow >1 stat in AE tables; */
-/* %* this will be superseeded by splitting columns when splitcolumns=Y;      */
-/*                 */
-/*       data rrgpgmtmp; */
-/*       length record $ 2000; */
-/*       keep record; */
-/*  */
-/*       %* create rename statement; */
-/*  */
-/*       record = '                                                                                                                                        '; output; */
-/*       record = '     data __numstat;'; output; */
-/*       record = '      set sashelp.vcolumn;'; output; */
-/*       record = '      where memname="__ALL" and libname="WORK" and lowcase(name)=:"__col" and lowcase(name) ne: "__cole" and lowcase(name) ne: "__col_";'; output; */
-/*       record = '      tt=input(tranwrd(scan(name,1,"_"),"col",""),??best.);                                                                             '; output; */
-/*       record = '      keep name tt;                                                                                                                     '; output; */
-/*       record = '      run;                                                                                                                              '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*       record = '     proc sql noprint;                                                                                                                  '; output; */
-/*       record = '     select max(tt) into: numstat separated by  " " from __numstat;                                                                     '; output; */
-/*       record = '     quit;                                                                                                                              '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*       record = '     %let r1 =;                                                                                                                         '; output; */
-/*       record = '     %let r2 =;                                                                                                                         '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*       record = '     %do i=1 %to &maxtrt;                                                                                                               '; output; */
-/*       record = '       %let r1= &r1 __col_&i=__ncol_%eval(&i*&numstat-&numstat+1);                                                                      '; output; */
-/*       record = '       %do j=2 %to &numstat;                                                                                                            '; output; */
-/*       record = '         %let r1= &r1 __col&j._&i=__ncol_%eval(&i*&numstat-&numstat+&j);                                                                '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*       record = '      %end;                                                                                                                             '; output; */
-/*       record = '     %end;                                                                                                                              '; output; */
-/*       record = '     %do i=1 %to %eval(&maxtrt*&numstat);                                                                                               '; output; */
-/*       record = '       %let r2=&r2 __ncol_&i=__col_&i;                                                                                                  '; output; */
-/*       record = '     %end;                                                                                                                              '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*         */
-/*       record = '      data __all (rename=(&r2));                                                                                                        '; output; */
-/*       record = '       set __all (rename=(&r1));                                                                                                        '; output; */
-/*       record = '      run;                                                                                                                              '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*       record = '                                                                                                                                        '; output; */
-/*         */
-/*             */
-/*       proc append base=rrgpgm data=rrgpgmtmp; */
-/*       run; */
-/*  */
-/*      */
-/*   %end;   */
-/*    */
-/*  */
-
-
+%put DEBUG INFO 15NOV2024 NGRPV=&NGRPV GROUPBY=&GROUPBY;
 %local i tmp tmp2 numg;
 %let tmp=0;
 %let numg=%sysfunc(countw(&groupby,%str( )));
@@ -2372,9 +2319,11 @@ quit;
     %if %index(&tmp2,%str(__ORDER))=0 and %index(&tmp2,%str(__FORDER))=0 %then %do;
         %let tmp = %eval(&tmp+1);
         %let grp&tmp = &tmp2;
+        %put DEBUG INFO 15NOV2024 during update grp&tmp=&&grp&tmp;
     %end;
 %end;
 %let ngrpv=&tmp;
+%put DEBUG INFO 15NOV2024 after update NGRPV=&NGRPV  ;
 
 data rrgpgmtmp;
 length record $ 2000;
@@ -2423,10 +2372,12 @@ record=  " drop __i __nindentlev;";                                             
 record=  "  if 0 then do; __varlabel=''; __grplabel_0=''; end;";                                              output;
 record=  "  by &varby __grptype __tby &groupby __grpid __blockid ";                                           output;
 record=  "     __order __tmprowid;";                                                                          output;
+
+    %do i=1 %to &ngrpv;
+record=  "  if last.&&grp&i then __last_&&grp&i=1;"; output;
+    %end;
+
 record=  "  array cols{*} __col_:;";                                                                          output;
-%do i=1 %to &ngrpv;
-    record=  "  if last.&&grp&i then __last_&&grp&i=1;"; output;
-%end;
 
 %if &ngrpv>0 %then %do;
     record=  "  array grpl{*}" || %do i=1 %to &ngrpv; " __grplabel_&&grp&i"||  %end;";" ;                     output;
@@ -2602,15 +2553,25 @@ record=  "  if first.__blockid then do;";                                       
 record=  "     if __labelline ne 1 then do;";                                                                output;
 record=  "        __sid=0;";                                                                                 output;
 record=  "        __suffix='';";                                                                             output;
+%* 15Nov2024;
+record=  "        __keepn=1;";                                                                             output;
+%* eof 15Nov2024;
 
-%if %upcase(&defreport_statsacross)=Y and &ngrpv>1 %then %do;
+%put DEBUG INFO: ngrpv=&ngrpv groupby=&groupby;
+%if %upcase(&defreport_statsacross)=Y and &ngrpv>1 and %scan(&groupby,-2, %str( )) ne %then %do;
     record=  "        if last.%scan(&groupby,-2, %str( )) then do;";                                         output;
     record=  "          __suffix = '~-2n';";                                                                 output;
     record=  "          __keepn=0;";                                                                         output;
     record=  "        end;;";                                                                                output;
 %end;
+%else %if %upcase(&defreport_statsacross)=Y and &ngrpv=1 and %scan(&groupby,-3, %str( )) ne %then %do;
+    record=  "        if last.%scan(&groupby,-3, %str( )) then do;";                                         output;
+    record=  "          __suffix = '~-2n';";                                                                 output;
+    record=  "          __keepn=0;";                                                                         output;
+    record=  "        end;;";                                                                                output;
+%end;
 %else %do;
-    record=  "        __keepn=1;";                                                                           output;
+    record=  "        __keepn=0;";                                                                           output;
 %end;
 
 record=  "        __indentlev=max(__oldind,0);";                                                             output;

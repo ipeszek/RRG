@@ -276,7 +276,7 @@ record =  "merge __all __trtdisp ;";output;
 record =  "by &varby __tmptrtvar;";output;
 record =  "if __fname='OVRL' then do;";output;
 record =  "   __vtype='OV';";output;
-record =  "   __order='999999999';";output;
+record =  "   __order=999999999;";output;
 record =  " end;";output;
 record =  "run;";output;
 record = " ";output;

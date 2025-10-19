@@ -7,14 +7,14 @@
  */
 
 %macro __getcntaew(datain=, unit=, group=, cnt=, dataout=, 
-                 trtvar=, var=, worstvar=, desc=, where=, total=N)/store;
+                 trtvar=, var=, desc=, where=, total=N)/store;
 
 %* creates a dataset with count of distinc &unit, grouped by &group;
 %* provides count for each grouping variable as well if cntallgrpYN=Y;
 %* note: unit is one variable;
 
 
-%local datain unit group  cnt dataout  trtvar var worstvar desc where total;
+%local datain unit group  cnt dataout  trtvar var  desc where total;
 
 
 %let datain = %unquote(&datain);
@@ -55,12 +55,12 @@ record =  "data __out; if 0; run;"; output;
     record =  "* TAKE THE MAXIMUM &VAR;"; output;
     record =  "*-------------------------------------------------------------------;"; output;
     record = " "; output;
-    record =  "proc sort data=&datain nodupkey;"; output;
+    record =  "proc sort data=&datain nodupkey out=__tmpdatain;"; output;
     record =  "  by &trtvar &&ngrp&i  &unit &desc &var;"; output;
     record =  "run;"; output;
     record = " "; output;
-    record =  "data &datain;"; output;
-    record =  "  set &datain;"; output;
+    record =  "data __tmpdatain;"; output;
+    record =  "  set __tmpdatain;"; output;
     record =  "  by &trtvar &&ngrp&i &unit &desc &var;"; output;
     record =  "  if last.%scan(&unit,-1, %str( ));"; output;
     record =  "run;"; output;
@@ -103,15 +103,15 @@ record =  "data __out; if 0; run;"; output;
       record =  "    select &tmp1,"; output;
       record =  "      count(*) as &cnt, &j as __grpid from "; output;
       record =  "    (select distinct "; output;
-      record =  "      &tmp2"; output;
-      %if %length(&where) %then %do;
-          record =  "    from  &datain (where=("; output;
-          record =  strip(symget("where")); output;
-          record = "  )))"; output;
-      %end;
-      %else %do;
-          record =  "    from  &datain)"; output;
-      %end;
+       record =  "      &tmp2"; output;  
+/*        %if %length(&where) %then %do;  */
+/*           record =  "    from  &datain (where=("; output; */
+/*           record =  strip(symget("where")); output; */
+/*           record = "  )))"; output; */
+/*       %end; */
+/*       %else %do; */
+          record =  "    from  __tmpdatain)"; output;
+      /* %end; */
       record =  "    group by &tmp1"; output;
       record =  "    order by &tmp1;"; output;
       record =  "quit;"; output;

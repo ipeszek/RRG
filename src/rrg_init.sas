@@ -15,9 +15,14 @@
  - OUTNAME (optional) name of output RTF and/or PDF file, without extension, 
       if it is desired to name the output file in different lenght/naming convention 
       than SAS dataset rules allow. The length/value is limited only by OS restrictions. 
+      
+ -TABLEPART:      
  */
  
  /*
+ 
+ 15Nov2023: stored tablepart in global &defreport_tablepart;
+ 
 10Sep2020 rrg_init PROGRAM FLOW
 Note: this.xxx refers to macro parameter xxx of this macro
 
@@ -54,15 +59,16 @@ Note: this.xxx refers to macro parameter xxx of this macro
 */  
    
 
-%macro RRG_init (URI=, purpose=, outname=)/store;
+%macro RRG_init (URI=, purpose=, outname=, tablepart=0)/store;
 
 
 
-%local uri purpose outname;
-%global rrguri __dirdel;
+%local uri purpose outname tablepart;
+%global rrguri __dirdel defreport_tablepart;
 %local  purpose __workdir  DELRRGCONF;    
 
 %let __workdir = %sysfunc(getoption(work));
+%let defreport_tablepart=&tablepart;
 
 %if %index(&__workdir, %str(\))>0 %then %let __dirdel=%str(\);
 %else %let __dirdel=%str(/);

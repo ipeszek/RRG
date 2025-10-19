@@ -48,26 +48,28 @@ NOTES:
 proc sql noprint;
   select across into :istrtacross separated by ' '
      from __varinfo (where =(type='TRT'));
-
-  select upcase(name),varid into 
-     :allgrps separated by ' ',
-     :tmp separated by ' '  
-     from __varinfo (where =(type='GROUP'  
-       and upcase(page) ne 'Y'))
-     order by varid;
-
+/*  */
+/*   select upcase(name),varid into  */
+/*      :allgrps separated by ' ', */
+/*      :tmp separated by ' '   */
+/*      from __varinfo (where =(type='GROUP'   */
+/*        and upcase(page) ne 'Y')) */
+/*      order by varid; */
+/*  */
   select upcase(name),varid into 
      :cgrps separated by ' ',
      :tmp separated by ' '  
      from __varinfo (where =(type='GROUP' and upcase(across)='Y' 
        and upcase(page) ne 'Y'))
      order by varid;
+     
   select upcase(name), varid into
      :cgrps_w_trt separated by ' ',
      :tmp separated by ' '
       from __varinfo 
       (where =((type='GROUP' and upcase(across)='Y') or type='TRT'))
       order by varid;
+      
    select upcase(name), varid into
      :notcgrps separated by ' ',
      :tmp separated by ' '
@@ -77,6 +79,7 @@ proc sql noprint;
       order by varid;      
 quit;  
 
+%let allgrps=&cgrps &notcgrps;
 
 
 %local cleargrp tmp tmp2 j;
@@ -92,6 +95,7 @@ quit;
   %end;
 %end; 
 
+%put DEBUG INFO: allgroups=&allgrps cgrps=&cgrps cleargrp=&cleargrp;
 
 %local breakvar;
 %let breakvar = %scan(&cgrps_w_trt,-2, %str( ));
@@ -152,6 +156,8 @@ proc sql noprint;
  %end;
 quit;   
 
+%put DEBUG INFO: notinc2=&notinc2 newtrt=&trtvar &inc4;
+
 
 *** UPDATE ___PGMINFO TO STORE NEW  GROUPING VARIABLES;
 
@@ -172,16 +178,27 @@ record=   "*------------------------------------------------------------;"; outp
 record=   "* TRANSPOSE DATASET TO PLACE REQUESTED GROUPS IN COLUMNS    ;"; output;
 record=   "*------------------------------------------------------------;"; output;
 record= " "; output;
-%if %upcase(aetable) ne N %then %do;
-    record=   "data &dsin;"; output;
-    record=   "  set &dsin;"; output;
-    record=   "  if __grpid in (&cleargrp) then delete;"; output;
-    record=   "run;  "; output;
-    record= " "; output;
-%end;
+/*  */
+/* %if %upcase(aetable) ne N %then %do; */
+/*     record=   "data &dsin;"; output; */
+/*     record=   "  set &dsin;"; output; */
+/*       record=   "  if __grpid in (&cleargrp) then delete;"; output;   */
+/*  */
+/*      record=   "run;  "; output; */
+/*     record= " "; output; */
+/* %end; */
+/* 2024-06-11 */
+
 record=   "data __all2;"; output;
 record=   "set &dsin;"; output;
 record=   "length __colx __col0 $ 2000;"; output;
+record =  "if 0 then do; "; output;
+record =  "   __varbylab=''; "; output;
+record =  "   __den_1=.;  "; output;
+record =  "   __cnt_1=.;  "; output;
+record =  "   __pct_1=.;  "; output;
+record =  "   __colevt_1='';  "; output;
+record =  "end;";output;
 record=   'array cols{*} __col_1-__col_&maxtrt;'; output;
 record=   'array cnts{*} __cnt_1-__cnt_&maxtrt;'; output;
 record=   'array pcts{*} __pct_1-__pct_&maxtrt;'; output;
@@ -309,7 +326,7 @@ record=   "  __tmprowid=_n_;"; output;
 record=   "  if last.__blockid then __keepn=0;"; output;
 record=   "  else __keepn=1;"; output;
 record=   "  if last.__blockid and __skipline='Y' then __suffix='~-2n';"; output;
-record=   "  __indentlev = max(0, __indentlev-&ncgrps);"; output;
+record=   "  __indentlev = max(0, __indentlev-&ncgrps+1);"; output;
 record=   "run;"; output;
 record= " "; output;
 record= " "; output;

@@ -8,7 +8,7 @@
 
 %macro __defcomm/store;
 
-** 04Dec2014 added additional substitution: _apgmname_ to get actual program name;
+%** 04Dec2014 added additional substitution: _apgmname_ to get actual program name;
 
 
 /*
@@ -33,10 +33,19 @@ NOTE: COLHEAD1 IN __REPINFO HAS "(","(" AND SINGLE QUOTES RECODED AS "RPAR, "LPA
 
 %local  nsavercd  nlowmemorymode;
 
+
+%let defreport_missing=%str(-);
+
 data _null_;
   set __rrgconfig(where=(type ='[D4]'));
   call symput(cats('n',w1),w2);
 run;
+
+%if %symexist(nmissingse) %then %do;
+  %put nmissingse=&nmissingse;
+  %let defreport_missing=&nmissingse; 
+%end;  
+  
 
 
 %if %length(&defreport_lowmemorymode)=0 %then %let defreport_lowmemorymode=&nlowmemorymode; 
@@ -204,15 +213,19 @@ quit;
 *** DOCUMENT PROPERTIES - NOT SPROPS; 
 
 
-*libname __vrfy ".";
-
-data _null_;
-  set sashelp.vextfl;
-  if index(upcase(xpath), ".SAS") then call symput('__program', left(trim(tranwrd(xpath,'\','\\')))); 
-run; 
+    
+  %local __program;  
+  %let __program=;
+    
+  data _null_;  
+    set sashelp.vextfl;  
+    if index(upcase(xpath), ".SAS") then call symput('__program', left(trim(tranwrd(xpath,'\','\\'))));   
+  run;   
 
 data __nsprops;
-  length tmp tmp2  w2 $ 2000;
+  length tmp w2 $ 2000;
+  length tmp2  $ 2000;
+
   set __nsprops;
   tmp2=strip(symget("__program"));
   tmp = cats("&rrgpgmpath.")||cats("/&rrguri..sas");
@@ -279,7 +292,8 @@ run;
 
 %if %length(&__fname)=0 %then %let __fname=&rrguri;
 
-%global rrgtablepart rrgtablepartnum  rrgsasfopen;
+%global rrgtablepart rrgtablepartnum  ;
+/* %global rrgsasfopen; */
 %let append=%upcase(&append);
 %let appendable=%upcase(&appendable);
 %if &append ne Y %then %let append=N;

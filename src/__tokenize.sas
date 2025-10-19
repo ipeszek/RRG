@@ -47,17 +47,17 @@ run;
 */
 
 %local numtokens ;
-%let numtokens = %sysfunc(countw(&string, %str( ,)));
+%let numtokens = %sysfunc(countw(&string, %str(,)));
 %do i=1 %to &numtokens;
   %local token&i;
-  %let token&i = %sysfunc(scan(&string, &i, %str( ,)));
+  %let token&i = %sysfunc(scan(&string, &i, %str(,)));
 %end;
 
 data __tokends;
 length  nstring  $ 2000;
 %do i=1 %to &numtokens;
   %if &ischar=1 %then %do;
-    nstring=quote(strip(symget("token&i")));
+    nstring=quote(dequote(strip(symget("token&i"))));
   %end;
   %else %do;
     nstring = strip(symget("token&i"));

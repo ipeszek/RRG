@@ -66,7 +66,7 @@ record =  "   do __i=1 to dim(cols); cols[__i]=''; end; end;";output;
 record =  ' %end;';output;
 record =  "      end;";output;
 record =  "    end;";output;
-record =  "    if __datatype='RINFO' then __lastcheadid=__lastcheadid+1;";output;
+record =  "    if __datatype='RINFO' then __lastcheadid=strip(put(input(__lastcheadid,??best.)+1, best.));";output;
 record =  "    if __datatype='HEAD' then __newcol0='';";output;
 record =  "  run;";output;
 record = " ";    output;

@@ -55,7 +55,10 @@ desc=,
 remove=,
 DENOMINClTRT=Y,
 show0cnt=y,
-noshow0cntvals=)/store;
+noshow0cntvals=,
+cutoffval=,
+cutofftype=
+)/store;
 
 %* NOTE: POPGRP MUST BE A SUBSET OF TOTALGRP AND TOTALGRP MUST BE A SUBSET OF GROUPVARS (WITHOUT PAGEBY VARS);
 
@@ -68,14 +71,20 @@ noshow0cntvals=)/store;
        delimiter ordervar showgroupcnt showemptygroups showmissing pctfmt 
        overallstats sortcolumn preloadfmt labelline pct4missing totalgrp
        totalwhere  subjid misspos misstext denomgrp keepwithnext templatewhere
-       desc remove DENOMINClTRT show0cnt noshow0cntvals pct4total;
+       desc remove DENOMINClTRT show0cnt noshow0cntvals pct4total cutoffval cutofftype ;
 
 %PUT STARTING RRG_ADDCATVAR USING VARIABLE &NAME;
 
+** IP 02may2024;
+%*if &defreport_statsacross=Y %then %let skipline=;
+** End of IP 02may2024;
 
 %if %length(&denom) %then %let denomgrp=&denom;
 
 %if %length(&totaltext)=0 %then %let totalpos=;
+
+/* %if %upcase(countwhat)=MAX and &sortcolumn= %then %let sortcolumn=_TOTAL_; */
+
 %if %length(&preloadfmt) %then %do;
 
  
@@ -231,7 +240,9 @@ desc=&desc,
 delmods=%nrbquote(&remove),
 DENOMINClTRT=%upcase(&DENOMINClTRT),
 show0cnt=%nrbquote(&show0cnt),
-noshow0cntvals=%nrbquote(&noshow0cntvals)
+noshow0cntvals=%nrbquote(&noshow0cntvals),
+cutoffval=&cutoffval,
+cutofftype=&cutofftype
 
 );
 

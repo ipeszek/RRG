@@ -152,7 +152,7 @@ if _n_=1 then do;
 
 
     %if %upcase(&countwhat)=MAX %then %do;
-        record="proc sort data=&ds4var (where=(not missing(&var)));"; output;
+        record="proc sort data=&ds4var (where=(not missing(&var))) nodupkey;"; output;
         record="  by  __tby __trtid &by &groupvars &unit  __order &var ;"; output;
         record="run;"; output;
         record=" "; output;

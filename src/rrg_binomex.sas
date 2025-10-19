@@ -20,6 +20,7 @@
   refvals=,
   alpha=0.05,
   pctfmt=6.1,
+  roundfact=0.1,
   subjid=,
   label_pctci=%str(CI for PCT),
   label_exact=N,
@@ -45,6 +46,7 @@
 *                     (for pairwise comp)
 *  ALPHA           = alpha-level for CI
 *  PCTFMT          = format to display CI for percentages
+*  ROUNDFACT       - rounding factor for CI
 *  SUBJID          = name of variabel denoting unique subject id
 *  LABEL_PCTCI     = display label for CI for percentages 
 *  PRINT_STATS     = whether to print generated statistics 
@@ -72,7 +74,7 @@
 
 %local   dataset where cntds   trtvar  pageby groupvars   var   refvals 
     subjid alpha maxtrt pctfmt events label_pctci Label_pctdiff
-    label_pctdiffci label_exact CONTCORR whereafter PRINT_STATS
+    label_pctdiffci label_exact CONTCORR whereafter PRINT_STATS roundfact
     ;
 %if %length(&where)=0  %then %let where=%str(1=1);
 
@@ -108,6 +110,7 @@ data __rrg_binom_EX;
   array den{*} __den_1-__den_&maxtrt;    
   
   do __i=1 to &maxtrt;
+    __den = den[__i];
     __trtid=__i;
     __val=1;
     __wt = cnt[__i];
@@ -117,7 +120,7 @@ data __rrg_binom_EX;
     __wt = den[__i]-cnt[__i];
     output;
   end;
-  keep &groupvars __trtid __val __wt;
+  keep &groupvars __trtid __val __wt __den;
 run;  
 
 proc sort data=__rrg_binom_EX;
@@ -154,13 +157,21 @@ id name1;
 run;
 
 
+proc sort data=__rrg_binom_EX out=__rrg_binom_EX_ (keep =&groupvars __trtid __den ) nodupkey;
+  by &groupvars __trtid __den;
+run;
+ 
 
 data __rrg_binom_exci;
-set __rrg_binom_exci;
+ merge __rrg_binom_exci __rrg_binom_EX_;
+
+ by &groupvars __trtid;
+
 length __stat_value __stat_name __stat_label __stat_align $ 200;
-xl_bin=100*xl_bin;
-xu_bin=100*xu_bin;
-__stat_value = "("||strip(put(xl_bin, &pctfmt.))||", "||strip(put(xu_bin, &pctfmt.))||")";
+xl_bin=round(100*xl_bin, roundfact);
+xu_bin=round(100*xu_bin, &roundfact);
+if __den=0 then __stat_value='NE';
+else __stat_value = "("||strip(put(xl_bin, &pctfmt.))||", "||strip(put(xu_bin, &pctfmt.))||")";
 __overall=0;
 __stat_order=0;
 __stat_name='EXCIPCT';

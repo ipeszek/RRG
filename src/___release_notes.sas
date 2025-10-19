@@ -9,16 +9,86 @@
 /*
   
   TODO:
-  nline for %rrg_addgroup with page=Y
-  keeptogether for grouping (not just last one)
-  test labelvar
-  test statsacross vs statsincolumn
+  keeptogether for grouping (not just last one) -- not sure what it means???
+  test labelvar - abandoned???
+  test statsacross vs statsincolumn -- not sure what it means???
   
-21Nov added eventcnt parameter to rrg_addgroup to allow for count events line (values: ABOVE or BELOW)
-13Nov added statlabel to rrg_addcod. applies to only 1st requested statistics. If >1 statistics are requsted, it will apply to all 
+
+  *** implement eventcnt parameter for group -- delayed (too complicated)
+  ***  total where countwhat=ALL  ---  delayed (too complicated)
+  *** fix skiplines and indentation for ae tables
+  
+  test pyr with events ???
+  
+  test table parts with __varbygrp
+  test cutoff with maxgrade  
+  test table parts with __varby and with appending
+  
+  *-------------------------------------------------------------------------------------------------------------------;
+
+19Feb fixed a bug that had errant text in header when >1 group is placed in column
+
+1Feb2025    fixed a bug that ignored orientation for CSR tables
+
+25Nov2024   implemented codelistds parameter in rrg_addgroup
+            added remove parameter
+            
+
+O1nOV2024   MISSINGSE can be read from D4 section of config file to populate value od SD.SE if missing.
+                 leave blank to show as blank. default is "-"
+
+23Sep2024   table can be generated with multiple "parts" (e.g. using different grouping).
+            to do that, invoke full set of rrg macros with the same rrrg_init, rrg_defreport 
+            (except for reptype which can vary) and same rrg_addtrt/page vars and across vars.
+            This is controlled by rrg_init parameter TABLEPART which should be set sequentially,e.g. 1,2,3 etc.
+            Also, rrg_defreport.print should be set to n in all but last set of rrg macros
+            If used with append functionality, within each "append" invocation series, start with tablepart=1
+            and make sure to use proper append/appendable for the last rrg macro set.
+            
+            
+            
+ 9Sep2024  rrg_codeafter and rrg_codebefore can now have macro invocations and macro vars
+          but have to be enclosed in %nrstr, e.g. %rrg_codebefore( %nrstr(xxx));        
+
+28Aug2024:  nline can be requested for grouping vars with Page=Y
+            in EVENT-type reports, grouping variable can be specified as aegroup=n and will be
+             treated as regular group (not like hierarchical)
+            
+            exposure-adjusted rates can be requested. 
+            available stats are PY, PYR, N/PY, N/PY(PYR),PYR(N/PY). 
+            If requested, PY info has to be defined using MACRO
+            
+                  %rrg_define_pyr(
+                    pydec = 1  -num of decimals for Patient-year variable
+                   ,pyrdec = 4 -- num of decimals for eposure adjusted rate
+                   ,patyearvar=patyr  - variable indicating patient exposure (e.g. last alive date)
+                   ,patyearunit=YEAR -- unit for the variable above (year, day
+                   ,onsetvar=ASTDT   -- variable indicating onset of AE
+                   ,onsettype=DATE   -- unit for variable above
+                   ,refstartvar=TRTSDT -- variable for reference startdate
+                   ,refstarttype=DATE  -- unit for variable above
+                  );
+
+
+
+16Aug24 added cutoffval and cutofftype (cnt or pct) to rrg_addcatvar. 
+   If specified, the rows below specified threshold (based on count or pct calculated  by groupvars aedecode )
+      are removed before anything else is calculated. For AE by grade, specify cutoffval/cutofftype
+      for aedecod grouping variable, not for grade variable.
+      Cutoff uses rrg_addtrt cutoffcolumn which is a list of comma delimited vaalues of treatment variable
+
+13May2024  if __col_0 ends with '//' then set __suffix to ~-2n  
+
+4Apr2024  More than 1 statistic can be requested for AE tables (no multiple statistics when PY and countwhat=max)
+         
+  
+21Nov23 added eventcnt parameter to rrg_addgroup to allow for count events line (values: ABOVE or BELOW)
+  
+13Nov23 added statlabel to rrg_addcod. applies to only 1st requested statistics. If >1 statistics are requsted, it will apply to all 
       added statindent (applies to additional indnetation when labelline=0, default=1)
       fixed issue with unit not being set properly in __cnts CALL
       fixed length of decode for total in cntsae 
+  
 8Nov2023 added subjid to rrg_addvar
 
 
@@ -31,7 +101,8 @@
          if totaltext length is greater than length of specified decode variable
 
 
-25Ja2023 removed comment from rrg_generate, updated __cond to handle labelvar parameter properly. Labelvar indicates a variable in templateds dataset
+25Ja2023 removed comment from rrg_generate, updated __cond to handle labelvar parameter properly. 
+          Labelvar indicates a variable in templateds dataset
 
 20Jan2023 Fixed bug in __transposet which created crash when only one treatment was present (drop stmt caused crash)
 

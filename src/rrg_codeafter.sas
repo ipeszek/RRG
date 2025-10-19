@@ -17,21 +17,23 @@ ds created RRGCODEAFTER
  ds initialized as empty: 
 */
 
-%macro rrg_codeafter(string)/ parmbuff store ;
+%macro rrg_codeafter/ parmbuff store ;
 
 %local string;
 %local st ;
 %let st=;
 
+%let string=%superq(syspbuff);
+
 
 
 %if %upcase(&rrgfinalize)=Y %then %do;
-  %put &WAR.NING: =======  DID YOU FORGET TO SET FINALIZE=N IN RRG GENLIST? ====== ;
+  %put &WAR.&NING: =======  DID YOU FORGET TO SET FINALIZE=N IN RRG GENLIST? ====== ;
 %END;  
 
 data rrgcodeafter;
 length string ns tmp  $ 32000;
-string = symget("syspbuff");
+string = symget("string");
 retain __word;
 __word=0;
 __ls = 100;

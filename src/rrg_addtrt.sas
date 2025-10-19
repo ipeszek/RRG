@@ -37,18 +37,14 @@ delimiter=%str(,)
 
 %if %length(&incolumns)>0 %then %let across=&incolumns;
 
-%if %length(&cutoffcolumn) %then %do;
-data _null_;
-  length tmp $ 2000;
-  cc = dequote(symget("cutoffcolumn"));
-  do i=1 to countw(cc, ' ');
-    tmp = cats(tmp)||" "||quote(dequote(scan(cc,i,' ')));
-  end;
-  tmp = tranwrd(tmp,'"',"'");
-  call symput("cutoffcolumn", cats(tmp));
-run;
+    
+  %if %length(&cutoffcolumn) %then %do;  
 
-%end;
+%let cutoffcolumn=%sysfunc(tranwrd(&cutoffcolumn, %str(,), %str( )));
+%let cutoffcolumn=%sysfunc(compbl(&cutoffcolumn));
+%let cutoffcolumn=%sysfunc(tranwrd(&cutoffcolumn, %str( ), %str(,)));
+
+  %end;  
 
 %if %length(&autospan)=0 %then %do;
 

@@ -51,9 +51,14 @@ record =  "    if _n_=1 then do;"; output;
 record =  "      array cols {*} __col_:;"; output;
 record =  "      call symput('nmt', cats(dim(cols)-1));"; output;
 record =  "    end; "; output;
-record =  "    if __datatype='RINFO' then __lastcheadid=__lastcheadid+&indentlev+1;"; output;
-record =  "    if __datatype='HEAD' then __newcol0='';";output;
- record =  "  run;"; output;
+record =  "    if __datatype='RINFO' then __lastcheadid=strip(put(input(__lastcheadid,??best.)+&indentlev+1, best.));"; output;
+  
+ record =  "    if __datatype='HEAD' then do;";output; 
+%do i=0 %to &indentlev; 
+    record =  "       __newcol&i = ''; "; output;
+%end; 
+record =  "      end;"; output;
+record =  "  run;"; output;
 record = " ";     output;
 record = " "; output;
 record =  '%local lastrow;'; output;

@@ -11,7 +11,7 @@
 %macro rrg_addgroup(
 name=,
 label=,
-stat=,
+stat=, /* not used */
 page=,
 popsplit=,
 decode=,
@@ -22,19 +22,19 @@ delimiter=%str(,),
 nline=N,
 sortcolumn=,
 freqsort=,
-autospan=,
+autospan=, /* not used */
 skipline=,
 preloadfmt=,
 across=N,
 incolumn=,
-colhead=,
-mincnt=,
-minpct=,
-ordervar=,
-eventcnt=,
+colhead=, /* not used */
+mincnt=,/* not used */
+minpct=,/* not used */
+ordervar=, /* not used */
+eventcnt=, /* reserved for future use */
 aegroup=,
-cutoffval=,
-cutofftype=
+cutoffval=, /* not used */
+cutofftype=/* not used */
 
 )/store;
 

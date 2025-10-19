@@ -68,7 +68,6 @@ appendable=,
 append=,
 print=Y,
 savercd=,
-gentxt=,
 bookmark_rtf=,
 bookmark_pdf=,
 lowmemorymode=Y)/store;

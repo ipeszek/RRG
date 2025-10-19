@@ -106,6 +106,7 @@ quit;
 
 %if %length(&asubjid)>0 %then %let unit=&asubjid;
 
+
 %let stat=&allstat;
 
 
@@ -1104,16 +1105,35 @@ __label = quote(dequote(trim(left(symget("label")))));
 
 %if %length(&simplestats) %then %do;
     %if &labelline ne 0 %then %do;
-        record=" if first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;
-        %if %length(&labelvar) %then %do;
-            record="    __col_0 = strip(&labelvar)||' '||trim(left(__col_0));"; output;
+       
+        
+        %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
+            record=" if first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;
+            %if %length(&labelvar) %then %do;
+                record="    __col_0 = strip(&labelvar)||' '||trim(left(__col_0));"; output;
+            %end;
+            %else %do;
+                record="    __col_0 = " ||strip(__label)|| "||' '||trim(left(__col_0));"; output;
+            %end;          
+            record="  __indentlev=max(&indent+&ngrpv-1,0);"; output;
+            record=" end;"; output;
+            record=" else __indentlev=&indent+&ngrpv+&statindent-1;"; output;
+          
         %end;
         %else %do;
-            record="    __col_0 = " ||strip(__label)|| "||' '||trim(left(__col_0));"; output;
-        %end;
-        record="  __indentlev=&indent+&ngrpv;"; output;
-        record=" end;"; output;
-        record=" else __indentlev=&indent+&ngrpv+&statindent;"; output;
+           record=" if first.%scan(__tby &groupvars,-1, %str( )) then do;"; output;
+           %if %length(&labelvar) %then %do;
+              record="    __col_0 = strip(&labelvar)||' '||trim(left(__col_0));"; output;
+           %end;
+           %else %do;
+              record="    __col_0 = " ||strip(__label)|| "||' '||trim(left(__col_0));"; output;
+           %end;
+            record="  __indentlev=&indent+&ngrpv;"; output;
+            record=" end;"; output;
+            record=" else __indentlev=&indent+&ngrpv+&statindent;"; output;
+        %end;          
+        
+               
     %end;
     %else %do;
         record="  __indentlev=&indent+&statindent+&ngrpv;"; output;

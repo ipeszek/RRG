@@ -39,18 +39,7 @@ into
   :decode                           separated by ' ' from  __catv_t;
 quit;
 
-/*
-  
-  select trim(left(name))        into:var        separated by ' ' from  __catv_t;
-  select trim(left(fmt))         into:fmt        separated by ' ' from  __catv_t;
-  select trim(left(desc))        into:desc       separated by ' ' from  __catv_t;
-  select trim(left(codelist))    into:codes      separated by ' ' from  __catv_t;
-  select trim(left(codelistds))  into:codelistds separated by ' ' from  __catv_t;
-  select trim(left(delimiter))   into:delimiter   separated by ' ' from  __catv_t;
-  select VARID                   into:ID          separated by ' ' from  __catv_t;
-  select trim(left(decode))      into:decode      separated by ' ' from  __catv_t;
-quit;
-*/
+
 %if %length(&codelistds) %then %do;
     data __&codelistds._exec __&codelistds; 
       set &codelistds;
@@ -119,18 +108,19 @@ run;
 
 
 data __CODES4TRT_exec;
-  set __CODES4TRT_exec;
   %if &vtype=C %then %do;
       length &var $ &vlen;
   %end;
   %if %length (&decode) %then %do;
     length &decode $ 2000;
   %end;
+  set __CODES4TRT_exec;
+  
   %if &vtype=C %then %do;
       &var = dequote(trim(left(scan(__tmp,1,'='))));
   %end;
   %else %do;
-      &var = scan(__tmp,1,'=')+0;
+      &var = input(scan(__tmp,1,'='), ??best.);
   %end;
   %if %length (&decode) %then %do;
     &decode = dequote(trim(left(substr(__tmp, index(__tmp,'=')+1))));
@@ -162,7 +152,7 @@ length __var $ 2000;
     __var = quote(&var);
 %end;
 %else %do;
-    __var=&var;
+    __var=put(&var, best.);
 %end;
 if _n_=1 then do;
     record = " "; output;

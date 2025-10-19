@@ -619,6 +619,7 @@ record=  "* GET HEADER ENTRIES FOR THE TABLE;";output;
 record=  "*-------------------------------------------------------------------;";output;
 record=  " "; output;
 record=  "data __poph;"; output;
+/* record=  "if 0 then __dec_&trt1='';"; output; */
 record=  "set __pop;"; output;
 record=  "length __col __prefix $ 2000;"; output;
 record=  "__overall=0;"; output;
@@ -1154,7 +1155,19 @@ record=  " run;"; output;
 record=  " "; output;
 
   %end;  
-    
+  
+/*    */
+/* record=   '     %local isnodatatable;'; output; */
+/* record=   '     %let isnodatatable=1;'; output; */
+/* record=  " "; output; */
+
+  /*  */
+/* record=   "data rrgreport;"; output; */
+/* record=   "set rrgreport;"; output; */
+/* record=   "__isnodatatable=1;"; output; */
+/* record=  " run;"; output; */
+/* record=  " "; output; */
+*** update __rinfo record;    
 record=  '     %goto dotab;'; output;
 record=  '%end;'; output;
 record=  " "; output;

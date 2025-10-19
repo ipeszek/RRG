@@ -138,7 +138,7 @@ multiplier=)/store;
 %end;
 */
 %if "%upcase(&skipline)" ne "Y" %then %let skipline=N;
-
+%if &indent= %then %let indent=0;
 
 data __tmp;
   if 0;

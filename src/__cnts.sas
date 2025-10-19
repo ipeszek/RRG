@@ -508,7 +508,8 @@ run;
  trtinfods = __trtinfo,
         by = &by,
  groupvars = &groupvars4ae,
-       var = &var
+       var = &var,
+       msg= Pass 1 passing &var
 );
 
 
@@ -540,7 +541,8 @@ run;
      groupvars = &ngrpvars,
            var = &currgrp,
       ordervar = __order_&currgrp,
-       analvar = &var
+       analvar = &var,
+       msg=Pass &i of &ngrp passing var=&currgrp and analvar=&var
     );
 
 
@@ -668,7 +670,7 @@ run;
         record= "data __datasetp;";                                                   output;
         record= "set __dataset(where=( ";
         record=strip(record)|| strip(symget("defreport_tabwhere")) || " and ";
-        record=strip(record)|| strip(symget("where")) || " &pooledstr));";            output;
+        record=strip(record)||" "|| strip(symget("where")) || " &pooledstr));";            output;
         record= "run;";                                                               output;
         record=" "; output;                                                                          
         record= "data __bincntds;";                                                   output;
@@ -1130,14 +1132,33 @@ record= "  if __tmpl1 ne '' then __varlabel = __tmpl1;   "; output;
 record=" "; output;  
 record= "__keepnvar='"||strip("&keepn")|| "';"; output;
 record=" "; output;
-%if %upcase(&defreport_statsacross)=Y and &ngrpv>0 and  %upcase(&defreport_aetable) ne N %then %do;
-/*     record= "  __indentlev=max(&indent+&ngrpv-1,0);"; output; */
-    record= "  __indentlev=max(&indent+&ngrpv,0);"; output;
-     record= "  __indent_modifier=&indent;"; output;
+
+*** added 2025-07-29;
+
+%if %upcase(&defreport_statsacross)=Y and &ngrpv>0  %then %do;  
+      record= "  __indentlev=max(&indent+&ngrpv-1,0);"; output;  
+
 %end;
 %else %do;
     record= "  __indentlev=&indent+&nnotcgrpv;"; output;
 %end;
+
+
+*** end of added 2025-07-29;
+
+*** removed 2025-07-29;
+
+/*   %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 and  %upcase(&defreport_aetable) ne N %then %do;  */
+/*     record= "  __indentlev=max(&indent+&ngrpv,0);"; output;   */
+/*     record= "  __indent_modifier=&indent;"; output;   */
+/*  */
+/*   %end; */
+/*   %else %do; */
+/*       record= "  __indentlev=&indent+&nnotcgrpv;"; output; */
+/*   %end; */
+
+*** end of removed 2025-07-29;
+
 record= "  if __vtype='CATS' then do;"; output;
 record= "    __indentlev+1;"; output;
 record= "    __align = 'L';"; output;

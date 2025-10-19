@@ -72,6 +72,7 @@ proc sql noprint;
   %end;
 quit;  
 
+
  
 
 *** MAKE DATASET LONG AND SKINNY - RECREATE __TRTID ;
@@ -325,8 +326,11 @@ record =  '  __tmprowid=_n_;';output;
 
 /* 18Nov2024 */
 /* %if &ngrp>1 %then %do; */
-    record =  "  if last.&lastgrp.  then do; __keepn=0; if not last.__tby then __suffix='//'; end; ";output;
+    record =  "  if last.&lastgrp.  then __keepn=0;  ";output;
     record =  '  else __keepn=1;';output;
+    %if %length(&lastgrpskip) %then %do;
+    record =  "  if last.&lastgrpskip. and not last.__tby then __suffix='//'; ";output;
+   %end;
 /* %end; */
 /* %else %do; */
 /*     record =  '  __keepn=0;';output; */

@@ -9,6 +9,7 @@
 /*
   
   TODO:
+  NLINE 
   keeptogether for grouping (not just last one) -- not sure what it means???
   test labelvar - abandoned???
   test statsacross vs statsincolumn -- not sure what it means???
@@ -26,7 +27,12 @@
   
   *-------------------------------------------------------------------------------------------------------------------;
 
-19Feb fixed a bug that had errant text in header when >1 group is placed in column
+18Aug2025 fixed __cntaepy cutoff portion to avoid NOTEs in log about __pct_x__cnt_x uninnitialized
+          fixed __transposet to avoid NOTEs in log about uninitialized __tmptrtvar
+
+6Mar2025  set indent to 0 if null, fixed issue with unwanted skiplines when statsacross=y
+
+19Feb2025 fixed a bug that had errant text in header when >1 group is placed in column
 
 1Feb2025    fixed a bug that ignored orientation for CSR tables
 

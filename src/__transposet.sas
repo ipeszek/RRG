@@ -192,6 +192,7 @@ record = " ";                                                                   
 record =  "data __all;";                                                                     output;
 record =  "  length __tmpalign $ 2000;";                                                     output;
 record =  "  set __all;";                                                                    output;
+record =  "  if 0 then __tmptrtvar=.";                                                       output;
 record =  "  __tmpalign =__align;";                                                          output;
 record =  "__indentlev =__indentlev+1;";                                                     output;
 %if &ncgrps>0 %then %do;                                                                     

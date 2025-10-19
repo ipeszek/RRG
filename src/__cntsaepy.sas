@@ -6,7 +6,10 @@
  * See the LICENSE file in the root directory or go to https://www.gnu.org/licenses/gpl-3.0.en.html for full license details.
  
  13Nov2023 fixed length of display variable when total is used
+ 18Aug2025 initialized __cnt_x/__pct_x to null in __forcutoff_fin to avoid NOTES in log
  */
+ 
+ 
  /* some macro variables used inside:
  
  vinfods : __varinfo where varid=&varid
@@ -465,7 +468,6 @@ select max(varid) into: tmp separated by ' ' from __varinfo (where=(not missing(
 
   quit;        
 
-
 %end;
 quit;
 
@@ -494,9 +496,18 @@ record=" "; output;
 %*prepare cutoff statement;
 
 record="%local  cutofftrtids cutoffstmt;"; output;
+
+%if %length(&cutofftrtvals)=0 %then %do;
+record="proc sql noprint;"; output;    
+record="  select __trtid into: cutofftrtids separated by ',' from __pop ;"; output;    
+record="quit;"; output;    
+%end;    
+
+%else %do;
 record="proc sql noprint;"; output;    
 record="  select __trtid into: cutofftrtids separated by ',' from __pop (where=(&trtvars in (&cutofftrtvals)));"; output;    
 record="quit;"; output;    
+%end;
 
 record=" "; output;                 
 output; record="data __tmp;    "; output;
@@ -507,10 +518,10 @@ record="run;       "; output;
 record=" "; output;
 record="proc sql noprint;"; output;
 %if %upcase(&cutofftype)=PCT %then %do;
-record="  select '__pct_'||strip(put(i, best.))||'>=" ||"&cutoffval"||"' into: cutoffstmt separated by ' and '"; output;
+record="  select '__pct_'||strip(put(i, best.))||'>=" ||"&cutoffval"||"' into: cutoffstmt separated by ' or '"; output;
 %end;
 %else %do;
-record="  select '__cnt_'||strip(put(i, best.))||'>=" ||"&cutoffval"||"' into: cutoffstmt separated by ' and '"; output;  
+record="  select '__cnt_'||strip(put(i, best.))||'>=" ||"&cutoffval"||"' into: cutoffstmt separated by ' or '"; output;  
 %end;
 record="        from __tmp ; "; output;
 record="quit;     "; output;
@@ -577,6 +588,15 @@ record="       "; output;
         %* keep only records above specified threshold;
         record="data  __forcutoff_fin;"; output;
         record="  set __forcutoff3 ;"; output;
+
+
+    record= '  array  pct{*} __pct_1-__pct_&maxtrt;';output;
+    record= "  if 0 then do;";output;
+    record= "      do __i=1 to dim(pct);";output;
+    record= "         pct[__i]=.;";output;
+    record= "    end;";output;
+    record= "  end;";output;        
+          
         record='  if &cutoffstmt ;'; output;
         record="  keep __tby &cutoffvarlist;"; output;
         record="run;  "; output;
@@ -600,6 +620,15 @@ record="       "; output;
         %* keep only records above specified threshold;
         record="data  __forcutoff_fin;"; output;
         record="  set __forcutoff3; "; output;
+
+    record= '  array  cnt{*} __cnt_1-__cnt_&maxtrt;';output;
+    record= "  if 0 then do;";output;
+    record= "    do __i=1 to dim(cnt);";output;
+    record= "         cnt[__i]=.;";output;
+    record= "    end;";output;
+    record= "  end;";output;                
+        
+        
         record='  if &cutoffstmt ;'; output;
         record="  keep __tby &cutoffvarlist;"; output;
         record="run;  "; output;
@@ -1319,8 +1348,8 @@ record=" "; output;
 record="if 0 then do; __total=0; __py=.; __pyr=.; __col_0=''; end;";output;
 record="if __total ne 1 then __total=0;";output;
 record=" "; output;
-record="__pydec="||"&pydec"||";"; output;
-record="__pyrdec="||"&pyrdec"||";"; output;
+record="__pydec=&pydec;"; output;
+record="__pyrdec=&pyrdec;"; output;
 record=" "; output;
 
 record='__pydecfmt = "12.'||"&pydec"||'";';output;
@@ -1372,7 +1401,8 @@ record="end;";output;
       %let sord0 = %scan(&simpleorder,1,%str( ));
       record=   "array col1{*} $ 2000 __col1_1-__col1_"||'&maxtrt;';output;
 %if %length(&rgroupvars) %then %do;
-      record="if __total ne 1 then __col_0 = coalescec(&rgroupvars);";output;
+      /*record="if __total ne 1 then __col_0 = coalescec(&rgroupvars);";output;*/
+      record="if __total ne 1 then __col_0 = ' ';";output;
 %end;      
       record="__stat='"||symget("simplestats")|| "';";output; 
       record="do __i=1 to dim(cnt);";output;

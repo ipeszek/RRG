@@ -30,6 +30,8 @@ delimiter=%str(,)
        
 %* totaltext seems to be never used;
 
+%if %length(&codelist) %then %let decode=__dummy_decode_trt;
+
 %local name label decode suffix nline totaltext sortcolumn 
        incolumns cutoffcolumn autospan splitrow across remove;
 
@@ -55,6 +57,9 @@ run;
 
 %end;
 
+
+
+    
 
 %__rrgaddgenvar(
 name=%nrbquote(&name),

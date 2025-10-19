@@ -173,6 +173,22 @@ record =  "if first.&trtvar then  __tmptrtvar+1;";                              
 record =  " __order___tmptrtvar=__tmptrtvar;";                                               output;
 record =  "run;";                                                                            output;
 record = " ";                                                                                output;
+
+
+%* add __tmptrtvars to datasets with group counts ;
+%do i=1 %to &ngrpv;
+  %let tmp=&&grp&i;
+  %if &&nline_&tmp=Y %then %do;
+    
+    record =  "       "; output;
+    record =  "    proc sql nowarn undo_policy=none ;" ;  output;
+    record =  "    create table __grpcnts_&tmp as select * from __grpcnts_&tmp natural left join __trtdisp;" ;  output;
+    record =  "    quit;";   output;
+    record =  "  " ;  output;
+
+  %end;   
+%end;  
+  
 record =  '%local numptrt;';                                                                 output;
 record =  'proc sql noprint;';                                                               output;
 record =  "select max(__tmptrtvar) into:numptrt separated by ' '";                           output;
@@ -192,7 +208,7 @@ record = " ";                                                                   
 record =  "data __all;";                                                                     output;
 record =  "  length __tmpalign $ 2000;";                                                     output;
 record =  "  set __all;";                                                                    output;
-record =  "  if 0 then __tmptrtvar=.";                                                       output;
+record =  "  if 0 then __tmptrtvar=.;";                                                       output;
 record =  "  __tmpalign =__align;";                                                          output;
 record =  "__indentlev =__indentlev+1;";                                                     output;
 %if &ncgrps>0 %then %do;                                                                     

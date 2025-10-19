@@ -21,12 +21,13 @@ splitrow=,
 across=Y,
 remove=,
 codelist=,
-delimiter=%str(,)
+delimiter=%str(,),
+nlinebyvars=
 )/store;
 
 %local name label decode suffix nline totaltext sortcolumn
        cutoffcolumn incolumns autospan splitrow across
-       remove codelist delimiter;
+       remove codelist delimiter nlinebyvars;
        
 %* totaltext seems to be never used;
 
@@ -77,7 +78,8 @@ autospan=%nrbquote(&autospan),
 across=&across,
 delmods=%nrbquote(&remove),
 codelist=%nrbquote(&codelist),
-delimiter = %nrbquote(&delimiter)
+delimiter = %nrbquote(&delimiter),
+nlinebyvars=&nlinebyvars
 );
 
 

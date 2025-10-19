@@ -9,7 +9,7 @@
 /*
   
   TODO:
-  NLINE 
+ 
   keeptogether for grouping (not just last one) -- not sure what it means???
   test labelvar - abandoned???
   test statsacross vs statsincolumn -- not sure what it means???
@@ -26,6 +26,16 @@
   test table parts with __varby and with appending
   
   *-------------------------------------------------------------------------------------------------------------------;
+26Aug2025 added nlinebyvars params to rrg_addtrt and rrg_addgroup to allow flexibility in calculating NLINE
+           (if requested). It only applies to variables with page =N. and only to reports where reptype=regular
+           the Nline is not automaticlly added, but the &rrguri dataset has additional variables
+           __grpcnt_<group variable name> 
+           calculated as count of subject in this value of grouping variables 
+           (and nlinebyvars variabes, if specified)
+           (and treatment if popsplit=y for this variable - bu then trtcount=subgroup count)
+           if trt is in columns followed by grouping variable then use popsplit=n and  nlinebyvars=trt01an
+           
+           fixed a bug which did not sort properly by frequency if >1 treatment was specified
 
 18Aug2025 fixed __cntaepy cutoff portion to avoid NOTEs in log about __pct_x__cnt_x uninnitialized
           fixed __transposet to avoid NOTEs in log about uninitialized __tmptrtvar

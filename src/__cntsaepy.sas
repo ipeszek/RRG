@@ -499,13 +499,13 @@ record="%local  cutofftrtids cutoffstmt;"; output;
 
 %if %length(&cutofftrtvals)=0 %then %do;
 record="proc sql noprint;"; output;    
-record="  select __trtid into: cutofftrtids separated by ',' from __pop ;"; output;    
+record="  select distinct __trtid into: cutofftrtids separated by ',' from __pop ;"; output;    
 record="quit;"; output;    
 %end;    
 
 %else %do;
 record="proc sql noprint;"; output;    
-record="  select __trtid into: cutofftrtids separated by ',' from __pop (where=(&trtvars in (&cutofftrtvals)));"; output;    
+record="  select distinct __trtid into: cutofftrtids separated by ',' from __pop (where=(&trtvars in (&cutofftrtvals)));"; output;    
 record="quit;"; output;    
 %end;
 

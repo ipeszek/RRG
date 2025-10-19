@@ -1268,14 +1268,18 @@ record="  __keepnvar='"|| "&keepn"|| "';";output;
 
 %local ngrpv;
 %let ngrpv=0;
-%if %length(&groupvars) %then %let ngrpv = %sysfunc(countw(&groupvars,%str( )));
 
-%if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;
-    record="  __indentlev=max(&indent+&ngrpv-1,0);";output;
-%end;
-%else %do;
-    record="  __indentlev=&indent+&ngrpv;";output;
-%end;
+%*nreggrp is number of grouping variables not in columns and not across and not pageby;
+%* currently not used ;
+%if %length(&groupvars) %then %let ngrpv = %sysfunc(countw(&groupvars,%str( )));
+    
+  %if %upcase(&defreport_statsacross)=Y and &ngrpv>0 %then %do;  
+      record="  __indentlev=max(&indent+&ngrpv-1,0);";output;  
+  %end;  
+  %else %do;  
+      record="  __indentlev=&indent+&ngrpv;";output;  
+  %end;  
+
 
 record="  __suffix='';  ";output;
 record=" ";output;

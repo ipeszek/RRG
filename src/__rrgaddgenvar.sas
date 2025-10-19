@@ -103,7 +103,8 @@ maxdec=,
 showneg0=,
 eventcnt=,
 aegroup=,
-multiplier=)/store;
+multiplier=,
+nlinebyvars=)/store;
 
 %local where popwhere cond name decode label labelline suffix stat countwhat 
        totaltext totalpos skipline indent denom denomwhere  popgrp fmt
@@ -116,7 +117,7 @@ multiplier=)/store;
        templatewhere show0cnt wholerow notcondition desc popsplit labelvar
        condfmt condfmtstats slfmt pvalfmt DENOMINClTRT noshow0cntvals pct4total
        maxdec showneg0 statlabel statindent eventcnt aegroup cutoffval cutofftype cutoffvar
-       multiplier;
+       multiplier nlinebyvars;
 
 
 
@@ -154,7 +155,7 @@ length name fmt  decode align countwhat ordervar type statds page basedec eventc
        denom worst totaltext events templateds sortcolumn freqsort mincnt 
        minpct popgrp newvalue values newlabel model statsetid cutoffcolumn 
        parms ovstat totalgrp totalwhere colhead delmods labelvar condfmt pvalfmt condfmtstats 
-       noshow0cntvals statlabel $ 2000 pctfmt  preloadfmt decinfmt 
+       noshow0cntvals statlabel nlinebyvars $ 2000 pctfmt  preloadfmt decinfmt 
        sdfmt subjid maxdec showneg0 $ 40;
   eventcnt= strip(symget("eventcnt"));  
   events='';
@@ -272,6 +273,7 @@ length name fmt  decode align countwhat ordervar type statds page basedec eventc
   showneg0 = upcase(trim(left(symget("showneg0"))));
   aegroup = upcase(trim(left(symget("aegroup"))));
   multiplier = upcase(trim(left(symget("multiplier"))));
+  nlinebyvars= upcase(trim(left(symget("nlinebyvars"))));
 
   output;
 run;

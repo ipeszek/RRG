@@ -248,13 +248,15 @@ run;
 %* NGRPV IS THE NUMBER OF GROUPING VARIABLES with page ne Y;
 %* GRP1, GRP2, ETC ARE THE GROUPING VARIABLES;
 *----------------------------------------------------------------;
-%local groupby  ngrpv varby  nvarby nnotcgrpv i j k  tmp;
+%local groupby  ngrpv varby  nvarby nnotcgrpv i j k  tmp altvarby4pop nreggrp;
 %let nvarby=0;
 %let ngrpv=0;
 
 
 proc sql noprint;
 
+     select count(*)   into :nreggrp separated by ' '
+    from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' and upcase(across) ne 'Y' and upcase(incolumn) ne 'Y'));
 
     select count(*) , name    into :ngrpv , :groupby separated by ' '
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) ne 'Y' ));
@@ -267,6 +269,9 @@ proc sql noprint;
 
    select name into:varby4pop separated by ' '
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y' and upcase(popsplit)='Y'));
+    
+  select name into:altvarby4pop separated by ' '
+    from __varinfo(where=(upcase(type)='GROUP' and upcase(popsplit)='Y'));    
     
   select name into:varbyn4pop separated by ' '
     from __varinfo(where=(upcase(type)='GROUP' and upcase(page) = 'Y' and upcase(popsplit) ne 'Y'));
@@ -326,9 +331,11 @@ proc sql noprint;
       order by varid ;      
 quit;  
 
+
+
 %let allgrps=&cgrps &notcgrps;
 
-%put DEBUG INFO:  allgrps=&allgrps;
+%*put DEBUG INFO:  allgrps=&allgrps;
 
 %let ngrpv = %cmpres(&ngrpv);
 %let nvarby = %cmpres(&nvarby);
@@ -337,6 +344,12 @@ quit;
     %let vby&i = %scan(&varby, &i, %str( ));
 %end;
 
+/*  */
+/* %do i=1 %to &ngrpv; */
+/*     %local grp&i; */
+/*     %let grp&i = %scan(&groupby, &i, %str( )); */
+/* %end; */
+/*  */
 
 data rrgpgmtmp;
 length record $ 2000;
@@ -361,9 +374,10 @@ data rrgpgmtmp;
 length record $ 2000;
 keep record;
 
+%* 2025-08-26 added groupby4pop below;
 %__getcntg(datain=__dataset,
         unit=&defreport_subjid,
-        group=&varby4pop __grouped &trt1 __dec_&trt1 __suff_&trt1 __prefix_&trt1
+        group=&varby4pop &groupby4pop __grouped &trt1 __dec_&trt1 __suff_&trt1 __prefix_&trt1
                   __nline_&trt1 __autospan,
         cnt=__pop_1,
         dataout=__pop);
@@ -1461,7 +1475,7 @@ quit;
 %if &ngrpv>0 or &nvarby>0 %then %do;
 
 
-    %local decodestr  vbdecodestr  ;
+    %local decodestr  vbdecodestr __trtvarname ;
     %* THIS IS LIST OF ALL DECODE VARIABLES FOR GROUPING VARIABLES;
     %* GRPDEC_&grp1, GRPDEC_&grp2, ETC ARE DECODES FOR &GRP1, &GRP2, ....;
 
@@ -1471,13 +1485,24 @@ quit;
          %local grp&i  grplab&i tmp;
          %let grp&i = %scan(&groupby, &i, %str( ));
          %let tmp = &&grp&i;
-         %local grpdec_&&grp&i;
-         select distinct decode, label into :grpdec_&&grp&i separated by ' ',
-         :grplab&i separated by ' '
+         %local grpdec_&&grp&i nline_&&grp&i nlinebyvars_&&grp&i across_&&grp&i popsplit_&&grp&i;
+         select distinct decode, label, upcase(nline), nlinebyvars, upcase(across), upcase(popsplit)
+         into 
+         :grpdec_&&grp&i separated by ' ',
+         :grplab&i separated by ' ',
+         :nline_&&grp&i separated by ' ',
+         :nlinebyvars_&&grp&i separated by ' ',
+         :across_&&grp&i separated by ' ',
+         :popsplit_&&grp&i separated by ' '
           from __varinfo where upcase(name)=upcase("&&grp&i")
                and type='GROUP' and page ne 'Y';
 
          %let decodestr=&decodestr &&grpdec_&tmp;
+         %if &&nlinebyvars_&tmp= %then %let nlinebyvars_&tmp=&tmp;
+         
+         select name into:__trtvarname separated by ' ' from __varinfo (where=(type='TRT'));
+         
+         %if &&popsplit_&tmp=Y %then  %let nlinebyvars_&tmp=&&nlinebyvars_&tmp &__trtvarname;
     %end;
     
       %do i=1 %to &nnotcgrpv;  
@@ -1692,7 +1717,7 @@ quit;
     %*-------------------------------------------------------------------------;
 
     %if &ngrpv>0 and %length(&grps_w_cl)=0 %then %do;
-      %put DEBUG INFO: case 2, there are grouping variables but none with codelies;
+      %put DEBUG INFO: case 2, there are grouping variables but none with codelist;
 
         %* Case2: no grouping variables have codelist;
         %* create __varbylab (if &varby present) and __grplabel_&&grp&i variables;
@@ -1704,6 +1729,7 @@ quit;
         %do i=1 %to &ngrpv;
             %let tmp = &tmp __grplabel_&&grp&i;
             %let tmp1 = &tmp1 __grplab&i;
+          
         %end;
         %if %length(&varby) %then %let tmp = &tmp __varbylab;
         %do i=1 %to &nvarby;
@@ -1782,6 +1808,8 @@ quit;
         %end;
         
         
+     
+  %end;
                      
 
         record=  "*---------------------------------------------------------;";                                                  output;
@@ -1950,6 +1978,11 @@ quit;
 
         record=  "*---------------------------------------------------------;";                                                         output;
         record=  " ";                                                                                                                   output;
+        
+        
+        %do i=1 %to &ngrpv;
+ 
+        
         record=  "data __all;";                                                                                                         output;
         record=  "length &tmp $ 2000;";                                                                                                 output;
         record=  "set __all;";                                                                                                          output;
@@ -2100,7 +2133,7 @@ quit;
             record=  "* WITH ALL COMBOS OF GROUPING VARIABLES WITHOUT CODELIST);";                                   output;
             record=  "*-------------------------------------------------------------;";                              output;
             record=  " ";                                                                                            output;
-            record=  "proc sql noprint nowarn;";                                                                     output;
+            record=  "proc sql noprint nowarn undo_policy=none;";                                                                     output;
             record=  "  create table __tmp1g as select distinct &tmpdec from __dataset;";                            output;
             record=  "  create table __tmp2g as select * from";                                                      output;
             record=  "    __grpcodes cross join __tmp1g;";                                                           output;
@@ -2166,8 +2199,9 @@ quit;
             record=  '* CREATE __grplabel_&grp1... __grplabel_&grpX;';                                               output;
             record=  "* WITH DISPLAY VALUES OF GROUPING VARIABLES  ;";                                               output;
         %end;
-
-        record=  "*---------------------------------------------------------;";                                    output;
+        
+     
+                                      
         record=  " ";                                                                                              output;
         record=  "data __all;";                                                                                    output;
         record=  "length &tmp $ 2000;";                                                                            output;
@@ -2194,6 +2228,9 @@ quit;
            %else %do;
               record=  " __grplabel_&&grp&i = strip(__grplabel_&&grp&i)||' '||strip(&&grp&i);";                    output;
            %end;
+          
+          
+          
         %end;
 
         %if %length(&varby) %then %do;
@@ -2244,6 +2281,55 @@ quit;
 %* end of ngrpv>0 or nvarby>0;
 %end;
 
+
+%**************************************************************;
+%*** IF SOME GROUPING VARIABLES HAD NLINE=Y;
+%*** add this line to the display value
+%**************************************************************;
+
+data rrgpgmtmp;
+length record $ 2000;
+keep record;
+record=""; output;
+
+%do i=1 %to &ngrpv;
+  %local tmp1;
+  %let tmp1=&&grp&i;
+     %if %length(&&nlinebyvars_&tmp1) and &&nline_&tmp1=Y and  &&across_&tmp1 ne Y %then %do;
+     %let tmp=%sysfunc(tranwrd(%sysfunc(compbl(&&nlinebyvars_&tmp1 &tmp1)),%str( ), %str(,)));
+     record=  "*---------------------------------------------------------;";      output;
+     record=  "* calculate count per subgroup &&grp&i;";      output;
+     record=  "*---------------------------------------------------------;";      output;
+     record=  "";      output;
+
+
+     record=  "proc sql noprint nowarn UNDO_POLICY=NONE;;"; output;
+     record=  "  create table __grpcnts_&tmp1 as select &tmp, count(distinct &defreport_subjid) as __grpcnt_&tmp1 "; output;
+     record=  "  from __dataset"; output ;
+     record=  "  group by  &tmp;"; output;
+     record=  "  "; output;
+     record=  "  create table __grpcnts_&tmp1 as select * from __grpcnts_&tmp1 natural left join __trt;"; output;  
+    
+     record=  "quit;  "; output;
+     record=  "";      output;
+     
+     /*  */
+/*      record=  "data __all __all_tmp;  ";      output;     */
+/*      record=  " set __all;";      output;     */
+/*      */
+/*      record=  " __grplabel_&tmp1=strip(__grplabel_&tmp1)|| ' (N='||strip(put(__grpcnt_&tmp1, best.))||')';";      output;     */
+/*      */
+/*      record=  "run;  "; output;      */
+/*      record=  "";      output;     */   
+
+ %end;
+%end; 
+
+
+        proc append base=rrgpgm data=rrgpgmtmp;
+        run;
+
+
 %**************************************************************;
 %*** IF SOME GROUPING VARIABLES HAD "IN=COLUMNS" SPECIFIED;
 %*** PERFORM APPRORIATE TRANSFORMATION;
@@ -2263,10 +2349,11 @@ quit;
 %*** IF TREATMENT VARIABLE HAD "IN-COLUMNS=N" SPECIFIED;
 %*** PERFORM APPRORIATE TRANSFORMATION;
 %**************************************************************;
-
+%* 2025-08-26 changed varby below to varby4pop groupby4pop;
+%* and groupby yo varbyn4pop, groupbyn4pop (but it is unused);
 %__transposet(
-  varby=&varby,
-  groupby=&groupby,
+  varby=&varby4pop &groupby4pop,
+  groupby=&varbyn4pop &groupbyn4pop,
   trtvar=&trtvar,
   sta=%upcase(&defreport_statsacross));
 
@@ -2425,7 +2512,7 @@ record=  " ";                                                                   
 %local nn;
 %let nn=&ngrpv;
 %if %upcase(&defreport_statsacross)=Y %then %let nn=%eval(&ngrpv-1);
-%put DEBUG INFO: nn=&nn;
+%*put DEBUG INFO: nn=&nn;
 
 record=  "data __all ;";                                                                                      output;
 record=  "length __suffix $ 2000;";                                                                           output;
@@ -3577,7 +3664,24 @@ record=  "      __col_0 = substr(strip(__col_0), 1, length(strip(__col_0))-2);";
 record=  "    end;";                                                             output;
 record=  "  end;";                                                               output;
 record=  "run;";                                                                 output;
-record=  " ";                                                                                                                                     output;
+record=  " ";          
+
+%* add group count to &rrguri;
+%do i=1 %to &ngrpv;
+  %let tmp=&&grp&i;
+    %if %SYMEXIST(nline_&tmp) %then %do;
+  %if &&nline_&tmp=Y %then %do;
+    
+record =  "       "; output;
+record =  "    proc sql nowarn  undo_policy=none;";   output;
+record =  "    create table &rrguri as select * from &rrguri natural left join __grpcnts_&tmp;";   output;
+record =  "    quit;" ;  output;
+record =  "  " ;  output;
+%end;
+%end;  
+%end;
+
+                                                                                                                           output;
 record=  "proc sort data=&rrguri;";                                                                                                               output;
 record=  "  by  __datatype __varbygrp  __rowid;";                                                                                                 output;
 record=  "run;";                                                                                                                                  output;

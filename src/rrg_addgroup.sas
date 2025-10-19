@@ -33,8 +33,9 @@ minpct=,/* not used */
 ordervar=, /* not used */
 eventcnt=, /* reserved for future use */
 aegroup=,
-cutoffval=, /* not used */
-cutofftype=/* not used */
+cutoffval=,  
+cutofftype=,
+nlinebyvars=
 
 )/store;
 
@@ -44,7 +45,7 @@ cutofftype=/* not used */
 %local name label stat page decode incolumns  codelist codelistds delimiter nline 
      sortcolumn freqsort autospan preloadfmt across incolumn colhead mincnt minpct
      popsplit eventcnt ordervar
-     aegroup cutoffval cutofftype ;
+     aegroup cutoffval cutofftype nlinebyvars ;
 
 %put STARTING RRG_ADDGROUP USING VARIABLE &NAME;
 
@@ -212,7 +213,8 @@ minpct=%nrbquote(&minpct),
 eventcnt=%upcase(&eventcnt),
 aegroup=%upcase(&AEGROUP),
 cutoffval=&cutoffval,
-cutofftype=&cutofftype
+cutofftype=&cutofftype,
+nlinebyvars=&nlinebyvars
 /*,
 ordervar=&ordervar
 */
